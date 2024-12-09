@@ -16,3 +16,11 @@ or add the following package reference to your project file:
 ```xml
 <PackageReference Include="Framework.Defaults" Version="x.x.x" PrivateAssets="all"/>
 ```
+
+## Publish
+
+```bash
+dotnet pack --configuration Release --output ./packages
+cd ./packages
+dotnet nuget push .\*.nupkg --source https://nuget.pkg.github.com/xshaheen/index.json --skip-duplicate --api-key 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
+```
