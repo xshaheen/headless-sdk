@@ -1,7 +1,7 @@
 <Project>
 
   <PropertyGroup Label="Package settings">
-    <Title>Framework.$(MSBuildProjectName)</Title>
+    <Title>$(MSBuildProjectName)</Title>
     <Description>Source Only package, which provides the standard configurations and settings for
       the Framework projects. Such as `.editorconfig`, build props and targets.</Description>
     <RepositoryUrl>https://github.com/xshaheen/defaults.git</RepositoryUrl>
