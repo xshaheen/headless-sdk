@@ -58,8 +58,9 @@
       CA5394: Random is an insecure random number generator.
       IDE0022: Use expression body for methods
       CA1308: Normalize strings to uppercase
+      MA0076: Do not use implicit culture-sensitive ToString in interpolated strings
     -->
-    <NoWarn Condition="'$(IsTestableProject)' == 'true'">$(NoWarn);1591;CA1707;IDE1006;IDE0022;VSTHRD200;CA1822;CA1515;CA2007;CS8604;S4144;CA5394;CA1308</NoWarn>
+    <NoWarn Condition="'$(IsTestableProject)' == 'true'">$(NoWarn);1591;CA1707;IDE1006;IDE0022;VSTHRD200;CA1822;CA1515;CA2007;CS8604;S4144;CA5394;CA1308;MA0076</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Label="Error Handling" Condition="'$(Configuration)' == 'Release'">
