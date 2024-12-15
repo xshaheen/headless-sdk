@@ -61,6 +61,10 @@
       MA0076: Do not use implicit culture-sensitive ToString in interpolated strings
     -->
     <NoWarn Condition="'$(IsTestableProject)' == 'true'">$(NoWarn);1591;CA1707;IDE1006;IDE0022;VSTHRD200;CA1822;CA1515;CA2007;CS8604;S4144;CA5394;CA1308;MA0076</NoWarn>
+    <!--
+    CS1591: Missing XML comment for publicly visible type or member
+    -->
+    <NoWarn Condition="'$(IsAspireHost)' == 'true'">$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Label="Error Handling" Condition="'$(Configuration)' == 'Release'">
