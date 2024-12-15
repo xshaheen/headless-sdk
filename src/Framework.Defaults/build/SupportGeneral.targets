@@ -7,8 +7,8 @@
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(IsTestableProject)' == 'false' ">
-    <IsPackable>true</IsPackable>
-    <IsTestProject>false</IsTestProject>
+    <IsPackable Condition="'$(IsPackable)' == ''">true</IsPackable>
+    <IsTestProject Condition="'$(IsTestProject)' == ''">false</IsTestProject>
   </PropertyGroup>
 
   <PropertyGroup Label="Properties correction">
