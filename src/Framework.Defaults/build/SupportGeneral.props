@@ -1,6 +1,6 @@
 <Project>
 
-  <PropertyGroup Label="Project categorisation">
+  <PropertyGroup Label="Project categorisation" Condition=" '$(IsTestableProject)' == '' ">
     <IsTestableProject>false</IsTestableProject>
     <IsTestableProject Condition=" $(MSBuildProjectName.Contains('.Tests.')) ">true</IsTestableProject>
   </PropertyGroup>
