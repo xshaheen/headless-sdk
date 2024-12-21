@@ -62,8 +62,9 @@
       MA0003: Add parameter name to improve readability
       RCS1046: Asynchronous method name should end with 'Async'
       CA2254: Log template should be a static expression
+      IDE0039: Use local function
     -->
-    <NoWarn Condition="'$(IsTestableProject)' == 'true'">$(NoWarn);1591;CA1707;IDE1006;IDE0022;VSTHRD200;CA1822;CA1515;CA2007;CS8604;S4144;CA5394;CA1308;MA0076;MA0003;RCS1046;CA2254</NoWarn>
+    <NoWarn Condition="'$(IsTestableProject)' == 'true'">$(NoWarn);1591;CA1707;IDE1006;IDE0022;VSTHRD200;CA1822;CA1515;CA2007;CS8604;S4144;CA5394;CA1308;MA0076;MA0003;RCS1046;CA2254;IDE0039</NoWarn>
     <!--
       CS1591: Missing XML comment for publicly visible type or member
       CA1707: Identifiers should not contain underscores
