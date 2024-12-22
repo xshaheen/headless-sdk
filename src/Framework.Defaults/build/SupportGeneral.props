@@ -98,12 +98,12 @@
       MA0048: File name must match type name (I use multiple types per file)
       MA0051: Method is too long
       MA0097: A class that implements IComparable<T> or IComparable should override comparison operators (deprecated - use  CA1036)
-      RCS1194: Implement exception constructors
+      CA1032;RCS1194: Implement exception constructors
       RCS1046;VSTHRD200: Asynchronous method name should end with 'Async'
       RCS1163: Unused parameter (deprecated - use dotnet_code_quality_unused_parameters, IDE0060)
       RCS1090;MA0004;VSTHRD111: Use .ConfigureAwait (deprecated - use CA2007)
     -->
-    <NoWarn>$(NoWarn);IDE0010;IDE0072;1573;1591;1712;CA1031;CA1062;CA1054;CA1056;CA1308;CA1711;CA1812;CA1724;NU5104;MA0018;MA0038;MA0041;MA0040;MA0032;MA0016;MA0048;MA0051;MA0097;RCS1194;RCS1046;VSTHRD200;RCS1163;RCS1090;MA0004;VSTHRD111</NoWarn>
+    <NoWarn>$(NoWarn);IDE0010;IDE0072;1573;1591;1712;CA1031;CA1062;CA1054;CA1056;CA1308;CA1711;CA1812;CA1724;NU5104;MA0018;MA0038;MA0041;MA0040;MA0032;MA0016;MA0048;MA0051;MA0097;CA1032;RCS1194;RCS1046;VSTHRD200;RCS1163;RCS1090;MA0004;VSTHRD111</NoWarn>
     <!--
       1591: Missing XML comment for publicly visible type or member
       CA1707: Identifiers should not contain underscores
