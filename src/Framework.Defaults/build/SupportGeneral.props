@@ -69,21 +69,45 @@
     <SuppressTfmSupportBuildWarnings Condition=" '$(Configuration)' == 'Release' ">true</SuppressTfmSupportBuildWarnings>
 
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NoWarn">
     <!--
       Make sure any documentation comments which are included in code get checked for syntax during the build, but do
       not report warnings for missing comments.
+      IDE0010: Add missing cases to switch statement
+      IDE0072: Add missing cases to switch expression
       CS1573: Parameter 'parameter' has no matching param tag in the XML comment for 'parameter' (but other parameters do)
       CS1591: Missing XML comment for publicly visible type or member 'Type_or_Member'
       CS1712: Type parameter 'type_parameter' has no matching typeparam tag in the XML comment on 'type_or_member' (but other type parameters do)
       CA1031: Do not catch general exception types
+      CA1062: Validate arguments of public methods
+      CA1054: URI parameters should not be strings
+      CA1056: URI properties should not be strings
+      CA1308: Normalize strings to uppercase
+      CA1711: Identifiers should not have incorrect suffix
+      CA1812 Avoid uninstantiated internal classes
+      CA1724: Type names should not match namespaces
       NU5104: A stable release of a package should not have a prerelease dependency.
+      MA0018: Do not declare static members on generic types (deprecated - use CA1000)
+      MA0038: Make method static (deprecated - use CA1822)
+      MA0041: Make property static (deprecated - use CA1822)
+      MA0040: Flow the cancellation token when available (deprecated)
+      MA0032: Use an overload with a CancellationToken argument (deprecated)
+      MA0016: Prefer returning collection abstraction instead of implementation (I prefer perfornamce)
+      MA0048: File name must match type name (I use multiple types per file)
+      MA0051: Method is too long
+      MA0097: A class that implements IComparable<T> or IComparable should override comparison operators (deprecated - use  CA1036)
+      RCS1194: Implement exception constructors
+      RCS1046;VSTHRD200: Asynchronous method name should end with 'Async'
+      RCS1163: Unused parameter (deprecated - use dotnet_code_quality_unused_parameters, IDE0060)
+      RCS1090;MA0004;VSTHRD111: Use .ConfigureAwait (deprecated - use CA2007)
     -->
-    <NoWarn>$(NoWarn)1573;1591;1712;CA1031;NU5104</NoWarn>
+    <NoWarn>$(NoWarn);IDE0010;IDE0072;1573;1591;1712;CA1031;CA1062;CA1054;CA1056;CA1308;CA1711;CA1812;CA1724;NU5104;MA0018;MA0038;MA0041;MA0040;MA0032;MA0016;MA0048;MA0051;MA0097;RCS1194;RCS1046;VSTHRD200;RCS1163;RCS1090;MA0004;VSTHRD111</NoWarn>
     <!--
       1591: Missing XML comment for publicly visible type or member
       CA1707: Identifiers should not contain underscores
       IDE1006: Code-style naming rules
-      VSTHRD200 Use Async suffix for async methods
       CA1822: Mark members as static
       CA1515: Consider making public types internal
       CA2007: Do not directly await a Task
@@ -94,11 +118,10 @@
       CA1308: Normalize strings to uppercase
       MA0076: Do not use implicit culture-sensitive ToString in interpolated strings
       MA0003: Add parameter name to improve readability
-      RCS1046: Asynchronous method name should end with 'Async'
       CA2254: Log template should be a static expression
       IDE0039: Use local function
     -->
-    <NoWarn Condition="'$(IsTestableProject)' == 'true'">$(NoWarn);1591;CA1707;IDE1006;IDE0022;VSTHRD200;CA1822;CA1515;CA2007;CS8604;S4144;CA5394;CA1308;MA0076;MA0003;RCS1046;CA2254;IDE0039</NoWarn>
+    <NoWarn Condition="'$(IsTestableProject)' == 'true'">$(NoWarn);1591;CA1707;IDE1006;IDE0022;CA1822;CA1515;CA2007;CS8604;S4144;CA5394;CA1308;MA0076;MA0003;RCS1046;CA2254;IDE0039</NoWarn>
     <!--
       CS1591: Missing XML comment for publicly visible type or member
       CA1707: Identifiers should not contain underscores
