@@ -1,6 +1,40 @@
 <Project>
 
-  <PropertyGroup Label="Project categorisation" Condition=" '$(IsTestableProject)' == '' ">
+  <PropertyGroup Label="Set Repo Defaults">
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
+    <PlatformName Condition="'$(PlatformName)' == ''">$(Platform)</PlatformName>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Set Repo Layout">
+    <!-- Source: https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.Arcade.Sdk/tools/RepoLayout.props -->
+    <RepoRoot Condition="'$(RepoRoot)' == ''">$([MSBuild]::NormalizeDirectory('$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), 'global.json'))'))</RepoRoot>
+    <ArtifactsDir Condition="'$(ArtifactsDir)' == ''">$([MSBuild]::NormalizeDirectory('$(RepoRoot)', 'artifacts'))</ArtifactsDir>
+    <ArtifactsToolsetDir>$([MSBuild]::NormalizeDirectory('$(ArtifactsDir)', 'toolset'))</ArtifactsToolsetDir>
+    <ArtifactsObjDir>$([MSBuild]::NormalizeDirectory('$(ArtifactsDir)', 'obj'))</ArtifactsObjDir>
+    <ArtifactsBinDir>$([MSBuild]::NormalizeDirectory('$(ArtifactsDir)', 'bin'))</ArtifactsBinDir>
+    <ArtifactsLogDir>$([MSBuild]::NormalizeDirectory('$(ArtifactsDir)', 'log', '$(Configuration)'))</ArtifactsLogDir>
+    <ArtifactsTestResultsDir>$([MSBuild]::NormalizeDirectory('$(ArtifactsDir)', 'test-results', '$(Configuration)'))</ArtifactsTestResultsDir>
+    <ArtifactsPackagesDir>$([MSBuild]::NormalizeDirectory('$(ArtifactsDir)', 'packages-results', '$(Configuration)'))</ArtifactsPackagesDir>
+    <VisualStudioSetupOutputPath>$([MSBuild]::NormalizeDirectory('$(ArtifactsDir)', 'VSSetup', '$(Configuration)'))</VisualStudioSetupOutputPath>
+    <VisualStudioSetupInsertionPath>$([MSBuild]::NormalizeDirectory('$(VisualStudioSetupOutputPath)', 'Insertion'))</VisualStudioSetupInsertionPath>
+    <VisualStudioSetupIntermediateOutputPath>$([MSBuild]::NormalizeDirectory('$(ArtifactsDir)', 'VSSetup.obj', '$(Configuration)'))</VisualStudioSetupIntermediateOutputPath>
+    <VisualStudioBuildPackagesDir>$([MSBuild]::NormalizeDirectory('$(VisualStudioSetupOutputPath)', 'DevDivPackages'))</VisualStudioBuildPackagesDir>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Set Project Layout">
+    <OutDirName Condition="'$(OutDirName)' == ''">$(MSBuildProjectName)</OutDirName>
+
+    <BaseOutputPath Condition="'$(BaseOutputPath)' == ''">$([System.IO.Path]::GetFullPath('$(ArtifactsBinDir)$(OutDirName)\'))</BaseOutputPath>
+    <OutputPath Condition="'$(PlatformName)' == 'AnyCPU'">$(BaseOutputPath)$(Configuration)\</OutputPath>
+    <OutputPath Condition="'$(PlatformName)' != 'AnyCPU'">$(BaseOutputPath)$(PlatformName)\$(Configuration)\</OutputPath>
+
+    <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)' == ''">$([System.IO.Path]::GetFullPath('$(ArtifactsObjDir)$(OutDirName)\'))</BaseIntermediateOutputPath>
+    <IntermediateOutputPath Condition="'$(PlatformName)' == 'AnyCPU'">$(BaseIntermediateOutputPath)$(Configuration)\</IntermediateOutputPath>
+    <IntermediateOutputPath Condition="'$(PlatformName)' != 'AnyCPU'">$(BaseIntermediateOutputPath)$(PlatformName)\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Project Categorisation" Condition=" '$(IsTestableProject)' == '' ">
     <IsTestableProject>false</IsTestableProject>
     <IsTestableProject Condition=" $(MSBuildProjectName.Contains('.Tests.')) ">true</IsTestableProject>
   </PropertyGroup>
