@@ -20,7 +20,7 @@ or add the following package reference to your project file:
 ## Publish
 
 ```bash
-dotnet pack --configuration Release --output ./packages-results
-cd ./packages-results
+dotnet pack --configuration Release --output ./artifacts/packages-results
+cd ./artifacts/packages-results
 dotnet nuget push .\*.nupkg --source https://nuget.pkg.github.com/xshaheen/index.json --skip-duplicate --api-key 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
 ```
