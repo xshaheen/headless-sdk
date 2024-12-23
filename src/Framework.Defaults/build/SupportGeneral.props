@@ -75,6 +75,7 @@
     <!--
       Make sure any documentation comments which are included in code get checked for syntax during the build, but do
       not report warnings for missing comments.
+      IDE0055: Fix formatting (We use CSharpier)
       IDE0010: Add missing cases to switch statement
       IDE0072: Add missing cases to switch expression
       CS1573: Parameter 'parameter' has no matching param tag in the XML comment for 'parameter' (but other parameters do)
@@ -102,9 +103,9 @@
       CA1032;RCS1194: Implement exception constructors
       RCS1046;VSTHRD200: Asynchronous method name should end with 'Async'
       RCS1163: Unused parameter (deprecated - use dotnet_code_quality_unused_parameters, IDE0060)
-      RCS1090;MA0004;VSTHRD111: Use .ConfigureAwait (deprecated - use CA2007)
+      CA2007,RCS1090;MA0004;VSTHRD111: Use .ConfigureAwait (deprecated - use CA2007)
     -->
-    <NoWarn>$(NoWarn);IDE0010;IDE0072;1573;1591;1712;CA1031;CA1062;CA1054;CA1056;CA1308;CA1711;CA1812;CA1034;CA1724;NU5104;MA0018;MA0038;MA0041;MA0040;MA0032;MA0016;MA0048;MA0051;MA0097;CA1032;RCS1194;RCS1046;VSTHRD200;RCS1163;RCS1090;MA0004;VSTHRD111</NoWarn>
+    <NoWarn>$(NoWarn);IDE0055;IDE0010;IDE0072;1573;1591;1712;CA1031;CA1062;CA1054;CA1056;CA1308;CA1711;CA1812;CA1034;CA1724;NU5104;MA0018;MA0038;MA0041;MA0040;MA0032;MA0016;MA0048;MA0051;MA0097;CA1032;RCS1194;RCS1046;VSTHRD200;RCS1163;CA2007;RCS1090;MA0004;VSTHRD111</NoWarn>
     <!--
       1591: Missing XML comment for publicly visible type or member
       CA1707: Identifiers should not contain underscores
