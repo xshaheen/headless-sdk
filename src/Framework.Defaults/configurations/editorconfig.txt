@@ -115,6 +115,8 @@ dotnet_analyzer_diagnostic.severity = default
 
 ############ .NET Code Style Severities
 
+# CA2225: Operator overloads have named alternates
+dotnet_diagnostic.ca2225.severity = suggestion
 # CA1848: Use the LoggerMessage delegates
 dotnet_diagnostic.ca1848.severity = silent
 # CA1863: Cache a 'CompositeFormat' for repeated use in this formatting operation
