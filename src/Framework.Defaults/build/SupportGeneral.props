@@ -91,14 +91,15 @@
       IDE1006: Code-style naming rules
       CS8604: Possible null reference argument
       S4144: Methods should not have identical implementations
-      CA5394: Random is an insecure random number generator.
+      CA5394: Random is an insecure random number generator
+      CA1848: Use the LoggerMessage delegates
       IDE0022: Use expression body for methods
       MA0076: Do not use implicit culture-sensitive ToString in interpolated strings
       MA0003: Add parameter name to improve readability
       CA2254: Log template should be a static expression
       IDE0039: Use local function
     -->
-    <NoWarn Condition="'$(IsTestableProject)' == 'true'">$(NoWarn);1591;CA1707;IDE1006;IDE0022;CS8604;S4144;CA5394;MA0076;MA0003;RCS1046;CA2254;IDE0039</NoWarn>
+    <NoWarn Condition="'$(IsTestableProject)' == 'true'">$(NoWarn);1591;CA1707;IDE1006;IDE0022;CS8604;S4144;CA5394;CA1848;MA0076;MA0003;RCS1046;CA2254;IDE0039</NoWarn>
     <!--
       CS1591: Missing XML comment for publicly visible type or member
       CA1707: Identifiers should not contain underscores
