@@ -22,5 +22,5 @@ or add the following package reference to your project file:
 ```bash
 dotnet pack --configuration Release --output ./artifacts/packages-results
 cd ./artifacts/packages-results
-dotnet nuget push .\*.nupkg --source https://nuget.pkg.github.com/xshaheen/index.json --skip-duplicate --api-key ghp_KEY
+dotnet nuget push ./*.nupkg --source https://nuget.pkg.github.com/xshaheen/index.json --skip-duplicate --api-key ghp_KEY
 ```
