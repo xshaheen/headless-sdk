@@ -15,9 +15,9 @@
     <RootNamespace>$(MSBuildProjectName)</RootNamespace>
     <AssemblyName>$(MSBuildProjectName)</AssemblyName>
 
-    <LangVersion>latest</LangVersion>
+    <LangVersion Condition="$(LangVersion)' == ''">latest</LangVersion>
     <WarningLevel>9999</WarningLevel>
-    <Nullable>enable</Nullable>
+    <Nullable Condition="$(Nullable)' == ''">enable</Nullable>
     <WarningsAsErrors>nullable</WarningsAsErrors>
     <ImplicitUsings>enable</ImplicitUsings>
 
