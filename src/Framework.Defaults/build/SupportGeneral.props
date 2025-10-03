@@ -12,8 +12,8 @@
   </PropertyGroup>
 
   <PropertyGroup Label="General Configurations">
-    <RootNamespace Condition="'$(RootNamespace)' == ''">$(MSBuildProjectName)</RootNamespace>
-    <AssemblyName Condition="'$(AssemblyName)' == ''">$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>$(MSBuildProjectName)</RootNamespace>
+    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
 
     <LangVersion Condition="'$(LangVersion)' == ''">latest</LangVersion>
     <WarningLevel>9999</WarningLevel>
