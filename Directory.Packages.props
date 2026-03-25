@@ -1,5 +1,4 @@
 <Project>
-
   <PropertyGroup>
     <!-- 👇 Use directory.packages.props for nuget package versions -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -22,5 +21,4 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
   </ItemGroup>
-
 </Project>

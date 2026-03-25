@@ -1,0 +1,15 @@
+<Solution>
+    <Folder Name="/Solution Items/">
+        <File Path=".editorconfig" />
+        <File Path=".gitattributes" />
+        <File Path=".gitignore" />
+        <File Path="Directory.Build.props" />
+        <File Path="Directory.Build.targets" />
+        <File Path="Directory.Packages.props" />
+        <File Path="Directory.Solution.props" />
+        <File Path="nuget.config" />
+        <File Path="README.md" />
+    </Folder>
+    <Project Path="src\Headless.Defaults\Headless.Defaults.csproj" />
+    <Project Path="tests\Headless.Defaults.Tests.Integrations\Headless.Defaults.Tests.Integrations.csproj" />
+</Solution>

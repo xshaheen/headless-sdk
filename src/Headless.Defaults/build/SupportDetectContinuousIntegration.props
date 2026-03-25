@@ -1,0 +1,84 @@
+<Project>
+  <PropertyGroup>
+    <IsContinuousIntegration>false</IsContinuousIntegration>
+    <!-- Detect CI -->
+    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(CI)' == 'true'"
+      >true</IsContinuousIntegration
+    >
+    <!-- Detect Azure DevOps / TFS -->
+    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(TF_BUILD)' == 'true'"
+      >true</IsContinuousIntegration
+    >
+    <!-- Detect GitHub Actions -->
+    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(GITHUB_ACTIONS)' == 'true'"
+      >true</IsContinuousIntegration
+    >
+    <!-- Detect GitLab CI -->
+    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(GITLAB_CI)' == 'true'"
+      >true</IsContinuousIntegration
+    >
+    <!--
+      Detect TeamCity
+      https://www.jetbrains.com/help/teamcity/predefined-build-parameters.html#Server+Build+Properties
+    -->
+    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(TEAMCITY_VERSION)' != ''"
+      >true</IsContinuousIntegration
+    >
+    <!-- Detect Wrench -->
+    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(BUILD_COMMAND)' != ''"
+      >true</IsContinuousIntegration
+    >
+    <!-- Detect AppVeyor -->
+    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(APPVEYOR)' != ''"
+      >true</IsContinuousIntegration
+    >
+    <!-- Detect Travis -->
+    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(TRAVIS)' == 'true'"
+      >true</IsContinuousIntegration
+    >
+    <!-- Detect Circle CI -->
+    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(CIRCLECI)' == 'true'"
+      >true</IsContinuousIntegration
+    >
+    <!-- Detect AWS CodeBuild -->
+    <IsContinuousIntegration
+      Condition="'$(IsContinuousIntegration)' == 'false' and '$(CODEBUILD_BUILD_ID)' != '' and '$(AWS_REGION)' != ''"
+      >true</IsContinuousIntegration
+    >
+    <!--
+      Detect Jenkins
+      https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
+    -->
+    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(JENKINS_URL)' != ''"
+      >true</IsContinuousIntegration
+    >
+    <IsContinuousIntegration
+      Condition="'$(IsContinuousIntegration)' == 'false' and '$(BUILD_ID)' != '' and '$(BUILD_URL)' != ''"
+      >true</IsContinuousIntegration
+    >
+    <!--
+      Google Cloud Build
+      https://cloud.google.com/build/docs/configuring-builds/substitute-variable-values
+    -->
+    <IsContinuousIntegration
+      Condition="'$(IsContinuousIntegration)' == 'false' and '$(BUILD_ID)' != '' and '$(PROJECT_ID)' != ''"
+      >true</IsContinuousIntegration
+    >
+    <!--
+      JetBrains Space
+      https://www.jetbrains.com/help/space/automation-environment-variables.html#general
+    -->
+    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(JB_SPACE_API_URL)' != ''"
+      >true</IsContinuousIntegration
+    >
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(IsContinuousIntegration)' == 'true' ">
+    <!-- 👇 Ensures consistent, reproducible builds -->
+    <Deterministic>true</Deterministic>
+    <!-- 👇 Enable deterministic restore -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- 👇 Set CI Build to true -->
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+</Project>

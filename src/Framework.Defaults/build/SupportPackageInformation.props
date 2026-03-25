@@ -1,7 +1,0 @@
-<Project>
-
-    <PropertyGroup Label="NuGet Package Framework.Defaults" Condition=" '$(IsTestableProject)' != 'true' ">
-        <PackageTags>xshaheen;$(PackageTags)</PackageTags>
-    </PropertyGroup>
-
-</Project>

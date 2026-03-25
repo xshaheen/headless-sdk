@@ -1,11 +1,10 @@
 <Project>
-
   <PropertyGroup Label="Package settings">
     <Title>$(MSBuildProjectName)</Title>
     <Description>Source Only package, which provides the standard configurations and settings for
       the Framework projects. Such as `.editorconfig`, build props and targets.</Description>
-    <RepositoryUrl>https://github.com/xshaheen/defaults.git</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/xshaheen/defaults</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/xshaheen/headless-defaults.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/xshaheen/headless-defaults</PackageProjectUrl>
     <PackageReleaseNotes>$(PackageProjectUrl)/releases</PackageReleaseNotes>
     <PackageTags>editorconfig;configuration;settings;props;targets</PackageTags>
     <CopyrightYearStart>2024</CopyrightYearStart>
@@ -15,5 +14,4 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
     <PackageReference Include="MinVer" PrivateAssets="All" />
   </ItemGroup>
-
 </Project>

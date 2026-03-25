@@ -1,0 +1,14 @@
+<Project>
+  <Target
+    Condition="'$(SolutionDir)' != '' AND $(SolutionDir) != '*Undefined*'"
+    Name="UpdateEditorConfig"
+    BeforeTargets="Build"
+  >
+    <Copy
+      SourceFiles="$(MSBuildThisFileDirectory)../configurations/editorconfig.txt"
+      DestinationFiles="$(SolutionDir).editorconfig"
+      OverwriteReadOnlyFiles="true"
+      SkipUnchangedFiles="true"
+    />
+  </Target>
+</Project>

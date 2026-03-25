@@ -1,0 +1,12 @@
+<Project>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.CLSCompliantAttribute">
+      <_Parameter1>false</_Parameter1>
+    </AssemblyAttribute>
+
+    <AssemblyAttribute
+      Include="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute"
+      Condition="'$(IsTestableProject)' == 'true' and $([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0')) == 'true'"
+    />
+  </ItemGroup>
+</Project>

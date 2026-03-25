@@ -1,0 +1,16 @@
+<Project>
+  <ItemGroup Condition="'$(ImplicitUsings)' != 'true'">
+    <Using Include="System.Globalization" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ImplicitUsings)' != 'true' AND $([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0')) == 'true'">
+    <Using Include="System.Text" />
+    <Using Include="System.Text.Json" />
+    <Using Include="System.Text.Json.Serialization" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ImplicitUsings)' != 'true' AND $([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net8.0')) == 'true'">
+    <Using Include="System.Collections.Frozen" />
+    <Using Include="System.Collections.Immutable" />
+  </ItemGroup>
+</Project>
