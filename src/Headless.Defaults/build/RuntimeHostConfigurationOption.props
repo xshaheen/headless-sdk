@@ -1,7 +1,16 @@
 <Project>
+  <PropertyGroup>
+    <!-- Off by default: these process-wide STJ runtime switches can break third-party serializers such as NATS.Net. -->
+    <HeadlessEnableStrictSystemTextJsonRuntimeDefaults
+      Condition="'$(HeadlessEnableStrictSystemTextJsonRuntimeDefaults)' == ''"
+      >false</HeadlessEnableStrictSystemTextJsonRuntimeDefaults
+    >
+  </PropertyGroup>
+
   <ItemGroup
     Label="Json Config"
-    Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net9.0')) == 'true'"
+    Condition="'$(HeadlessEnableStrictSystemTextJsonRuntimeDefaults)' == 'true'
+      and $([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net9.0')) == 'true'"
   >
     <RuntimeHostConfigurationOption
       Include="System.Text.Json.Serialization.RespectRequiredConstructorParametersDefault"
