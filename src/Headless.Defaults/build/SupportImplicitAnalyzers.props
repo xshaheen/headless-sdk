@@ -1,0 +1,19 @@
+<Project>
+  <!-- Implicit analyzer + banned-API references injected for every consuming project. -->
+  <ItemGroup Condition="'$(DisableImplicitAnalyzers)' != 'true'">
+    <PackageReference
+      Include="Meziantou.Analyzer"
+      Version="3.0.75"
+      Condition="'$(PackageId)' != 'Meziantou.Analyzer'"
+      IsImplicitlyDefined="true"
+    >
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="4.14.0" IsImplicitlyDefined="true">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>

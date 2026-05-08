@@ -1,0 +1,11 @@
+T:Newtonsoft.Json.JsonConvert;Use System.Text.Json instead
+T:Newtonsoft.Json.JsonSerializer;Use System.Text.Json.JsonSerializer instead
+T:Newtonsoft.Json.JsonSerializerSettings;Use System.Text.Json.JsonSerializerOptions instead
+T:Newtonsoft.Json.JsonReader;Use System.Text.Json.Utf8JsonReader instead
+T:Newtonsoft.Json.JsonWriter;Use System.Text.Json.Utf8JsonWriter instead
+T:Newtonsoft.Json.JsonTextReader;Use System.Text.Json.Utf8JsonReader instead
+T:Newtonsoft.Json.JsonTextWriter;Use System.Text.Json.Utf8JsonWriter instead
+T:Newtonsoft.Json.Linq.JObject;Use System.Text.Json.Nodes.JsonObject instead
+T:Newtonsoft.Json.Linq.JArray;Use System.Text.Json.Nodes.JsonArray instead
+T:Newtonsoft.Json.Linq.JToken;Use System.Text.Json.Nodes.JsonNode instead
+T:Newtonsoft.Json.Linq.JValue;Use System.Text.Json.Nodes.JsonValue instead

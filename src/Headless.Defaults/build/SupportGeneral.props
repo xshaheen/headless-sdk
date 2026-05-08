@@ -24,7 +24,7 @@
 
     <Features>strict</Features>
 
-    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisLevel>latest-all</AnalysisLevel>
     <AnalysisMode>All</AnalysisMode>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <CodeAnalysisTreatWarningsAsErrors>false</CodeAnalysisTreatWarningsAsErrors>
@@ -42,6 +42,30 @@
     >
 
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+
+    <!-- Reproducible builds, regardless of CI. CI also pins lockfile via SupportDetectContinuousIntegration. -->
+    <Deterministic Condition="'$(Deterministic)' == ''">true</Deterministic>
+
+    <!-- Faster + more correct restore. -->
+    <RestoreUseStaticGraphEvaluation Condition="'$(RestoreUseStaticGraphEvaluation)' == ''"
+      >true</RestoreUseStaticGraphEvaluation
+    >
+    <RestoreSerializeGlobalProperties Condition="'$(RestoreSerializeGlobalProperties)' == ''"
+      >true</RestoreSerializeGlobalProperties
+    >
+
+    <!-- Catch breaking API changes between package versions. -->
+    <EnablePackageValidation Condition="'$(EnablePackageValidation)' == ''">true</EnablePackageValidation>
+  </PropertyGroup>
+
+  <PropertyGroup
+    Label="MSBuild Warnings As Errors"
+    Condition=" '$(IsContinuousIntegration)' == 'true' OR '$(ContinuousIntegrationBuild)' == 'true' OR '$(Configuration)' == 'Release' "
+  >
+    <!-- Compiler warnings (TreatWarningsAsErrors) are handled below; this catches MSBuild-level warnings. -->
+    <MSBuildTreatWarningsAsErrors Condition="'$(MSBuildTreatWarningsAsErrors)' == ''"
+      >true</MSBuildTreatWarningsAsErrors
+    >
   </PropertyGroup>
 
   <PropertyGroup Label="NoWarn">

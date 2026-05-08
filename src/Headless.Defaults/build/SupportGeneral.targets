@@ -18,4 +18,16 @@
     <IsTestProject Condition=" '$(IsTestProject)' != 'true' ">false</IsTestProject>
     <IsPackable Condition=" '$(IsPackable)' != 'true' or '$(IsTestProject)' == 'true' ">false</IsPackable>
   </PropertyGroup>
+
+  <!--
+    Allow apps to run on a newer major .NET runtime if their pinned major isn't installed.
+    Skipped for test projects (they should pin to the SDK they were built against) and libraries
+    (RollForward only applies to executables / shared frameworks).
+  -->
+  <PropertyGroup
+    Label="RollForward"
+    Condition=" '$(RollForward)' == '' and '$(IsTestProject)' != 'true' and '$(IsTestableProject)' != 'true' "
+  >
+    <RollForward>LatestMajor</RollForward>
+  </PropertyGroup>
 </Project>

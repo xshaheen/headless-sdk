@@ -86,6 +86,29 @@ indent_size = 2
     }
 
     [Fact]
+    public async Task BuildCopiesDefaultConfigFilesWhenExplicitlyEnabled()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            enableDefaultConfigFilesCopy: true
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true -p:SolutionDir={Quote(project.SolutionDirectory)}"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.True(File.Exists(project.EditorConfigPath), "Expected build to copy .editorconfig.");
+        Assert.True(File.Exists(project.CSharpierIgnorePath), "Expected build to copy .csharpierignore.");
+        Assert.True(File.Exists(project.GitIgnorePath), "Expected build to copy .gitignore.");
+        Assert.True(File.Exists(project.GitAttributesPath), "Expected build to copy .gitattributes.");
+
+        var csharpierIgnore = await File.ReadAllTextAsync(project.CSharpierIgnorePath);
+        Assert.Contains("**/[Nn]u[Gg]et.config", csharpierIgnore, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void PackedPackageContainsFixedNuGetAuditWarningsAsErrorsExpression()
     {
         using var package = ZipFile.OpenRead(fixture.PackagePath);
@@ -248,6 +271,12 @@ internal sealed class ConsumerProject : IAsyncDisposable
 
     public string EditorConfigPath { get; }
 
+    public string CSharpierIgnorePath => Path.Combine(RootDirectory, ".csharpierignore");
+
+    public string GitAttributesPath => Path.Combine(RootDirectory, ".gitattributes");
+
+    public string GitIgnorePath => Path.Combine(RootDirectory, ".gitignore");
+
     public string NuGetConfigPath { get; }
 
     public string PackageVersion { get; }
@@ -263,6 +292,7 @@ internal sealed class ConsumerProject : IAsyncDisposable
         string packageSourceDirectory,
         string? editorConfigContent = null,
         bool enableEditorConfigCopy = false,
+        bool enableDefaultConfigFilesCopy = false,
         string? warningsAsErrors = null
     )
     {
@@ -277,7 +307,7 @@ internal sealed class ConsumerProject : IAsyncDisposable
 
         await File.WriteAllTextAsync(
             project.ProjectFilePath,
-            project.CreateProjectFile(enableEditorConfigCopy, warningsAsErrors),
+            project.CreateProjectFile(enableEditorConfigCopy, enableDefaultConfigFilesCopy, warningsAsErrors),
             Encoding.UTF8
         );
         await File.WriteAllTextAsync(
@@ -331,9 +361,20 @@ public sealed class Class1;
             """;
     }
 
-    private string CreateProjectFile(bool enableEditorConfigCopy, string? warningsAsErrors)
+    private string CreateProjectFile(
+        bool enableEditorConfigCopy,
+        bool enableDefaultConfigFilesCopy,
+        string? warningsAsErrors
+    )
     {
         var extraProperties = new List<string>();
+
+        if (enableDefaultConfigFilesCopy)
+        {
+            extraProperties.Add(
+                "    <HeadlessCopyDefaultConfigFilesToSolutionDir>true</HeadlessCopyDefaultConfigFilesToSolutionDir>"
+            );
+        }
 
         if (enableEditorConfigCopy)
         {

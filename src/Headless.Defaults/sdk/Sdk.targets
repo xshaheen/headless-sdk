@@ -1,3 +1,7 @@
-﻿<Project>
-  <Import Project="$(MSBuildThisFileDirectory)\..\build\Headless.Defaults.targets" />
+<Project>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)..\build\Headless.Defaults.targets"
+    Condition="'$(_MustImportMicrosoftNETSdk)' != 'true'"
+  />
 </Project>

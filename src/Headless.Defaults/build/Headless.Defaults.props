@@ -20,4 +20,8 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
     Condition=" '$(DisableSupportPackageInformation)' != 'true' "
   />
   <Import Project="$(MSBuildThisFileDirectory)GlobalUsing.props" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)SupportImplicitAnalyzers.props"
+    Condition=" '$(DisableSupportImplicitAnalyzers)' != 'true' "
+  />
 </Project>

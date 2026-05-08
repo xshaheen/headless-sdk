@@ -1,3 +1,24 @@
-﻿<Project>
-  <Import Project="$(MSBuildThisFileDirectory)\..\build\Headless.Defaults.props" />
+<Project>
+  <!--
+    Hook into MSBuild's Custom* extension points so build/Headless.Defaults.props is loaded
+    BEFORE the consumer's Directory.Build.props, and build/Headless.Defaults.targets BEFORE
+    Microsoft.NET.Sdk's targets. This only kicks in when consumed as an MSBuild SDK
+    (`<Project Sdk="Headless.Defaults">`, global.json msbuild-sdks, or `#:sdk` directive on .NET 10+).
+    PackageReference consumption goes through NuGet's auto-import of build/*.props which runs
+    AFTER Directory.Build.props - that path is unaffected.
+  -->
+  <PropertyGroup>
+    <HeadlessSdkName>Headless.Defaults</HeadlessSdkName>
+    <_MustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_MustImportMicrosoftNETSdk>
+
+    <CustomBeforeDirectoryBuildProps>$(CustomBeforeDirectoryBuildProps);$(MSBuildThisFileDirectory)../build/Headless.Defaults.props</CustomBeforeDirectoryBuildProps>
+    <BeforeMicrosoftNETSdkTargets>$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.Defaults.targets</BeforeMicrosoftNETSdkTargets>
+  </PropertyGroup>
+
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'" />
+  <!-- Inner SDK case (parent project already imported Microsoft.NET.Sdk via <Sdk Name="Headless.Defaults"...>) -->
+  <Import
+    Project="$(MSBuildThisFileDirectory)..\build\Headless.Defaults.props"
+    Condition="'$(_MustImportMicrosoftNETSdk)' != 'true'"
+  />
 </Project>

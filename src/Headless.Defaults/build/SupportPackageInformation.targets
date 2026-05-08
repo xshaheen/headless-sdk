@@ -15,13 +15,19 @@
     <IncludeSymbols Condition=" '$(IncludeSymbols)' == '' ">true</IncludeSymbols>
     <!-- Specifies that the symbol package should be generated in the `.snupkg` format instead of the legacy `.nupkg` -->
     <SymbolPackageFormat Condition=" '$(SymbolPackageFormat)' == '' ">snupkg</SymbolPackageFormat>
+    <PackageLicenseExpression Condition=" '$(PackageLicenseExpression)' == '' and '$(PackageLicenseFile)' == '' "
+      >MIT</PackageLicenseExpression
+    >
 
     <!-- Readme -->
-    <PackageReadmeFile Condition="Exists('$(ProjectDir)README.md')">README.md</PackageReadmeFile>
+    <PackageReadmeFile Condition="'$(DisableReadme)' != 'true' and Exists('$(ProjectDir)README.md')"
+      >README.md</PackageReadmeFile
+    >
 
     <!-- Logo -->
     <PackageIcon
-      Condition=" '$(PackageIcon)' == ''
+      Condition="'$(DisablePackageLogo)' != 'true'
+        and '$(PackageIcon)' == ''
         and (Exists('$(ProjectDir)logo.png') or Exists('$(SolutionDir)logo.png'))"
       >logo.png</PackageIcon
     >
@@ -48,13 +54,19 @@
       Include="$(SolutionDir)README.md"
       Condition="@(_ProjectReadme) == '' and Exists('$(SolutionDir)README.md')"
     />
-    <None Include="@(_ProjectReadme)" Pack="true" PackagePath="" Visible="true" Condition="Exists(@(_ProjectReadme))" />
+    <None
+      Include="@(_ProjectReadme)"
+      Pack="true"
+      PackagePath=""
+      Visible="true"
+      Condition="'$(DisableReadme)' != 'true' and Exists(@(_ProjectReadme))"
+    />
     <None
       Include="@(_SolutionReadme)"
       Pack="true"
       PackagePath=""
       Visible="false"
-      Condition="!Exists(@(_ProjectReadme)) and Exists(@(_SolutionReadme))"
+      Condition="'$(DisableReadme)' != 'true' and !Exists(@(_ProjectReadme)) and Exists(@(_SolutionReadme))"
     />
 
     <!-- Logo -->
@@ -63,13 +75,19 @@
       Include="$(SolutionDir)logo.png"
       Condition="@(_ProjectLogo) == '' and Exists('$(SolutionDir)logo.png')"
     />
-    <None Include="@(_ProjectLogo)" Pack="true" PackagePath="" Visible="true" Condition="Exists(@(_ProjectLogo))" />
+    <None
+      Include="@(_ProjectLogo)"
+      Pack="true"
+      PackagePath=""
+      Visible="true"
+      Condition="'$(DisablePackageLogo)' != 'true' and Exists(@(_ProjectLogo))"
+    />
     <None
       Include="@(_SolutionLogo)"
       Pack="true"
       PackagePath=""
       Visible="false"
-      Condition="!Exists(@(_ProjectLogo)) and Exists(@(_SolutionLogo))"
+      Condition="'$(DisablePackageLogo)' != 'true' and !Exists(@(_ProjectLogo)) and Exists(@(_SolutionLogo))"
     />
   </ItemGroup>
 </Project>
