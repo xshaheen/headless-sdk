@@ -10,7 +10,7 @@ The intent is simple: every project starts with the same strict baseline, then o
 - Quality gates: `AnalysisLevel=latest-all`, .NET analyzers, Meziantou, AsyncFixer, Asyncify, Microsoft.VisualStudio.Threading, SmartAnalyzers multithreading, Roslynator, ReflectionAnalyzers, ErrorProne.NET, banned API rules, NuGet audit, and code style enforcement.
 - Test projects: automatic test-project detection, MTP or VSTest defaults, dumps on crash or hang, CI coverage, GitHub Actions logging, and faster `dotnet test` runs.
 - CI behavior: provider detection, `ContinuousIntegrationBuild`, locked restore behavior, SBOM generation, and stricter warning handling.
-- Packaging: default authors/company/license metadata, README/LICENSE/logo packing, Source Link, symbol packages, and repository metadata.
+- Packaging: default authors/company metadata, README/LICENSE/logo packing, Source Link, symbol packages, and repository metadata.
 - App support: web container tagging on GitHub Actions, optional npm restore, file-based app relaxations, optional target framework inference, and optional strict System.Text.Json runtime switches.
 - Diagnostics: embeds editorconfig, banned-symbol files, npm lock files, and GitHub Actions environment details into binlogs.
 
@@ -196,7 +196,7 @@ Npm restore is opt-in.
 | `Title` | `$(MSBuildProjectName)` | Default package title. |
 | `Company` | `Mahmoud Shaheen` | Default company. |
 | `Authors` | `Mahmoud Shaheen` | Default authors. |
-| `PackageLicenseExpression` | `MIT` | Default package license when no license file is set. |
+| `PackageLicenseFile` | Auto-detected | Uses `LICENSE` or `LICENSE.txt` when found. No license expression is invented by default. |
 | `PublishRepositoryUrl` | `true` | Publishes repository metadata. |
 | `RepositoryType` | `git` | Marks the repository type. |
 | `EmbedUntrackedSources` | `true` | Embeds untracked sources in PDBs. |

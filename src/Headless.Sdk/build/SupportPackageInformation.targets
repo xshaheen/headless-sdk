@@ -15,10 +15,6 @@
     <IncludeSymbols Condition=" '$(IncludeSymbols)' == '' ">true</IncludeSymbols>
     <!-- Specifies that the symbol package should be generated in the `.snupkg` format instead of the legacy `.nupkg` -->
     <SymbolPackageFormat Condition=" '$(SymbolPackageFormat)' == '' ">snupkg</SymbolPackageFormat>
-    <PackageLicenseExpression Condition=" '$(PackageLicenseExpression)' == '' and '$(PackageLicenseFile)' == '' "
-      >MIT</PackageLicenseExpression
-    >
-
     <!-- Readme -->
     <_PackageReadmeFilePath Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/README.md')"
       >$(MSBuildProjectDirectory)/README.md</_PackageReadmeFilePath
@@ -95,6 +91,28 @@
       Visible="false"
       Condition="Exists(@(_LicensePath))"
     />
+  </ItemGroup>
+
+  <Target
+    Name="HeadlessSetPackageLicenseFile"
+    BeforeTargets="GenerateNuspec"
+    Condition=" '$(IsTestableProject)' != 'true'
+      and '$(PackageLicenseExpression)' == ''
+      and '$(PackageLicenseFile)' == '' "
+  >
+    <PropertyGroup>
+      <PackageLicenseFile
+        Condition=" '@(_SolutionLicense)' != '' "
+        >@(_SolutionLicense->'%(Filename)%(Extension)')</PackageLicenseFile
+      >
+      <PackageLicenseFile
+        Condition=" '$(PackageLicenseFile)' == '' and '@(_LicensePath)' != '' "
+        >@(_LicensePath->'%(Filename)%(Extension)')</PackageLicenseFile
+      >
+    </PropertyGroup>
+  </Target>
+
+  <ItemGroup Label="Package Additional Files" Condition=" '$(IsTestableProject)' != 'true' ">
 
     <!-- Readme -->
     <None

@@ -276,7 +276,8 @@ indent_size = 2
         Assert.NotNull(package.GetEntry("THIRD-PARTY-NOTICES.TXT"));
 
         var nuspec = ReadPackageEntry(package, "ConsumerProject.nuspec");
-        Assert.Contains("<license type=\"expression\">MIT</license>", nuspec, StringComparison.Ordinal);
+        Assert.Contains("<license type=\"file\">LICENSE.txt</license>", nuspec, StringComparison.Ordinal);
+        Assert.DoesNotContain("<license type=\"expression\">MIT</license>", nuspec, StringComparison.Ordinal);
         Assert.Contains("<readme>README.md</readme>", nuspec, StringComparison.Ordinal);
     }
 
