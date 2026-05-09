@@ -45,6 +45,7 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
     Project="$(MSBuildThisFileDirectory)SupportAnalyzerHygiene.targets"
     Condition=" '$(DisableSupportAnalyzerHygiene)' != 'true' "
   />
+  <Import Project="$(MSBuildThisFileDirectory)SupportNpm.targets" Condition=" '$(DisableSupportNpm)' != 'true' " />
   <Import Project="$(MSBuildThisFileDirectory)SupportSbom.targets" Condition=" '$(DisableSupportSbom)' != 'true' " />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportEmbedBinlog.targets"

@@ -145,6 +145,120 @@ indent_size = 2
         Assert.Contains("GitHubActionsTestLogger.dll", runsettings, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void PackedPackageContainsSingleFileTargetFrameworkNpmAndSdkMetadataSupport()
+    {
+        using var package = ZipFile.OpenRead(fixture.PackagePath);
+
+        Assert.NotNull(package.GetEntry("build/SupportSingleFileApp.props"));
+        Assert.NotNull(package.GetEntry("build/SupportTargetFrameworkInference.props"));
+        Assert.NotNull(package.GetEntry("build/SupportNpm.targets"));
+        Assert.NotNull(package.GetEntry("configurations/Headless.Defaults.SingleFileApp.editorconfig"));
+
+        var assemblyAttributes = ReadPackageEntry(package, "build/SupportAssemblyAttributes.targets");
+        Assert.Contains("Headless.Defaults.SdkName", assemblyAttributes, StringComparison.Ordinal);
+
+        var npmTargets = ReadPackageEntry(package, "build/SupportNpm.targets");
+        Assert.Contains("HeadlessEnableNpmRestore", npmTargets, StringComparison.Ordinal);
+        Assert.Contains("npm $(_HeadlessNpmRestoreCommand) --no-fund --no-audit", npmTargets, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task MsBuildPropertiesUseExpectedDefaults()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            outputType: "Exe"
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("LatestMajor", properties["RollForward"]);
+        Assert.Equal("true", properties["PackAsTool"]);
+        Assert.Equal("Headless.Defaults", properties["HeadlessSdkName"]);
+    }
+
+    [Fact]
+    public async Task MsBuildPropertiesInferTargetFrameworkWhenExplicitlyEnabled()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.Defaults/{fixture.PackageVersion}",
+            targetFramework: null,
+            includePackageReference: false
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync("-p:HeadlessInferTargetFramework=true");
+
+        Assert.StartsWith("net", properties["TargetFramework"], StringComparison.Ordinal);
+        Assert.NotEqual("net", properties["TargetFramework"]);
+    }
+
+    [Fact]
+    public async Task MsBuildPropertiesSkipToolPackagingForWebProjects()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: "Microsoft.NET.Sdk.Web",
+            outputType: "Exe"
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal(string.Empty, properties["PackAsTool"]);
+    }
+
+    [Fact]
+    public async Task MsBuildPropertiesIncludeSingleFileEditorConfigWhenEnabled()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync("-p:HeadlessSingleFileApp=true");
+
+        Assert.Equal("true", properties["HeadlessSingleFileApp"]);
+        Assert.Contains(
+            "Headless.Defaults.SingleFileApp.editorconfig",
+            properties["EditorConfigFiles"],
+            StringComparison.Ordinal
+        );
+    }
+
+    [Fact]
+    public async Task PackIncludesReadmeLicenseAndThirdPartyNotices()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            additionalFiles: new Dictionary<string, string>
+            {
+                ["ReadMe.md"] = "# Consumer readme",
+                ["LICENSE.txt"] = "MIT",
+                ["THIRD-PARTY-NOTICES.TXT"] = "Notices",
+            }
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"pack {Quote(project.ProjectFilePath)} -c Release -o {Quote(project.PackagesDirectory)} -p:PackageVersion=1.2.3 -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+
+        using var package = ZipFile.OpenRead(Path.Combine(project.PackagesDirectory, "ConsumerProject.1.2.3.nupkg"));
+        Assert.NotNull(package.GetEntry("README.md"));
+        Assert.NotNull(package.GetEntry("LICENSE.txt"));
+        Assert.NotNull(package.GetEntry("THIRD-PARTY-NOTICES.TXT"));
+
+        var nuspec = ReadPackageEntry(package, "ConsumerProject.nuspec");
+        Assert.Contains("<license type=\"expression\">MIT</license>", nuspec, StringComparison.Ordinal);
+        Assert.Contains("<readme>README.md</readme>", nuspec, StringComparison.Ordinal);
+    }
+
     private static string NormalizeLineEndings(string value) => value.ReplaceLineEndings("\n");
 
     private static string Quote(string value) => $"\"{value}\"";
@@ -277,6 +391,7 @@ internal sealed class ConsumerProject : IAsyncDisposable
         ProjectFilePath = Path.Combine(rootDirectory, $"{ProjectName}.csproj");
         NuGetConfigPath = Path.Combine(rootDirectory, "NuGet.Config");
         EditorConfigPath = Path.Combine(rootDirectory, ".editorconfig");
+        PackagesDirectory = Path.Combine(rootDirectory, "packages");
         SolutionDirectory = $"{Path.TrimEndingDirectorySeparator(rootDirectory)}{Path.DirectorySeparatorChar}";
         PackageVersion = packageVersion;
         this.packageSourceDirectory = packageSourceDirectory;
@@ -308,6 +423,8 @@ internal sealed class ConsumerProject : IAsyncDisposable
 
     public string PackageVersion { get; }
 
+    public string PackagesDirectory { get; }
+
     public string ProjectFilePath { get; }
 
     public string RootDirectory { get; }
@@ -317,10 +434,16 @@ internal sealed class ConsumerProject : IAsyncDisposable
     public static async Task<ConsumerProject> CreateAsync(
         string packageVersion,
         string packageSourceDirectory,
+        string sdk = "Microsoft.NET.Sdk",
+        string? targetFramework = "net8.0",
+        string? outputType = null,
         string? editorConfigContent = null,
         bool enableEditorConfigCopy = false,
         bool enableDefaultConfigFilesCopy = false,
-        string? warningsAsErrors = null
+        string? warningsAsErrors = null,
+        bool includePackageReference = true,
+        IReadOnlyDictionary<string, string>? extraProperties = null,
+        IReadOnlyDictionary<string, string>? additionalFiles = null
     )
     {
         var rootDirectory = Path.Combine(
@@ -334,7 +457,16 @@ internal sealed class ConsumerProject : IAsyncDisposable
 
         await File.WriteAllTextAsync(
             project.ProjectFilePath,
-            project.CreateProjectFile(enableEditorConfigCopy, enableDefaultConfigFilesCopy, warningsAsErrors),
+            project.CreateProjectFile(
+                sdk,
+                targetFramework,
+                outputType,
+                enableEditorConfigCopy,
+                enableDefaultConfigFilesCopy,
+                warningsAsErrors,
+                includePackageReference,
+                extraProperties
+            ),
             Encoding.UTF8
         );
         await File.WriteAllTextAsync(
@@ -353,11 +485,49 @@ public sealed class Class1;
             await File.WriteAllTextAsync(project.EditorConfigPath, editorConfigContent, Encoding.UTF8);
         }
 
+        if (additionalFiles is not null)
+        {
+            foreach (var (relativePath, content) in additionalFiles)
+            {
+                var filePath = Path.Combine(rootDirectory, relativePath);
+                var directory = Path.GetDirectoryName(filePath);
+
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                await File.WriteAllTextAsync(filePath, content, Encoding.UTF8);
+            }
+        }
+
         return project;
     }
 
     public Task<DotNetCommandResult> RunDotNetAsync(string arguments) =>
         DotNetCommand.RunAsync(RootDirectory, arguments, environment);
+
+    public async Task<Dictionary<string, string>> EvaluateHeadlessPropertiesAsync(string additionalArguments = "")
+    {
+        var argumentsSuffix = string.IsNullOrWhiteSpace(additionalArguments) ? string.Empty : $" {additionalArguments}";
+        var result = await RunDotNetAsync(
+            $"msbuild {Quote(ProjectFilePath)} /restore /t:WriteHeadlessProperties -p:RestoreConfigFile={Quote(NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true -v:q -nologo{argumentsSuffix}"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+
+        var properties = new Dictionary<string, string>(StringComparer.Ordinal);
+        var propertiesPath = Path.Combine(RootDirectory, "headless-properties.txt");
+
+        foreach (var line in await File.ReadAllLinesAsync(propertiesPath))
+        {
+            var separatorIndex = line.IndexOf('=', StringComparison.Ordinal);
+            Assert.True(separatorIndex > 0, $"Invalid property output line: {line}");
+            properties[line[..separatorIndex]] = line[(separatorIndex + 1)..];
+        }
+
+        return properties;
+    }
 
     public ValueTask DisposeAsync()
     {
@@ -389,50 +559,90 @@ public sealed class Class1;
     }
 
     private string CreateProjectFile(
+        string sdk,
+        string? targetFramework,
+        string? outputType,
         bool enableEditorConfigCopy,
         bool enableDefaultConfigFilesCopy,
-        string? warningsAsErrors
+        string? warningsAsErrors,
+        bool includePackageReference,
+        IReadOnlyDictionary<string, string>? extraProperties
     )
     {
-        var extraProperties = new List<string>();
+        var propertyLines = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(targetFramework))
+        {
+            propertyLines.Add($"    <TargetFramework>{targetFramework}</TargetFramework>");
+        }
+
+        if (!string.IsNullOrWhiteSpace(outputType))
+        {
+            propertyLines.Add($"    <OutputType>{outputType}</OutputType>");
+        }
 
         if (enableDefaultConfigFilesCopy)
         {
-            extraProperties.Add(
+            propertyLines.Add(
                 "    <HeadlessCopyDefaultConfigFilesToSolutionDir>true</HeadlessCopyDefaultConfigFilesToSolutionDir>"
             );
         }
 
         if (enableEditorConfigCopy)
         {
-            extraProperties.Add(
+            propertyLines.Add(
                 "    <HeadlessCopyEditorConfigToSolutionDir>true</HeadlessCopyEditorConfigToSolutionDir>"
             );
         }
 
         if (!string.IsNullOrWhiteSpace(warningsAsErrors))
         {
-            extraProperties.Add($"    <WarningsAsErrors>{warningsAsErrors}</WarningsAsErrors>");
+            propertyLines.Add($"    <WarningsAsErrors>{warningsAsErrors}</WarningsAsErrors>");
+        }
+
+        if (extraProperties is not null)
+        {
+            foreach (var (name, value) in extraProperties)
+            {
+                propertyLines.Add($"    <{name}>{value}</{name}>");
+            }
         }
 
         var extraPropertyBlock =
-            extraProperties.Count == 0
+            propertyLines.Count == 0
                 ? string.Empty
-                : $"{Environment.NewLine}{string.Join(Environment.NewLine, extraProperties)}";
+                : $"{Environment.NewLine}{string.Join(Environment.NewLine, propertyLines)}";
+
+        var packageReferenceBlock = includePackageReference
+            ? $$"""
+
+                  <ItemGroup>
+                    <PackageReference Include="Headless.Defaults" Version="{{PackageVersion}}" PrivateAssets="all" />
+                  </ItemGroup>
+                """
+            : string.Empty;
 
         return $$"""
-            <Project Sdk="Microsoft.NET.Sdk">
+            <Project Sdk="{{sdk}}">
               <PropertyGroup>
-                <TargetFramework>net8.0</TargetFramework>
                 <Nullable>enable</Nullable>{{extraPropertyBlock}}
-              </PropertyGroup>
+              </PropertyGroup>{{packageReferenceBlock}}
 
-              <ItemGroup>
-                <PackageReference Include="Headless.Defaults" Version="{{PackageVersion}}" PrivateAssets="all" />
-              </ItemGroup>
+              <Target Name="WriteHeadlessProperties">
+                <PropertyGroup>
+                  <_HeadlessEvaluatedEditorConfigFiles>@(EditorConfigFiles)</_HeadlessEvaluatedEditorConfigFiles>
+                </PropertyGroup>
+                <WriteLinesToFile
+                  File="$(MSBuildProjectDirectory)/headless-properties.txt"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSingleFileApp=$(HeadlessSingleFileApp);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);VSTestSetting=$(VSTestSetting)"
+                  Overwrite="true"
+                />
+              </Target>
             </Project>
             """;
     }
+
+    private static string Quote(string value) => $"\"{value}\"";
 }
 
 internal static class DotNetCommand

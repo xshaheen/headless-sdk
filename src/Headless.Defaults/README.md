@@ -77,6 +77,10 @@ dotnet run Program.cs
 - Auto `Copyright`, README/LICENSE/logo packing, optional strict System.Text.Json runtime defaults
 - Optional packaged config bootstrap for `.editorconfig`, `.csharpierignore`, `.gitignore`, and `.gitattributes`
 - VSTest coverage runsettings that treat zero tests as an error and exclude test-log infrastructure from coverage
+- Optional npm restore integration for projects that opt in with `HeadlessEnableNpmRestore=true`
+- File-based app analyzer relaxations when `FileBasedProgram=true` or `HeadlessSingleFileApp=true`
+- Optional target framework inference when `HeadlessInferTargetFramework=true`
+- Assembly metadata that records the SDK identity in compiled outputs
 - SBOM generation (`Microsoft.Sbom.Targets`) auto-enabled on CI
 - Faster restore (`RestoreUseStaticGraphEvaluation`, `RestoreSerializeGlobalProperties`)
 - `EnablePackageValidation=true` to catch breaking API changes between releases
@@ -96,8 +100,16 @@ dotnet run Program.cs
 | `DisableSupportBannedSymbols` | unset | Set `true` to skip the banned-symbols import entirely. |
 | `DisableSupportWebContainer` | unset | Set `true` to skip Web SDK container automation. |
 | `DisableSupportAnalyzerHygiene` | unset | Set `true` to skip analyzer hygiene targets. |
+| `DisableSupportSingleFileApp` | unset | Set `true` to skip file-based app analyzer relaxations. |
+| `DisableSupportTargetFrameworkInference` | unset | Set `true` to skip target-framework inference support. |
+| `DisableSupportNpm` | unset | Set `true` to skip npm restore targets. |
 | `DisableSponsorLink` | `true` | Removes SponsorLink/Moq analyzers when not set to `false`. |
 | `Disable_SponsorLink` | `true` | Meziantou-compatible alias for `DisableSponsorLink`. Set `false` to keep those analyzers. |
+| `HeadlessSingleFileApp` | auto for file-based apps | Adds relaxed analyzer settings for single-file/file-based apps. |
+| `HeadlessInferTargetFramework` | `false` | Set `true` to infer `TargetFramework` from the current .NET SDK when a project omits `TargetFramework`/`TargetFrameworks`. |
+| `HeadlessEnableNpmRestore` | `false` | Set `true` to run npm restore for a project-local `package.json`. Explicit `NpmPackageFile` items also participate. |
+| `EnableDefaultNpmPackageFile` | `true` when npm restore is enabled | Set `false` to prevent automatic `package.json` discovery. |
+| `NpmRestoreLockedMode` | `true` on CI/locked restore | Uses `npm ci` when true, otherwise `npm install`. |
 | `OptimizeVsTestRun` | `true` | Disables analyzers during `dotnet test`. Set `false` to keep them. |
 | `EnableCodeCoverage` | `true` on CI | Enables coverage collection for test projects on CI. |
 | `UseMicrosoftTestingPlatform` | auto | Auto-detected from `xunit.v3.mtp-v2` or `TUnit`. Force with `true` / `false`. |

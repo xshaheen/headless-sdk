@@ -10,12 +10,17 @@
   <PropertyGroup>
     <HeadlessSdkName>Headless.Defaults</HeadlessSdkName>
     <_MustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_MustImportMicrosoftNETSdk>
+    <_HeadlessDeferTargetFrameworkInference Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'">true</_HeadlessDeferTargetFrameworkInference>
 
     <CustomBeforeDirectoryBuildProps>$(CustomBeforeDirectoryBuildProps);$(MSBuildThisFileDirectory)../build/Headless.Defaults.props</CustomBeforeDirectoryBuildProps>
     <BeforeMicrosoftNETSdkTargets>$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.Defaults.targets</BeforeMicrosoftNETSdkTargets>
   </PropertyGroup>
 
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)../build/SupportTargetFrameworkInference.props"
+    Condition="'$(_MustImportMicrosoftNETSdk)' == 'true' and '$(DisableSupportTargetFrameworkInference)' != 'true'"
+  />
   <!-- Inner SDK case (parent project already imported Microsoft.NET.Sdk via <Sdk Name="Headless.Defaults"...>) -->
   <Import
     Project="$(MSBuildThisFileDirectory)..\build\Headless.Defaults.props"

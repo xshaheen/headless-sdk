@@ -1,0 +1,7 @@
+is_global = true
+global_level = 1
+
+# File-based apps intentionally keep all code in one file and often omit explicit namespaces.
+dotnet_diagnostic.MA0047.severity = none
+dotnet_diagnostic.MA0048.severity = none
+dotnet_diagnostic.CA1050.severity = none

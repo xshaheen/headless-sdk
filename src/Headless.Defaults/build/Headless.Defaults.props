@@ -13,8 +13,18 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
   <!-- .props files - Defines properties used during the build process. -->
 
   <Import Project="$(MSBuildThisFileDirectory)SupportGeneral.props" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)SupportTargetFrameworkInference.props"
+    Condition=" '$(DisableSupportTargetFrameworkInference)' != 'true'
+      and '$(_HeadlessSupportTargetFrameworkInferenceImported)' != 'true'
+      and '$(_HeadlessDeferTargetFrameworkInference)' != 'true' "
+  />
   <Import Project="$(MSBuildThisFileDirectory)SupportDetectContinuousIntegration.props" />
   <Import Project="$(MSBuildThisFileDirectory)RuntimeHostConfigurationOption.props" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)SupportSingleFileApp.props"
+    Condition=" '$(DisableSupportSingleFileApp)' != 'true' "
+  />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportPackageInformation.props"
     Condition=" '$(DisableSupportPackageInformation)' != 'true' "

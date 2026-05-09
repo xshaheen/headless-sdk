@@ -1,0 +1,23 @@
+<Project>
+  <PropertyGroup>
+    <_HeadlessSupportTargetFrameworkInferenceImported>true</_HeadlessSupportTargetFrameworkInferenceImported>
+    <_HeadlessDefaultNetCoreAppVersion Condition="'$(_HeadlessDefaultNetCoreAppVersion)' == ''"
+      >$(NETCoreAppMaximumVersion)</_HeadlessDefaultNetCoreAppVersion
+    >
+    <_HeadlessDefaultNetCoreAppVersion
+      Condition="'$(_HeadlessDefaultNetCoreAppVersion)' == '' and '$(NETCoreSdkVersion)' != ''"
+      >$([System.Text.RegularExpressions.Regex]::Replace('$(NETCoreSdkVersion)', '^(\d+)\.(\d+).*$', '$1.$2'))</_HeadlessDefaultNetCoreAppVersion
+    >
+    <_HeadlessProjectDeclaresTargetFramework Condition="Exists('$(MSBuildProjectFullPath)')"
+      >$([System.Text.RegularExpressions.Regex]::IsMatch($([System.IO.File]::ReadAllText('$(MSBuildProjectFullPath)')), '&lt;TargetFrameworks?(\s|&gt;)'))</_HeadlessProjectDeclaresTargetFramework
+    >
+    <TargetFramework
+      Condition="'$(HeadlessInferTargetFramework)' == 'true'
+        and '$(TargetFramework)' == ''
+        and '$(TargetFrameworks)' == ''
+        and '$(_HeadlessProjectDeclaresTargetFramework)' != 'True'
+        and '$(_HeadlessDefaultNetCoreAppVersion)' != ''"
+      >net$(_HeadlessDefaultNetCoreAppVersion)</TargetFramework
+    >
+  </PropertyGroup>
+</Project>
