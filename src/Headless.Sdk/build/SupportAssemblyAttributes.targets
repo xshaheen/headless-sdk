@@ -5,7 +5,7 @@
     </AssemblyAttribute>
 
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
-      <_Parameter1>Headless.Defaults.SdkName</_Parameter1>
+      <_Parameter1>Headless.Sdk.SdkName</_Parameter1>
       <_Parameter2>$(HeadlessSdkName)</_Parameter2>
     </AssemblyAttribute>
 

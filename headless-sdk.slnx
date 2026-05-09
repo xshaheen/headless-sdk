@@ -10,6 +10,6 @@
         <File Path="nuget.config" />
         <File Path="README.md" />
     </Folder>
-    <Project Path="src\Headless.Defaults\Headless.Defaults.csproj" />
-    <Project Path="tests\Headless.Defaults.Tests.Integrations\Headless.Defaults.Tests.Integrations.csproj" />
+    <Project Path="src\Headless.Sdk\Headless.Sdk.csproj" />
+    <Project Path="tests\Headless.Sdk.Tests.Integrations\Headless.Sdk.Tests.Integrations.csproj" />
 </Solution>

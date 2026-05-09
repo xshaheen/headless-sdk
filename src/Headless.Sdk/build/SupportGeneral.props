@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup Label="Set Repo Defaults">
-    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.Defaults</HeadlessSdkName>
+    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.Sdk</HeadlessSdkName>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
     <PlatformName Condition="'$(PlatformName)' == ''">$(Platform)</PlatformName>

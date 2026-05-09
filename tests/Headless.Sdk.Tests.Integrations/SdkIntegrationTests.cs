@@ -10,13 +10,13 @@ using Xunit;
 
 #nullable enable
 
-namespace Headless.Defaults.Tests.Integrations;
+namespace Headless.Sdk.Tests.Integrations;
 
-[CollectionDefinition(nameof(HeadlessDefaultsPackageCollection))]
-public sealed class HeadlessDefaultsPackageCollection : ICollectionFixture<HeadlessDefaultsPackageFixture>;
+[CollectionDefinition(nameof(HeadlessSdkPackageCollection))]
+public sealed class HeadlessSdkPackageCollection : ICollectionFixture<HeadlessSdkPackageFixture>;
 
-[Collection(nameof(HeadlessDefaultsPackageCollection))]
-public sealed class SdkIntegrationTests(HeadlessDefaultsPackageFixture fixture)
+[Collection(nameof(HeadlessSdkPackageCollection))]
+public sealed class SdkIntegrationTests(HeadlessSdkPackageFixture fixture)
 {
     [Fact]
     public async Task PackDoesNotRequireLogoByDefault()
@@ -153,10 +153,10 @@ indent_size = 2
         Assert.NotNull(package.GetEntry("build/SupportSingleFileApp.props"));
         Assert.NotNull(package.GetEntry("build/SupportTargetFrameworkInference.props"));
         Assert.NotNull(package.GetEntry("build/SupportNpm.targets"));
-        Assert.NotNull(package.GetEntry("configurations/Headless.Defaults.SingleFileApp.editorconfig"));
+        Assert.NotNull(package.GetEntry("configurations/Headless.Sdk.SingleFileApp.editorconfig"));
 
         var assemblyAttributes = ReadPackageEntry(package, "build/SupportAssemblyAttributes.targets");
-        Assert.Contains("Headless.Defaults.SdkName", assemblyAttributes, StringComparison.Ordinal);
+        Assert.Contains("Headless.Sdk.SdkName", assemblyAttributes, StringComparison.Ordinal);
 
         var npmTargets = ReadPackageEntry(package, "build/SupportNpm.targets");
         Assert.Contains("HeadlessEnableNpmRestore", npmTargets, StringComparison.Ordinal);
@@ -176,7 +176,7 @@ indent_size = 2
 
         Assert.Equal("LatestMajor", properties["RollForward"]);
         Assert.Equal("true", properties["PackAsTool"]);
-        Assert.Equal("Headless.Defaults", properties["HeadlessSdkName"]);
+        Assert.Equal("Headless.Sdk", properties["HeadlessSdkName"]);
     }
 
     [Fact]
@@ -185,7 +185,7 @@ indent_size = 2
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
             fixture.PackageSourceDirectory,
-            sdk: $"Headless.Defaults/{fixture.PackageVersion}",
+            sdk: $"Headless.Sdk/{fixture.PackageVersion}",
             targetFramework: null,
             includePackageReference: false
         );
@@ -223,7 +223,7 @@ indent_size = 2
 
         Assert.Equal("true", properties["HeadlessSingleFileApp"]);
         Assert.Contains(
-            "Headless.Defaults.SingleFileApp.editorconfig",
+            "Headless.Sdk.SingleFileApp.editorconfig",
             properties["EditorConfigFiles"],
             StringComparison.Ordinal
         );
@@ -273,7 +273,7 @@ indent_size = 2
     }
 }
 
-public sealed class HeadlessDefaultsPackageFixture : IAsyncLifetime
+public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
 {
     public string PackageRootDirectory { get; private set; } = null!;
 
@@ -285,42 +285,36 @@ public sealed class HeadlessDefaultsPackageFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        PackageRootDirectory = Path.Combine(
-            Path.GetTempPath(),
-            "Headless.Defaults.Tests",
-            Guid.NewGuid().ToString("N")
-        );
+        PackageRootDirectory = Path.Combine(Path.GetTempPath(), "Headless.Sdk.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(PackageSourceDirectory);
 
         var repositoryRoot = FindRepositoryRoot();
         var env = CreateDotNetEnvironment(PackageRootDirectory);
-        var projectPath = Path.Combine(repositoryRoot, "src", "Headless.Defaults", "Headless.Defaults.csproj");
+        var projectPath = Path.Combine(repositoryRoot, "src", "Headless.Sdk", "Headless.Sdk.csproj");
         var command = $"pack {Quote(projectPath)} -c Debug -o {Quote(PackageSourceDirectory)}";
         var result = await DotNetCommand.RunAsync(repositoryRoot, command, env);
 
         if (result.ExitCode != 0)
         {
             throw new InvalidOperationException(
-                $"Failed to pack Headless.Defaults for integration tests.{Environment.NewLine}{result.Output}"
+                $"Failed to pack Headless.Sdk for integration tests.{Environment.NewLine}{result.Output}"
             );
         }
 
         var packagePath = Directory
-            .EnumerateFiles(PackageSourceDirectory, "Headless.Defaults.*.nupkg", SearchOption.TopDirectoryOnly)
+            .EnumerateFiles(PackageSourceDirectory, "Headless.Sdk.*.nupkg", SearchOption.TopDirectoryOnly)
             .Where(path => !path.EndsWith(".snupkg", StringComparison.Ordinal))
             .OrderByDescending(File.GetCreationTimeUtc)
             .FirstOrDefault();
 
         if (packagePath is null)
         {
-            throw new InvalidOperationException(
-                "Failed to locate packed Headless.Defaults nupkg for integration tests."
-            );
+            throw new InvalidOperationException("Failed to locate packed Headless.Sdk nupkg for integration tests.");
         }
 
         PackagePath = packagePath;
         PackageVersion = Path.GetFileNameWithoutExtension(packagePath)
-            .Replace("Headless.Defaults.", string.Empty, StringComparison.Ordinal);
+            .Replace("Headless.Sdk.", string.Empty, StringComparison.Ordinal);
     }
 
     public Task DisposeAsync()
@@ -364,7 +358,7 @@ public sealed class HeadlessDefaultsPackageFixture : IAsyncLifetime
 
         while (current is not null)
         {
-            if (File.Exists(Path.Combine(current.FullName, "headless-defaults.slnx")))
+            if (File.Exists(Path.Combine(current.FullName, "headless-sdk.slnx")))
             {
                 return current.FullName;
             }
@@ -446,11 +440,7 @@ internal sealed class ConsumerProject : IAsyncDisposable
         IReadOnlyDictionary<string, string>? additionalFiles = null
     )
     {
-        var rootDirectory = Path.Combine(
-            Path.GetTempPath(),
-            "Headless.Defaults.Consumer",
-            Guid.NewGuid().ToString("N")
-        );
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "Headless.Sdk.Consumer", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(rootDirectory);
 
         var project = new ConsumerProject(rootDirectory, packageVersion, packageSourceDirectory);
@@ -617,7 +607,7 @@ public sealed class Class1;
             ? $$"""
 
                   <ItemGroup>
-                    <PackageReference Include="Headless.Defaults" Version="{{PackageVersion}}" PrivateAssets="all" />
+                    <PackageReference Include="Headless.Sdk" Version="{{PackageVersion}}" PrivateAssets="all" />
                   </ItemGroup>
                 """
             : string.Empty;

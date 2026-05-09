@@ -1,6 +1,6 @@
-# Headless.Defaults
+# Headless.Sdk
 
-`Headless.Defaults` is the MSBuild SDK / source-only package that provides standard configurations and settings for the Framework projects: `.editorconfig`, build props/targets, analyzers, banned-API rules, opinionated test defaults.
+`Headless.Sdk` is the MSBuild SDK / source-only package that provides standard configurations and settings for the Framework projects: `.editorconfig`, build props/targets, analyzers, banned-API rules, opinionated test defaults.
 
 All Framework projects build on top of this package for a consistent build/test pipeline.
 
@@ -11,27 +11,27 @@ Three consumption modes are supported.
 ### 1. As a `<PackageReference>` (current default)
 
 ```bash
-dotnet add package Headless.Defaults
+dotnet add package Headless.Sdk
 ```
 
 ```xml
-<PackageReference Include="Headless.Defaults" Version="x.x.x" PrivateAssets="all"/>
+<PackageReference Include="Headless.Sdk" Version="x.x.x" PrivateAssets="all"/>
 ```
 
-NuGet auto-imports `build/Headless.Defaults.props` and `build/Headless.Defaults.targets` after `Directory.Build.props`.
+NuGet auto-imports `build/Headless.Sdk.props` and `build/Headless.Sdk.targets` after `Directory.Build.props`.
 
 ### 2. As an MSBuild SDK (`global.json` + project Sdk)
 
 ```jsonc
 {
   "msbuild-sdks": {
-    "Headless.Defaults": "x.x.x"
+    "Headless.Sdk": "x.x.x"
   }
 }
 ```
 
 ```xml
-<Project Sdk="Headless.Defaults">
+<Project Sdk="Headless.Sdk">
 </Project>
 ```
 
@@ -40,7 +40,7 @@ In this mode the SDK runs **before** `Directory.Build.props` via `CustomBeforeDi
 You can also pin the version in the csproj:
 
 ```xml
-<Project Sdk="Headless.Defaults/x.x.x">
+<Project Sdk="Headless.Sdk/x.x.x">
 </Project>
 ```
 
@@ -48,14 +48,14 @@ Or layer it on top of `Microsoft.NET.Sdk`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
-  <Sdk Name="Headless.Defaults" Version="x.x.x" />
+  <Sdk Name="Headless.Sdk" Version="x.x.x" />
 </Project>
 ```
 
 ### 3. .NET 10+ file-based apps (`#:sdk` directive)
 
 ```csharp
-#:sdk Headless.Defaults@x.x.x
+#:sdk Headless.Sdk@x.x.x
 Console.WriteLine("Hello!");
 ```
 
@@ -135,7 +135,7 @@ dotnet run Program.cs
 
 The package no longer overwrites `$(SolutionDir).editorconfig` during normal builds.
 
-If you want Headless.Defaults to manage the solution-level `.editorconfig`, opt in explicitly:
+If you want Headless.Sdk to manage the solution-level `.editorconfig`, opt in explicitly:
 
 ```xml
 <PropertyGroup>

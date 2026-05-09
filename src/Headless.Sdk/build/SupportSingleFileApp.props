@@ -7,6 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(HeadlessSingleFileApp)' == 'true'">
-    <EditorConfigFiles Include="$(MSBuildThisFileDirectory)../configurations/Headless.Defaults.SingleFileApp.editorconfig" />
+    <EditorConfigFiles Include="$(MSBuildThisFileDirectory)../configurations/Headless.Sdk.SingleFileApp.editorconfig" />
   </ItemGroup>
 </Project>
