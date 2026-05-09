@@ -11,7 +11,9 @@
     <HeadlessSdkName>Headless.Sdk</HeadlessSdkName>
     <HeadlessSdkProjectType>Default</HeadlessSdkProjectType>
     <_MustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_MustImportMicrosoftNETSdk>
-    <_HeadlessDeferTargetFrameworkInference Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'">true</_HeadlessDeferTargetFrameworkInference>
+    <_HeadlessDeferTargetFrameworkInference Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'"
+      >true</_HeadlessDeferTargetFrameworkInference
+    >
 
     <CustomBeforeDirectoryBuildProps>$(CustomBeforeDirectoryBuildProps);$(MSBuildThisFileDirectory)../build/Headless.Sdk.props</CustomBeforeDirectoryBuildProps>
     <BeforeMicrosoftNETSdkTargets>$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.Sdk.targets</BeforeMicrosoftNETSdkTargets>

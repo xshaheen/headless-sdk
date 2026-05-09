@@ -56,7 +56,11 @@
     <Delete Files="@(NpmPackageFile->'%(StampFile)')" />
   </Target>
 
-  <Target Name="HeadlessNpmInstall" DependsOnTargets="HeadlessComputeNpmPackageMetadata" Condition="'@(NpmPackageFile)' != ''">
+  <Target
+    Name="HeadlessNpmInstall"
+    DependsOnTargets="HeadlessComputeNpmPackageMetadata"
+    Condition="'@(NpmPackageFile)' != ''"
+  >
     <Exec Command="%(NpmPackageFile.InstallCommand)" WorkingDirectory="%(NpmPackageFile.WorkingDirectory)" />
   </Target>
 

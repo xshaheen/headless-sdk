@@ -1,5 +1,9 @@
 <Project>
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk.WindowsDesktop" Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'" />
+  <Import
+    Project="Sdk.targets"
+    Sdk="Microsoft.NET.Sdk.WindowsDesktop"
+    Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'"
+  />
   <Import
     Project="$(MSBuildThisFileDirectory)..\build\Headless.Sdk.WindowsDesktop.targets"
     Condition="'$(_MustImportMicrosoftNETSdk)' != 'true'"

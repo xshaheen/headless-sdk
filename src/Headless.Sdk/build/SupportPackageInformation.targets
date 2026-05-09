@@ -16,16 +16,20 @@
     <!-- Specifies that the symbol package should be generated in the `.snupkg` format instead of the legacy `.nupkg` -->
     <SymbolPackageFormat Condition=" '$(SymbolPackageFormat)' == '' ">snupkg</SymbolPackageFormat>
     <!-- Readme -->
-    <_PackageReadmeFilePath Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/README.md')"
+    <_PackageReadmeFilePath
+      Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/README.md')"
       >$(MSBuildProjectDirectory)/README.md</_PackageReadmeFilePath
     >
-    <_PackageReadmeFilePath Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/readme.md')"
+    <_PackageReadmeFilePath
+      Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/readme.md')"
       >$(MSBuildProjectDirectory)/readme.md</_PackageReadmeFilePath
     >
-    <_PackageReadmeFilePath Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/Readme.md')"
+    <_PackageReadmeFilePath
+      Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/Readme.md')"
       >$(MSBuildProjectDirectory)/Readme.md</_PackageReadmeFilePath
     >
-    <_PackageReadmeFilePath Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/ReadMe.md')"
+    <_PackageReadmeFilePath
+      Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/ReadMe.md')"
       >$(MSBuildProjectDirectory)/ReadMe.md</_PackageReadmeFilePath
     >
     <_PackageReadmeFilePath
@@ -44,7 +48,8 @@
       Condition="'$(_PackageReadmeFilePath)' == '' and '$(SearchReadmeFileAbove)' == 'true' and Exists($([MSBuild]::GetPathOfFileAbove('ReadMe.md', '$(MSBuildProjectDirectory)')))"
       >$([MSBuild]::GetPathOfFileAbove('ReadMe.md', '$(MSBuildProjectDirectory)'))</_PackageReadmeFilePath
     >
-    <PackageReadmeFile Condition="'$(DisableReadme)' != 'true' and '$(PackageReadmeFile)' == '' and '$(_PackageReadmeFilePath)' != ''"
+    <PackageReadmeFile
+      Condition="'$(DisableReadme)' != 'true' and '$(PackageReadmeFile)' == '' and '$(_PackageReadmeFilePath)' != ''"
       >README.md</PackageReadmeFile
     >
 
@@ -84,13 +89,7 @@
       Visible="false"
       Condition="Exists(@(_SolutionLicense))"
     />
-    <None
-      Include="@(_LicensePath)"
-      Pack="true"
-      PackagePath=""
-      Visible="false"
-      Condition="Exists(@(_LicensePath))"
-    />
+    <None Include="@(_LicensePath)" Pack="true" PackagePath="" Visible="false" Condition="Exists(@(_LicensePath))" />
   </ItemGroup>
 
   <Target
@@ -101,19 +100,16 @@
       and '$(PackageLicenseFile)' == '' "
   >
     <PropertyGroup>
-      <PackageLicenseFile
-        Condition=" '@(_SolutionLicense)' != '' "
+      <PackageLicenseFile Condition=" '@(_SolutionLicense)' != '' "
         >@(_SolutionLicense->'%(Filename)%(Extension)')</PackageLicenseFile
       >
-      <PackageLicenseFile
-        Condition=" '$(PackageLicenseFile)' == '' and '@(_LicensePath)' != '' "
+      <PackageLicenseFile Condition=" '$(PackageLicenseFile)' == '' and '@(_LicensePath)' != '' "
         >@(_LicensePath->'%(Filename)%(Extension)')</PackageLicenseFile
       >
     </PropertyGroup>
   </Target>
 
   <ItemGroup Label="Package Additional Files" Condition=" '$(IsTestableProject)' != 'true' ">
-
     <!-- Readme -->
     <None
       Include="$(_PackageReadmeFilePath)"
