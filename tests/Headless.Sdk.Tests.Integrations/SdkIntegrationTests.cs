@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Xunit;
 
 #nullable enable
@@ -131,6 +132,26 @@ indent_size = 2
     public void PackedPackageContainsAnalyzerHygieneAndCoverageSettings()
     {
         using var package = ZipFile.OpenRead(fixture.PackagePath);
+
+        var implicitAnalyzers = ReadPackageEntry(package, "build/SupportImplicitAnalyzers.props");
+        var implicitAnalyzerVersions = XDocument
+            .Parse(implicitAnalyzers)
+            .Descendants("PackageReference")
+            .ToDictionary(
+                element => element.Attribute("Include")?.Value ?? string.Empty,
+                element => element.Attribute("Version")?.Value ?? string.Empty,
+                StringComparer.Ordinal
+            );
+
+        Assert.Equal("3.0.75", implicitAnalyzerVersions["Meziantou.Analyzer"]);
+        Assert.Equal("4.14.0", implicitAnalyzerVersions["Microsoft.CodeAnalysis.BannedApiAnalyzers"]);
+        Assert.Equal("2.1.0", implicitAnalyzerVersions["AsyncFixer"]);
+        Assert.Equal("0.9.7", implicitAnalyzerVersions["Asyncify"]);
+        Assert.Equal("17.14.15", implicitAnalyzerVersions["Microsoft.VisualStudio.Threading.Analyzers"]);
+        Assert.Equal("1.1.31", implicitAnalyzerVersions["SmartAnalyzers.MultithreadingAnalyzer"]);
+        Assert.Equal("4.15.0", implicitAnalyzerVersions["Roslynator.Analyzers"]);
+        Assert.Equal("0.3.1", implicitAnalyzerVersions["ReflectionAnalyzers"]);
+        Assert.Equal("0.1.2", implicitAnalyzerVersions["ErrorProne.NET.CoreAnalyzers"]);
 
         var analyzerHygiene = ReadPackageEntry(package, "build/SupportAnalyzerHygiene.targets");
         Assert.Contains("HeadlessDisableSponsorLinkAnalyzers", analyzerHygiene, StringComparison.Ordinal);

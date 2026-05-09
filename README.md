@@ -7,7 +7,7 @@ The intent is simple: every project starts with the same strict baseline, then o
 ## What It Standardizes
 
 - Build defaults: nullable reference types, implicit usings, latest C#, strict compiler features, deterministic output, static graph restore, and package validation.
-- Quality gates: `AnalysisLevel=latest-all`, .NET analyzers, Meziantou analyzer, banned API rules, NuGet audit, and code style enforcement.
+- Quality gates: `AnalysisLevel=latest-all`, .NET analyzers, Meziantou, AsyncFixer, Asyncify, Microsoft.VisualStudio.Threading, SmartAnalyzers multithreading, Roslynator, ReflectionAnalyzers, ErrorProne.NET, banned API rules, NuGet audit, and code style enforcement.
 - Test projects: automatic test-project detection, MTP or VSTest defaults, dumps on crash or hang, CI coverage, GitHub Actions logging, and faster `dotnet test` runs.
 - CI behavior: provider detection, `ContinuousIntegrationBuild`, locked restore behavior, SBOM generation, and stricter warning handling.
 - Packaging: default authors/company/license metadata, README/LICENSE/logo packing, Source Link, symbol packages, and repository metadata.
@@ -124,6 +124,7 @@ Many values apply only when the consuming project has not already set the proper
 | `EnforceCodeStyleInBuild` | `true` | Enforces code style during build. |
 | `ReportAnalyzer` | `true` | Includes analyzer timing/reporting data. |
 | `RunAnalyzersDuringBuild` | `true` | Runs analyzers during builds. |
+| Implicit analyzer packages | Enabled | Adds Meziantou, AsyncFixer, Asyncify, Microsoft.VisualStudio.Threading.Analyzers, SmartAnalyzers.MultithreadingAnalyzer, Roslynator.Analyzers, ReflectionAnalyzers, ErrorProne.NET.CoreAnalyzers, and banned API analyzers. |
 | `IncludeDefaultBannedSymbols` | `true` | Adds the bundled banned API list. Set `false` to skip it. |
 | `BannedNewtonsoftJsonSymbols` | `true` | Bans Newtonsoft.Json APIs by default. Set `false` to keep them. |
 | `DisableSponsorLink` | `true` unless set to `false` | Removes SponsorLink and Moq analyzers. |
