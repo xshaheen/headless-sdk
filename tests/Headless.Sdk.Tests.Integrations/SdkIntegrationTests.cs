@@ -134,24 +134,24 @@ indent_size = 2
         using var package = ZipFile.OpenRead(fixture.PackagePath);
 
         var implicitAnalyzers = ReadPackageEntry(package, "build/SupportImplicitAnalyzers.props");
-        var implicitAnalyzerVersions = XDocument
+        var implicitAnalyzerReferences = XDocument
             .Parse(implicitAnalyzers)
             .Descendants("PackageReference")
             .ToDictionary(
                 element => element.Attribute("Include")?.Value ?? string.Empty,
-                element => element.Attribute("Version")?.Value ?? string.Empty,
+                element => element,
                 StringComparer.Ordinal
             );
 
-        Assert.Equal("3.0.75", implicitAnalyzerVersions["Meziantou.Analyzer"]);
-        Assert.Equal("4.14.0", implicitAnalyzerVersions["Microsoft.CodeAnalysis.BannedApiAnalyzers"]);
-        Assert.Equal("2.1.0", implicitAnalyzerVersions["AsyncFixer"]);
-        Assert.Equal("0.9.7", implicitAnalyzerVersions["Asyncify"]);
-        Assert.Equal("17.14.15", implicitAnalyzerVersions["Microsoft.VisualStudio.Threading.Analyzers"]);
-        Assert.Equal("1.1.31", implicitAnalyzerVersions["SmartAnalyzers.MultithreadingAnalyzer"]);
-        Assert.Equal("4.15.0", implicitAnalyzerVersions["Roslynator.Analyzers"]);
-        Assert.Equal("0.3.1", implicitAnalyzerVersions["ReflectionAnalyzers"]);
-        Assert.Equal("0.1.2", implicitAnalyzerVersions["ErrorProne.NET.CoreAnalyzers"]);
+        AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Meziantou.Analyzer");
+        AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Microsoft.CodeAnalysis.BannedApiAnalyzers");
+        AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "AsyncFixer");
+        AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Asyncify");
+        AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Microsoft.VisualStudio.Threading.Analyzers");
+        AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "SmartAnalyzers.MultithreadingAnalyzer");
+        AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Roslynator.Analyzers");
+        AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "ReflectionAnalyzers");
+        AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "ErrorProne.NET.CoreAnalyzers");
 
         var analyzerHygiene = ReadPackageEntry(package, "build/SupportAnalyzerHygiene.targets");
         Assert.Contains("HeadlessDisableSponsorLinkAnalyzers", analyzerHygiene, StringComparison.Ordinal);
@@ -358,6 +358,18 @@ indent_size = 2
     private static string NormalizeLineEndings(string value) => value.ReplaceLineEndings("\n");
 
     private static string Quote(string value) => $"\"{value}\"";
+
+    private static void AssertImplicitAnalyzerReference(
+        IReadOnlyDictionary<string, XElement> packageReferences,
+        string packageId
+    )
+    {
+        Assert.True(packageReferences.TryGetValue(packageId, out var packageReference), $"Missing {packageId}.");
+        Assert.False(string.IsNullOrWhiteSpace(packageReference.Attribute("Version")?.Value));
+        Assert.Equal("true", packageReference.Attribute("IsImplicitlyDefined")?.Value);
+        Assert.Equal("all", packageReference.Element("PrivateAssets")?.Value);
+        Assert.Contains("analyzers", packageReference.Element("IncludeAssets")?.Value, StringComparison.Ordinal);
+    }
 
     private static string ReadPackageEntry(ZipArchive package, string entryName)
     {
