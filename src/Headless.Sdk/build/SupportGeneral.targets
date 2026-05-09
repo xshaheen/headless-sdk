@@ -19,6 +19,14 @@
     <IsPackable Condition=" '$(IsPackable)' != 'true' or '$(IsTestProject)' == 'true' ">false</IsPackable>
   </PropertyGroup>
 
+  <PropertyGroup Label="Documentation Warnings">
+    <!--
+      Generate XML documentation files by default, but do not require every public API to be
+      documented unless the consuming project opts in with DisableDocumentationWarnings=false.
+    -->
+    <NoWarn Condition="'$(DisableDocumentationWarnings)' != 'false'">$(NoWarn);CS1573;CS1591</NoWarn>
+  </PropertyGroup>
+
   <!--
     Allow apps to run on a newer major .NET runtime if their pinned major isn't installed.
     Skipped for test projects (they should pin to the SDK they were built against) and libraries

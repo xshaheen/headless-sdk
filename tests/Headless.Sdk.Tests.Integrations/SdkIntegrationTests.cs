@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Xunit;
@@ -34,6 +35,27 @@ public sealed class SdkIntegrationTests(HeadlessSdkPackageFixture fixture)
 
         Assert.True(result.ExitCode == 0, result.Output);
         Assert.DoesNotContain("NU5046", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task DocumentationWarningsAreReportedWhenExplicitlyEnabled()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            warningsAsErrors: "CS1591",
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["DisableDocumentationWarnings"] = "false",
+            }
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("CS1591", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -106,7 +128,8 @@ indent_size = 2
         Assert.True(File.Exists(project.GitAttributesPath), "Expected build to copy .gitattributes.");
 
         var csharpierIgnore = await File.ReadAllTextAsync(project.CSharpierIgnorePath);
-        Assert.Contains("**/[Nn]u[Gg]et.config", csharpierIgnore, StringComparison.Ordinal);
+        Assert.Contains("**/*.verified.*", csharpierIgnore, StringComparison.Ordinal);
+        Assert.Contains("**/*.received.*", csharpierIgnore, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -164,6 +187,10 @@ indent_size = 2
         var runsettings = ReadPackageEntry(package, "configurations/default.runsettings");
         Assert.Contains("<TreatNoTestsAsError>true</TreatNoTestsAsError>", runsettings, StringComparison.Ordinal);
         Assert.Contains("GitHubActionsTestLogger.dll", runsettings, StringComparison.Ordinal);
+
+        var generalTargets = ReadPackageEntry(package, "build/SupportGeneral.targets");
+        Assert.Contains("DisableDocumentationWarnings", generalTargets, StringComparison.Ordinal);
+        Assert.Contains("CS1573;CS1591", generalTargets, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -175,6 +202,10 @@ indent_size = 2
         Assert.NotNull(package.GetEntry("build/SupportTargetFrameworkInference.props"));
         Assert.NotNull(package.GetEntry("build/SupportNpm.targets"));
         Assert.NotNull(package.GetEntry("configurations/Headless.Sdk.SingleFileApp.editorconfig"));
+
+        var bannedNewtonsoftJson = ReadPackageEntry(package, "configurations/BannedSymbols.NewtonsoftJson.txt");
+        Assert.Contains("N:Newtonsoft.Json.Linq", bannedNewtonsoftJson, StringComparison.Ordinal);
+        Assert.Contains("N:Newtonsoft.Json.Serialization", bannedNewtonsoftJson, StringComparison.Ordinal);
 
         var assemblyAttributes = ReadPackageEntry(package, "build/SupportAssemblyAttributes.targets");
         Assert.Contains("Headless.Sdk.SdkName", assemblyAttributes, StringComparison.Ordinal);
@@ -773,13 +804,15 @@ public sealed class Class1;
 
 internal static class DotNetCommand
 {
+    private static readonly TimeSpan Timeout = TimeSpan.FromMinutes(10);
+
     public static async Task<DotNetCommandResult> RunAsync(
         string workingDirectory,
         string arguments,
         IReadOnlyDictionary<string, string> environment
     )
     {
-        var startInfo = new ProcessStartInfo("dotnet", arguments)
+        var startInfo = new ProcessStartInfo("dotnet", AddDisableBuildServersArgument(arguments))
         {
             RedirectStandardError = true,
             RedirectStandardOutput = true,
@@ -804,16 +837,51 @@ internal static class DotNetCommand
             startInfo.Environment[key] = value;
         }
 
+        startInfo.Environment["MSBUILDDISABLENODEREUSE"] = "1";
+        startInfo.Environment["DOTNET_CLI_USE_MSBUILDNOINPROCNODE"] = "1";
+
         using var process = new Process { StartInfo = startInfo };
         process.Start();
 
         var standardOutputTask = process.StandardOutput.ReadToEndAsync();
         var standardErrorTask = process.StandardError.ReadToEndAsync();
 
-        await process.WaitForExitAsync();
+        using var timeout = new CancellationTokenSource(Timeout);
+
+        try
+        {
+            await process.WaitForExitAsync(timeout.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            try
+            {
+                process.Kill(entireProcessTree: true);
+                await process.WaitForExitAsync();
+            }
+            catch (InvalidOperationException) { }
+
+            var timeoutOutput = $"{await standardOutputTask}{await standardErrorTask}".Trim();
+            throw new TimeoutException(
+                $"dotnet {arguments} timed out after {Timeout}.{Environment.NewLine}{timeoutOutput}"
+            );
+        }
 
         var output = $"{await standardOutputTask}{await standardErrorTask}";
         return new DotNetCommandResult(process.ExitCode, output.Trim());
+    }
+
+    private static string AddDisableBuildServersArgument(string arguments)
+    {
+        if (arguments.Contains("--disable-build-servers", StringComparison.Ordinal))
+        {
+            return arguments;
+        }
+
+        var separatorIndex = arguments.IndexOf(' ', StringComparison.Ordinal);
+        return separatorIndex < 0
+            ? $"{arguments} --disable-build-servers"
+            : $"{arguments[..separatorIndex]} --disable-build-servers{arguments[separatorIndex..]}";
     }
 }
 

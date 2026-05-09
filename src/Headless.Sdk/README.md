@@ -128,6 +128,7 @@ Many values apply only when the consuming project has not already set the proper
 | `Nullable` | `enable` | Enables nullable reference types. |
 | `ImplicitUsings` | `enable` | Enables SDK implicit usings. |
 | `GenerateDocumentationFile` | `true` | Emits XML documentation. Missing XML docs are suppressed by default. |
+| `DisableDocumentationWarnings` | `true` | Suppresses `CS1573` and `CS1591`. Set `false` to enforce documentation warnings. |
 | `Features` | `strict` | Enables strict compiler feature flags. |
 | `Deterministic` | `true` | Produces reproducible builds when inputs match. |
 | `RestoreUseStaticGraphEvaluation` | `true` | Uses static graph restore. |
