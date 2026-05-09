@@ -270,6 +270,27 @@ indent_size = 2
         Assert.Equal("false", properties["IsPackable"]);
     }
 
+    [Theory]
+    [InlineData("Headless.Sdk.Web", "Web")]
+    [InlineData("Headless.Sdk.Razor", "Razor")]
+    [InlineData("Headless.Sdk.BlazorWebAssembly", "BlazorWebAssembly")]
+    [InlineData("Headless.Sdk.WindowsDesktop", "WindowsDesktop")]
+    public async Task MsBuildPropertiesUseProjectTypeSdk(string sdkName, string projectType)
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"{sdkName}/{fixture.PackageVersion}",
+            includePackageReference: false
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal(sdkName, properties["HeadlessSdkName"]);
+        Assert.Equal(projectType, properties["HeadlessSdkProjectType"]);
+        Assert.Equal("false", properties["IsTestableProject"]);
+    }
+
     [Fact]
     public async Task MsBuildPropertiesSkipToolPackagingForWebProjects()
     {
