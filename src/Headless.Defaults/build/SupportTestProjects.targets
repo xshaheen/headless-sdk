@@ -81,6 +81,9 @@
     <VSTestBlameHangTimeout>10min</VSTestBlameHangTimeout>
 
     <VSTestCollect Condition="'$(EnableCodeCoverage)' == 'true'">Code Coverage</VSTestCollect>
+    <VSTestSetting Condition="'$(EnableCodeCoverage)' == 'true'"
+      >$(MSBuildThisFileDirectory)../configurations/default.runsettings</VSTestSetting
+    >
   </PropertyGroup>
 
   <PropertyGroup>

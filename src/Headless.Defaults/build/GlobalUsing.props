@@ -1,5 +1,6 @@
 <Project>
   <ItemGroup Condition="'$(ImplicitUsings)' != 'true'">
+    <Using Include="System.Diagnostics.CodeAnalysis" />
     <Using Include="System.Globalization" />
   </ItemGroup>
 

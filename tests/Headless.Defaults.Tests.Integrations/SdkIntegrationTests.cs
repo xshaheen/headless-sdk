@@ -127,9 +127,35 @@ indent_size = 2
         );
     }
 
+    [Fact]
+    public void PackedPackageContainsAnalyzerHygieneAndCoverageSettings()
+    {
+        using var package = ZipFile.OpenRead(fixture.PackagePath);
+
+        var analyzerHygiene = ReadPackageEntry(package, "build/SupportAnalyzerHygiene.targets");
+        Assert.Contains("HeadlessDisableSponsorLinkAnalyzers", analyzerHygiene, StringComparison.Ordinal);
+        Assert.Contains("DisableSponsorLink", analyzerHygiene, StringComparison.Ordinal);
+
+        var testTargets = ReadPackageEntry(package, "build/SupportTestProjects.targets");
+        Assert.Contains("configurations/default.runsettings", testTargets, StringComparison.Ordinal);
+
+        var runsettings = ReadPackageEntry(package, "configurations/default.runsettings");
+        Assert.Contains("<TreatNoTestsAsError>true</TreatNoTestsAsError>", runsettings, StringComparison.Ordinal);
+        Assert.Contains("GitHubActionsTestLogger.dll", runsettings, StringComparison.Ordinal);
+    }
+
     private static string NormalizeLineEndings(string value) => value.ReplaceLineEndings("\n");
 
     private static string Quote(string value) => $"\"{value}\"";
+
+    private static string ReadPackageEntry(ZipArchive package, string entryName)
+    {
+        var entry = package.GetEntry(entryName);
+        Assert.NotNull(entry);
+
+        using var reader = new StreamReader(entry!.Open());
+        return reader.ReadToEnd();
+    }
 }
 
 public sealed class HeadlessDefaultsPackageFixture : IAsyncLifetime

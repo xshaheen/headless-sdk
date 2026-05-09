@@ -41,6 +41,10 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
   <Import Project="$(MSBuildThisFileDirectory)SupportSystemRuntimeExperimental.targets" />
   <Import Project="$(MSBuildThisFileDirectory)SupportDetectContinuousIntegration.targets" />
   <Import Project="$(MSBuildThisFileDirectory)SupportAssemblyAttributes.targets" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)SupportAnalyzerHygiene.targets"
+    Condition=" '$(DisableSupportAnalyzerHygiene)' != 'true' "
+  />
   <Import Project="$(MSBuildThisFileDirectory)SupportSbom.targets" Condition=" '$(DisableSupportSbom)' != 'true' " />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportEmbedBinlog.targets"

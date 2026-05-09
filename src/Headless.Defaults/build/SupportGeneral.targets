@@ -30,4 +30,11 @@
   >
     <RollForward>LatestMajor</RollForward>
   </PropertyGroup>
+
+  <PropertyGroup Label="Tool Packaging">
+    <PackAsTool
+      Condition=" '$(PackAsTool)' == '' and '$(OutputType)' == 'Exe' and '$(IsTestProject)' != 'true' and '$(IsTestableProject)' != 'true' "
+      >true</PackAsTool
+    >
+  </PropertyGroup>
 </Project>

@@ -76,6 +76,7 @@ dotnet run Program.cs
 - Disables analyzers during `dotnet test` for fast feedback (override via `OptimizeVsTestRun=false`)
 - Auto `Copyright`, README/LICENSE/logo packing, optional strict System.Text.Json runtime defaults
 - Optional packaged config bootstrap for `.editorconfig`, `.csharpierignore`, `.gitignore`, and `.gitattributes`
+- VSTest coverage runsettings that treat zero tests as an error and exclude test-log infrastructure from coverage
 - SBOM generation (`Microsoft.Sbom.Targets`) auto-enabled on CI
 - Faster restore (`RestoreUseStaticGraphEvaluation`, `RestoreSerializeGlobalProperties`)
 - `EnablePackageValidation=true` to catch breaking API changes between releases
@@ -94,6 +95,8 @@ dotnet run Program.cs
 | `DisableImplicitAnalyzers` | unset | Set `true` to skip the implicit analyzer references after the import is loaded. |
 | `DisableSupportBannedSymbols` | unset | Set `true` to skip the banned-symbols import entirely. |
 | `DisableSupportWebContainer` | unset | Set `true` to skip Web SDK container automation. |
+| `DisableSupportAnalyzerHygiene` | unset | Set `true` to skip analyzer hygiene targets. |
+| `DisableSponsorLink` | `true` | Removes SponsorLink/Moq analyzers when not set to `false`. |
 | `OptimizeVsTestRun` | `true` | Disables analyzers during `dotnet test`. Set `false` to keep them. |
 | `EnableCodeCoverage` | `true` on CI | Enables coverage collection for test projects on CI. |
 | `UseMicrosoftTestingPlatform` | auto | Auto-detected from `xunit.v3.mtp-v2` or `TUnit`. Force with `true` / `false`. |
@@ -106,6 +109,8 @@ dotnet run Program.cs
 | `HeadlessCopyGitAttributesToSolutionDir` | `false` | Opt in to copy the bundled `.gitattributes`. Enabled by `HeadlessCopyDefaultConfigFilesToSolutionDir`. |
 | `DisableReadme` | unset | Set `true` to skip automatic README package metadata and packing. |
 | `DisablePackageLogo` | unset | Set `true` to skip automatic package icon metadata and packing. |
+| `SearchReadmeFileAbove` | `false` | Set `true` to search parent directories for README files to pack. |
+| `PackAsTool` | `true` for non-test executables | Override per project when executable packages are not .NET tools. |
 | `GenerateSBOM` | `true` on CI | Generate a Software Bill of Materials. Set `false` to skip. |
 | `DisableSupportSbom` | unset | Set `true` to skip the SBOM import entirely. |
 | `DisableSupportEmbedBinlog` | unset | Set `true` to skip embedding context in `.binlog`. |
