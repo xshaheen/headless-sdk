@@ -185,6 +185,39 @@ indent_size = 2
     }
 
     [Fact]
+    public void PackedProjectTypePackagesContainSdkWrappersAndBuildAssets()
+    {
+        var expectedPackages = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["Headless.Sdk.Web"] = "Microsoft.NET.Sdk.Web",
+            ["Headless.Sdk.Test"] = "Microsoft.NET.Sdk",
+            ["Headless.Sdk.Razor"] = "Microsoft.NET.Sdk.Razor",
+            ["Headless.Sdk.BlazorWebAssembly"] = "Microsoft.NET.Sdk.BlazorWebAssembly",
+            ["Headless.Sdk.WindowsDesktop"] = "Microsoft.NET.Sdk.WindowsDesktop",
+        };
+
+        foreach (var (packageId, baseSdk) in expectedPackages)
+        {
+            using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
+
+            Assert.NotNull(package.GetEntry("sdk/Sdk.props"));
+            Assert.NotNull(package.GetEntry("sdk/Sdk.targets"));
+            Assert.NotNull(package.GetEntry($"build/{packageId}.props"));
+            Assert.NotNull(package.GetEntry($"build/{packageId}.targets"));
+            Assert.NotNull(package.GetEntry($"buildMultiTargeting/{packageId}.props"));
+            Assert.NotNull(package.GetEntry($"buildMultiTargeting/{packageId}.targets"));
+            Assert.NotNull(package.GetEntry($"buildTransitive/{packageId}.props"));
+            Assert.NotNull(package.GetEntry($"buildTransitive/{packageId}.targets"));
+            Assert.NotNull(package.GetEntry("build/SupportGeneral.props"));
+            Assert.NotNull(package.GetEntry("configurations/editorconfig.txt"));
+
+            var sdkProps = ReadPackageEntry(package, "sdk/Sdk.props");
+            Assert.Contains($"<HeadlessSdkName>{packageId}</HeadlessSdkName>", sdkProps, StringComparison.Ordinal);
+            Assert.Contains($"Sdk=\"{baseSdk}\"", sdkProps, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public async Task MsBuildPropertiesUseExpectedDefaults()
     {
         await using var project = await ConsumerProject.CreateAsync(
@@ -198,6 +231,7 @@ indent_size = 2
         Assert.Equal("LatestMajor", properties["RollForward"]);
         Assert.Equal("true", properties["PackAsTool"]);
         Assert.Equal("Headless.Sdk", properties["HeadlessSdkName"]);
+        Assert.Equal("Default", properties["HeadlessSdkProjectType"]);
     }
 
     [Fact]
@@ -215,6 +249,25 @@ indent_size = 2
 
         Assert.StartsWith("net", properties["TargetFramework"], StringComparison.Ordinal);
         Assert.NotEqual("net", properties["TargetFramework"]);
+    }
+
+    [Fact]
+    public async Task MsBuildPropertiesUseTestProjectTypeSdk()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.Sdk.Test/{fixture.PackageVersion}",
+            includePackageReference: false
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("Headless.Sdk.Test", properties["HeadlessSdkName"]);
+        Assert.Equal("Test", properties["HeadlessSdkProjectType"]);
+        Assert.Equal("true", properties["IsTestableProject"]);
+        Assert.Equal("true", properties["IsTestProject"]);
+        Assert.Equal("false", properties["IsPackable"]);
     }
 
     [Fact]
@@ -297,6 +350,8 @@ indent_size = 2
 
 public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
 {
+    private readonly Dictionary<string, string> packagePaths = new(StringComparer.Ordinal);
+
     public string PackageRootDirectory { get; private set; } = null!;
 
     public string PackagePath { get; private set; } = null!;
@@ -312,31 +367,57 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
 
         var repositoryRoot = FindRepositoryRoot();
         var env = CreateDotNetEnvironment(PackageRootDirectory);
-        var projectPath = Path.Combine(repositoryRoot, "src", "Headless.Sdk", "Headless.Sdk.csproj");
-        var command = $"pack {Quote(projectPath)} -c Debug -o {Quote(PackageSourceDirectory)}";
-        var result = await DotNetCommand.RunAsync(repositoryRoot, command, env);
-
-        if (result.ExitCode != 0)
+        var packageIds = new[]
         {
-            throw new InvalidOperationException(
-                $"Failed to pack Headless.Sdk for integration tests.{Environment.NewLine}{result.Output}"
-            );
+            "Headless.Sdk",
+            "Headless.Sdk.Web",
+            "Headless.Sdk.Test",
+            "Headless.Sdk.Razor",
+            "Headless.Sdk.BlazorWebAssembly",
+            "Headless.Sdk.WindowsDesktop",
+        };
+
+        foreach (var packageId in packageIds)
+        {
+            var projectPath = Path.Combine(repositoryRoot, "src", packageId, $"{packageId}.csproj");
+            var command = $"pack {Quote(projectPath)} -c Debug -o {Quote(PackageSourceDirectory)}";
+            var result = await DotNetCommand.RunAsync(repositoryRoot, command, env);
+
+            if (result.ExitCode != 0)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to pack {packageId} for integration tests.{Environment.NewLine}{result.Output}"
+                );
+            }
+
+            var packagePath = Directory
+                .EnumerateFiles(PackageSourceDirectory, $"{packageId}.*.nupkg", SearchOption.TopDirectoryOnly)
+                .Where(path => !path.EndsWith(".snupkg", StringComparison.Ordinal))
+                .Where(path => HasVersionSuffix(Path.GetFileName(path), packageId))
+                .OrderByDescending(File.GetCreationTimeUtc)
+                .FirstOrDefault();
+
+            if (packagePath is null)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to locate packed {packageId} nupkg for integration tests."
+                );
+            }
+
+            packagePaths[packageId] = packagePath;
         }
 
-        var packagePath = Directory
-            .EnumerateFiles(PackageSourceDirectory, "Headless.Sdk.*.nupkg", SearchOption.TopDirectoryOnly)
-            .Where(path => !path.EndsWith(".snupkg", StringComparison.Ordinal))
-            .OrderByDescending(File.GetCreationTimeUtc)
-            .FirstOrDefault();
-
-        if (packagePath is null)
-        {
-            throw new InvalidOperationException("Failed to locate packed Headless.Sdk nupkg for integration tests.");
-        }
-
-        PackagePath = packagePath;
-        PackageVersion = Path.GetFileNameWithoutExtension(packagePath)
+        PackagePath = packagePaths["Headless.Sdk"];
+        PackageVersion = Path.GetFileNameWithoutExtension(PackagePath)
             .Replace("Headless.Sdk.", string.Empty, StringComparison.Ordinal);
+    }
+
+    public string GetPackagePath(string packageId) => packagePaths[packageId];
+
+    private static bool HasVersionSuffix(string fileName, string packageId)
+    {
+        var versionStart = packageId.Length + 1;
+        return fileName.Length > versionStart && char.IsDigit(fileName[versionStart]);
     }
 
     public Task DisposeAsync()
@@ -646,7 +727,7 @@ public sealed class Class1;
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
-                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSingleFileApp=$(HeadlessSingleFileApp);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);VSTestSetting=$(VSTestSetting)"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);VSTestSetting=$(VSTestSetting)"
                   Overwrite="true"
                 />
               </Target>

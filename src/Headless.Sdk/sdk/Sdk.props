@@ -9,6 +9,7 @@
   -->
   <PropertyGroup>
     <HeadlessSdkName>Headless.Sdk</HeadlessSdkName>
+    <HeadlessSdkProjectType>Default</HeadlessSdkProjectType>
     <_MustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_MustImportMicrosoftNETSdk>
     <_HeadlessDeferTargetFrameworkInference Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'">true</_HeadlessDeferTargetFrameworkInference>
 

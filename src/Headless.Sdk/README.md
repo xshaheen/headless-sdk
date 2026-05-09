@@ -39,13 +39,34 @@ Use this when the defaults must be visible before the consumer's `Directory.Buil
 ```jsonc
 {
   "msbuild-sdks": {
-    "Headless.Sdk": "x.y.z"
+    "Headless.Sdk": "x.y.z",
+    "Headless.Sdk.Web": "x.y.z",
+    "Headless.Sdk.Test": "x.y.z",
+    "Headless.Sdk.Razor": "x.y.z",
+    "Headless.Sdk.BlazorWebAssembly": "x.y.z",
+    "Headless.Sdk.WindowsDesktop": "x.y.z"
   }
 }
 ```
 
 ```xml
 <Project Sdk="Headless.Sdk">
+</Project>
+```
+
+Project-type SDK packages wrap the matching Microsoft SDK while applying the same Headless defaults:
+
+| Headless SDK | Base SDK | Extra behavior |
+| --- | --- | --- |
+| `Headless.Sdk` | `Microsoft.NET.Sdk` | Default library/console SDK. |
+| `Headless.Sdk.Web` | `Microsoft.NET.Sdk.Web` | Web SDK with Headless defaults and web container support. |
+| `Headless.Sdk.Test` | `Microsoft.NET.Sdk` | Forces `IsTestableProject` and `IsTestProject`. |
+| `Headless.Sdk.Razor` | `Microsoft.NET.Sdk.Razor` | Razor SDK with Headless defaults. |
+| `Headless.Sdk.BlazorWebAssembly` | `Microsoft.NET.Sdk.BlazorWebAssembly` | Blazor WebAssembly SDK with Headless defaults. |
+| `Headless.Sdk.WindowsDesktop` | `Microsoft.NET.Sdk.WindowsDesktop` | Windows Desktop SDK with Headless defaults. |
+
+```xml
+<Project Sdk="Headless.Sdk.Web/x.y.z">
 </Project>
 ```
 
@@ -85,6 +106,7 @@ dotnet run Program.cs
 | --- | --- | --- |
 | `PackageReference` | NuGet imports package build assets through the standard package flow. | You want the current default consumption path. |
 | `<Project Sdk="Headless.Sdk">` | `sdk/Sdk.props` wires `build/Headless.Sdk.props` before `Directory.Build.props` and targets before `Microsoft.NET.Sdk` targets. | Repository-wide defaults need to be visible early. |
+| `<Project Sdk="Headless.Sdk.Web">` and project-type SDKs | The wrapper SDK imports its matching Microsoft SDK and wires the corresponding `build/Headless.Sdk.*.props` and `.targets` files. | You want defaults plus the right base SDK from a single SDK name. |
 | `<Sdk Name="Headless.Sdk" />` | Imported as an additional SDK inside a `Microsoft.NET.Sdk` project. | You want normal .NET SDK behavior plus Headless defaults. |
 | `#:sdk` | Imported by the file-based app SDK directive. | Single-file experiments or scripts should share the same defaults. |
 
@@ -97,6 +119,7 @@ Many values apply only when the consuming project has not already set the proper
 | Property | Default | Effect |
 | --- | --- | --- |
 | `HeadlessSdkName` | `Headless.Sdk` | SDK identity used in generated assembly metadata. |
+| `HeadlessSdkProjectType` | `Default` | Project-type identity used in generated assembly metadata. |
 | `Configuration` | `Debug` | Default build configuration. |
 | `Platform` | `AnyCPU` | Default platform. |
 | `RootNamespace` | `$(MSBuildProjectName)` | Aligns namespace with project name. |

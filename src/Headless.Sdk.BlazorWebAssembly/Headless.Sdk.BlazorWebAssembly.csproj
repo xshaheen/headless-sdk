@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <HeadlessSdkName>Headless.Sdk.BlazorWebAssembly</HeadlessSdkName>
+    <HeadlessSdkProjectType>BlazorWebAssembly</HeadlessSdkProjectType>
+  </PropertyGroup>
+
+  <Import Project="..\Headless.Sdk\build\Headless.Sdk.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+    <NoWarn>$(NoWarn);NU5128;</NoWarn>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>true</IsPackable>
+    <PackageType>MSBuildSdk</PackageType>
+    <IsBuildTaskProject>true</IsBuildTaskProject>
+    <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="sdk/Sdk.props;sdk/Sdk.targets" Pack="true" PackagePath="sdk/%(Filename)%(Extension)" />
+    <None Include="..\Headless.Sdk\build\Headless.Sdk.props" Pack="true" PackagePath="build\$(PackageId).props" />
+    <None Include="..\Headless.Sdk\build\Headless.Sdk.targets" Pack="true" PackagePath="build\$(PackageId).targets" />
+    <None
+      Include="..\Headless.Sdk\build\**\*.*"
+      Pack="true"
+      PackagePath="build/%(RecursiveDir)%(Filename)%(Extension)"
+    />
+    <None
+      Include="..\Headless.Sdk\buildMultiTargeting\Headless.Sdk.props"
+      Pack="true"
+      PackagePath="buildMultiTargeting\$(PackageId).props"
+    />
+    <None
+      Include="..\Headless.Sdk\buildMultiTargeting\Headless.Sdk.targets"
+      Pack="true"
+      PackagePath="buildMultiTargeting\$(PackageId).targets"
+    />
+    <None
+      Include="..\Headless.Sdk\buildTransitive\Headless.Sdk.props"
+      Pack="true"
+      PackagePath="buildTransitive\$(PackageId).props"
+    />
+    <None
+      Include="..\Headless.Sdk\buildTransitive\Headless.Sdk.targets"
+      Pack="true"
+      PackagePath="buildTransitive\$(PackageId).targets"
+    />
+    <None Include="..\Headless.Sdk\configurations\**" Pack="true" PackagePath="configurations/" />
+    <None Include="..\Headless.Sdk\README.md" Pack="true" PackagePath="README.md" Visible="true" />
+    <None Include="..\Headless.Sdk\_._" Pack="true" PackagePath="lib\$(TargetFramework)" Visible="false" />
+  </ItemGroup>
+
+  <Import Project="..\Headless.Sdk\build\Headless.Sdk.targets" />
+</Project>

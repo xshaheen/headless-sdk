@@ -44,21 +44,25 @@
     <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.2.2" IsImplicitlyDefined="true" />
   </ItemGroup>
 
-  <PropertyGroup
+  <Target
+    Name="HeadlessApplyMicrosoftTestingPlatformSettings"
+    BeforeTargets="_MTPBuild"
     Condition="'$(EnableDefaultTestSettings)' != 'false' AND ('$(UseMicrosoftTestingPlatform)' == 'true' OR (
                             '$(UseMicrosoftTestingPlatform)' == '' AND (
                             @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) == 'true' OR
                             @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) == 'true'
                             )))"
   >
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --report-trx</TestingPlatformCommandLineArguments>
-    <TestingPlatformCommandLineArguments Condition="'$(EnableCodeCoverage)' == 'true'"
-      >$(TestingPlatformCommandLineArguments) --coverage</TestingPlatformCommandLineArguments
-    >
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --crashdump --crashdump-type mini</TestingPlatformCommandLineArguments>
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --hangdump --hangdump-timeout 10m --hangdump-type mini</TestingPlatformCommandLineArguments>
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --minimum-expected-tests 1</TestingPlatformCommandLineArguments>
-  </PropertyGroup>
+    <PropertyGroup>
+      <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --report-trx</TestingPlatformCommandLineArguments>
+      <TestingPlatformCommandLineArguments Condition="'$(EnableCodeCoverage)' == 'true'"
+        >$(TestingPlatformCommandLineArguments) --coverage</TestingPlatformCommandLineArguments
+      >
+      <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --crashdump --crashdump-type mini</TestingPlatformCommandLineArguments>
+      <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --hangdump --hangdump-timeout 10m --hangdump-type mini</TestingPlatformCommandLineArguments>
+      <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --minimum-expected-tests 1</TestingPlatformCommandLineArguments>
+    </PropertyGroup>
+  </Target>
 
   <!-- VSTest path (xUnit v2, MSTest, NUnit, etc.) -->
   <ItemGroup

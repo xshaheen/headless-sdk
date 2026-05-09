@@ -1,0 +1,21 @@
+<Project>
+  <PropertyGroup>
+    <HeadlessSdkName>Headless.Sdk.WindowsDesktop</HeadlessSdkName>
+    <HeadlessSdkProjectType>WindowsDesktop</HeadlessSdkProjectType>
+    <_MustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_MustImportMicrosoftNETSdk>
+    <_HeadlessDeferTargetFrameworkInference Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'">true</_HeadlessDeferTargetFrameworkInference>
+
+    <CustomBeforeDirectoryBuildProps>$(CustomBeforeDirectoryBuildProps);$(MSBuildThisFileDirectory)../build/Headless.Sdk.WindowsDesktop.props</CustomBeforeDirectoryBuildProps>
+    <BeforeMicrosoftNETSdkTargets>$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.Sdk.WindowsDesktop.targets</BeforeMicrosoftNETSdkTargets>
+  </PropertyGroup>
+
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk.WindowsDesktop" Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)../build/SupportTargetFrameworkInference.props"
+    Condition="'$(_MustImportMicrosoftNETSdk)' == 'true' and '$(DisableSupportTargetFrameworkInference)' != 'true'"
+  />
+  <Import
+    Project="$(MSBuildThisFileDirectory)..\build\Headless.Sdk.WindowsDesktop.props"
+    Condition="'$(_MustImportMicrosoftNETSdk)' != 'true'"
+  />
+</Project>
