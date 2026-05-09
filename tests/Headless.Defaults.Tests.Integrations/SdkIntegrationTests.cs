@@ -135,6 +135,7 @@ indent_size = 2
         var analyzerHygiene = ReadPackageEntry(package, "build/SupportAnalyzerHygiene.targets");
         Assert.Contains("HeadlessDisableSponsorLinkAnalyzers", analyzerHygiene, StringComparison.Ordinal);
         Assert.Contains("DisableSponsorLink", analyzerHygiene, StringComparison.Ordinal);
+        Assert.Contains("Disable_SponsorLink", analyzerHygiene, StringComparison.Ordinal);
 
         var testTargets = ReadPackageEntry(package, "build/SupportTestProjects.targets");
         Assert.Contains("configurations/default.runsettings", testTargets, StringComparison.Ordinal);

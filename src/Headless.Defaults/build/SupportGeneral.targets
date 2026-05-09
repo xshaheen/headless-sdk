@@ -33,7 +33,12 @@
 
   <PropertyGroup Label="Tool Packaging">
     <PackAsTool
-      Condition=" '$(PackAsTool)' == '' and '$(OutputType)' == 'Exe' and '$(IsTestProject)' != 'true' and '$(IsTestableProject)' != 'true' "
+      Condition=" '$(PackAsTool)' == ''
+        and '$(OutputType)' == 'Exe'
+        and '$(IsTestProject)' != 'true'
+        and '$(IsTestableProject)' != 'true'
+        and '$(UsingMicrosoftNETSdkWeb)' != 'true'
+        and '$(IsAspireHost)' != 'true' "
       >true</PackAsTool
     >
   </PropertyGroup>

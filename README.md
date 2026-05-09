@@ -97,6 +97,7 @@ dotnet run Program.cs
 | `DisableSupportWebContainer` | unset | Set `true` to skip Web SDK container automation. |
 | `DisableSupportAnalyzerHygiene` | unset | Set `true` to skip analyzer hygiene targets. |
 | `DisableSponsorLink` | `true` | Removes SponsorLink/Moq analyzers when not set to `false`. |
+| `Disable_SponsorLink` | `true` | Meziantou-compatible alias for `DisableSponsorLink`. Set `false` to keep those analyzers. |
 | `OptimizeVsTestRun` | `true` | Disables analyzers during `dotnet test`. Set `false` to keep them. |
 | `EnableCodeCoverage` | `true` on CI | Enables coverage collection for test projects on CI. |
 | `UseMicrosoftTestingPlatform` | auto | Auto-detected from `xunit.v3.mtp-v2` or `TUnit`. Force with `true` / `false`. |
@@ -110,7 +111,7 @@ dotnet run Program.cs
 | `DisableReadme` | unset | Set `true` to skip automatic README package metadata and packing. |
 | `DisablePackageLogo` | unset | Set `true` to skip automatic package icon metadata and packing. |
 | `SearchReadmeFileAbove` | `false` | Set `true` to search parent directories for README files to pack. |
-| `PackAsTool` | `true` for non-test executables | Override per project when executable packages are not .NET tools. |
+| `PackAsTool` | `true` for non-test, non-Web executables | Override per project when executable packages are not .NET tools. |
 | `GenerateSBOM` | `true` on CI | Generate a Software Bill of Materials. Set `false` to skip. |
 | `DisableSupportSbom` | unset | Set `true` to skip the SBOM import entirely. |
 | `DisableSupportEmbedBinlog` | unset | Set `true` to skip embedding context in `.binlog`. |

@@ -1,6 +1,10 @@
 <Project>
   <!-- Remove analyzers that are known to create licensing/noise friction when pulled transitively. -->
-  <Target Name="HeadlessDisableSponsorLinkAnalyzers" BeforeTargets="CoreCompile" Condition="'$(DisableSponsorLink)' != 'false'">
+  <Target
+    Name="HeadlessDisableSponsorLinkAnalyzers"
+    BeforeTargets="CoreCompile"
+    Condition="'$(DisableSponsorLink)' != 'false' and '$(Disable_SponsorLink)' != 'false'"
+  >
     <ItemGroup>
       <Analyzer Remove="@(Analyzer)" Condition="'%(FileName)' == 'DevLooped.SponsorLink'" />
       <Analyzer Remove="@(Analyzer)" Condition="'%(FileName)' == 'Moq.CodeAnalysis'" />
