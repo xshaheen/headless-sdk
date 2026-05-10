@@ -1,8 +1,0 @@
-<Project>
-  <PropertyGroup>
-    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.Sdk.WindowsDesktop</HeadlessSdkName>
-    <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">WindowsDesktop</HeadlessSdkProjectType>
-  </PropertyGroup>
-
-  <Import Project="$(MSBuildThisFileDirectory)Headless.Sdk.props" />
-</Project>

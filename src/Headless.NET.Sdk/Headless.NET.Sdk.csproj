@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="build\Headless.NET.Sdk.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+    <NoWarn>$(NoWarn);NU5128;</NoWarn>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>true</IsPackable>
+    <PackageType>MSBuildSdk</PackageType>
+    <IsBuildTaskProject>true</IsBuildTaskProject>
+    <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference
+      Update="Meziantou.Analyzer;Microsoft.CodeAnalysis.BannedApiAnalyzers;AsyncFixer;Asyncify;Microsoft.VisualStudio.Threading.Analyzers;SmartAnalyzers.MultithreadingAnalyzer;Roslynator.Analyzers;ReflectionAnalyzers;ErrorProne.NET.CoreAnalyzers"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Files that should have no role in the build process -->
+    <None Include="sdk/Sdk.props;sdk/Sdk.targets" Pack="true" PackagePath="sdk/%(Filename)%(Extension)" />
+    <None Include="build/**/*.*" Pack="true" PackagePath="build/%(RecursiveDir)%(Filename)%(Extension)" />
+    <None
+      Include="buildMultiTargeting/**/*.*"
+      Pack="true"
+      PackagePath="buildMultiTargeting/%(RecursiveDir)%(Filename)%(Extension)"
+    />
+    <None
+      Include="buildTransitive/**/*.*"
+      Pack="true"
+      PackagePath="buildTransitive/%(RecursiveDir)%(Filename)%(Extension)"
+    />
+    <None Include="configurations/**" Pack="true" PackagePath="configurations/" />
+    <None Include="_._" Pack="true" PackagePath="lib\$(TargetFramework)" Visible="false" />
+  </ItemGroup>
+
+  <Import Project="build\Headless.NET.Sdk.targets" />
+</Project>

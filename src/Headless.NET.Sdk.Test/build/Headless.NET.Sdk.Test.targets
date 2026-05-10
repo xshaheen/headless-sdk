@@ -1,0 +1,3 @@
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)Headless.NET.Sdk.targets" />
+</Project>

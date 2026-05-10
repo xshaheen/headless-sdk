@@ -1,0 +1,7 @@
+<Project>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.Test.targets"
+    Condition="'$(_MustImportMicrosoftNETSdk)' != 'true'"
+  />
+</Project>

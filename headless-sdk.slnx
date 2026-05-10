@@ -10,11 +10,11 @@
         <File Path="nuget.config" />
         <File Path="README.md" />
     </Folder>
-    <Project Path="src\Headless.Sdk.BlazorWebAssembly\Headless.Sdk.BlazorWebAssembly.csproj" />
-    <Project Path="src\Headless.Sdk.Razor\Headless.Sdk.Razor.csproj" />
-    <Project Path="src\Headless.Sdk.Test\Headless.Sdk.Test.csproj" />
-    <Project Path="src\Headless.Sdk.Web\Headless.Sdk.Web.csproj" />
-    <Project Path="src\Headless.Sdk.WindowsDesktop\Headless.Sdk.WindowsDesktop.csproj" />
-    <Project Path="src\Headless.Sdk\Headless.Sdk.csproj" />
-    <Project Path="tests\Headless.Sdk.Tests.Integrations\Headless.Sdk.Tests.Integrations.csproj" />
+    <Project Path="src\Headless.NET.Sdk.BlazorWebAssembly\Headless.NET.Sdk.BlazorWebAssembly.csproj" />
+    <Project Path="src\Headless.NET.Sdk.Razor\Headless.NET.Sdk.Razor.csproj" />
+    <Project Path="src\Headless.NET.Sdk.Test\Headless.NET.Sdk.Test.csproj" />
+    <Project Path="src\Headless.NET.Sdk.Web\Headless.NET.Sdk.Web.csproj" />
+    <Project Path="src\Headless.NET.Sdk.WindowsDesktop\Headless.NET.Sdk.WindowsDesktop.csproj" />
+    <Project Path="src\Headless.NET.Sdk\Headless.NET.Sdk.csproj" />
+    <Project Path="tests\Headless.NET.Sdk.Tests.Integrations\Headless.NET.Sdk.Tests.Integrations.csproj" />
 </Solution>

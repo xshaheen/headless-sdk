@@ -1,8 +1,0 @@
-<Project>
-  <PropertyGroup>
-    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.Sdk.Razor</HeadlessSdkName>
-    <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Razor</HeadlessSdkProjectType>
-  </PropertyGroup>
-
-  <Import Project="$(MSBuildThisFileDirectory)Headless.Sdk.props" />
-</Project>

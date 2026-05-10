@@ -1,5 +1,0 @@
-<Project>
-  <PropertyGroup Label="NuGet Package Headless.Sdk" Condition=" '$(IsTestableProject)' != 'true' ">
-    <PackageTags>xshaheen;$(PackageTags)</PackageTags>
-  </PropertyGroup>
-</Project>

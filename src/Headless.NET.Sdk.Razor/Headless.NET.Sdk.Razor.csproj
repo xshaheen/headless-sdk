@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <HeadlessSdkName>Headless.NET.Sdk.Razor</HeadlessSdkName>
+    <HeadlessSdkProjectType>Razor</HeadlessSdkProjectType>
+  </PropertyGroup>
+
+  <Import Project="..\Headless.NET.Sdk\build\Headless.NET.Sdk.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+    <NoWarn>$(NoWarn);NU5128;</NoWarn>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>true</IsPackable>
+    <PackageType>MSBuildSdk</PackageType>
+    <IsBuildTaskProject>true</IsBuildTaskProject>
+    <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference
+      Update="Meziantou.Analyzer;Microsoft.CodeAnalysis.BannedApiAnalyzers;AsyncFixer;Asyncify;Microsoft.VisualStudio.Threading.Analyzers;SmartAnalyzers.MultithreadingAnalyzer;Roslynator.Analyzers;ReflectionAnalyzers;ErrorProne.NET.CoreAnalyzers"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="sdk/Sdk.props;sdk/Sdk.targets" Pack="true" PackagePath="sdk/%(Filename)%(Extension)" />
+    <None Include="build\$(PackageId).props" Pack="true" PackagePath="build\$(PackageId).props" />
+    <None Include="build\$(PackageId).targets" Pack="true" PackagePath="build\$(PackageId).targets" />
+    <None
+      Include="..\Headless.NET.Sdk\build\**\*.*"
+      Pack="true"
+      PackagePath="build/%(RecursiveDir)%(Filename)%(Extension)"
+    />
+    <None
+      Include="buildMultiTargeting\$(PackageId).props"
+      Pack="true"
+      PackagePath="buildMultiTargeting\$(PackageId).props"
+    />
+    <None
+      Include="buildMultiTargeting\$(PackageId).targets"
+      Pack="true"
+      PackagePath="buildMultiTargeting\$(PackageId).targets"
+    />
+    <None
+      Include="buildTransitive\$(PackageId).props"
+      Pack="true"
+      PackagePath="buildTransitive\$(PackageId).props"
+    />
+    <None
+      Include="buildTransitive\$(PackageId).targets"
+      Pack="true"
+      PackagePath="buildTransitive\$(PackageId).targets"
+    />
+    <None Include="..\Headless.NET.Sdk\configurations\**" Pack="true" PackagePath="configurations/" />
+    <None Include="..\Headless.NET.Sdk\README.md" Pack="true" PackagePath="README.md" Visible="true" />
+    <None Include="..\Headless.NET.Sdk\_._" Pack="true" PackagePath="lib\$(TargetFramework)" Visible="false" />
+  </ItemGroup>
+
+  <Import Project="..\Headless.NET.Sdk\build\Headless.NET.Sdk.targets" />
+</Project>

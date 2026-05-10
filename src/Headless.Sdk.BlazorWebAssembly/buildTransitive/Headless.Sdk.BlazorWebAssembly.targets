@@ -1,3 +1,0 @@
-<Project>
-  <Import Project="$(MSBuildThisFileDirectory)..\build\Headless.Sdk.BlazorWebAssembly.targets" />
-</Project>

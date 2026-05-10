@@ -1,8 +1,0 @@
-<Project>
-  <PropertyGroup>
-    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.Sdk.BlazorWebAssembly</HeadlessSdkName>
-    <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">BlazorWebAssembly</HeadlessSdkProjectType>
-  </PropertyGroup>
-
-  <Import Project="$(MSBuildThisFileDirectory)Headless.Sdk.props" />
-</Project>

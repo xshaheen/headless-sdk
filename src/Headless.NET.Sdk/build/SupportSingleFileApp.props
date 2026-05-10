@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <!-- FileBasedProgram is set by the .NET SDK for .NET 10 file-based apps. -->
+    <HeadlessSingleFileApp Condition="'$(HeadlessSingleFileApp)' == '' and '$(FileBasedProgram)' == 'true'"
+      >true</HeadlessSingleFileApp
+    >
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(HeadlessSingleFileApp)' == 'true'">
+    <EditorConfigFiles Include="$(MSBuildThisFileDirectory)../configurations/Headless.NET.Sdk.SingleFileApp.editorconfig" />
+  </ItemGroup>
+</Project>
