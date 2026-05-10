@@ -72,7 +72,7 @@ jobs:
         run: dotnet nuget update source github.com --username xshaheen --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --configfile nuget.config
 
       - name: Restore
-        run: dotnet restore headless-sdk.slnx
+        run: dotnet restore headless-sdk.slnx -p:RestorePackagesWithLockFile=false -p:RestoreLockedMode=false
 
       - name: Build
         run: dotnet build headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -v:q -nologo /clp:ErrorsOnly
