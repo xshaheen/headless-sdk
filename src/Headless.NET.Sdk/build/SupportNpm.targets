@@ -32,7 +32,7 @@
   <Target
     Name="HeadlessNpmRestore"
     DependsOnTargets="HeadlessComputeNpmPackageMetadata;HeadlessNpmRestoreForce"
-    Inputs="@(NpmPackageFile)"
+    Inputs="@(NpmPackageFile);@(NpmPackageFile->'%(LockFile)')"
     Outputs="%(NpmPackageFile.StampFile)"
     BeforeTargets="Restore;CollectPackageReferences"
     Condition="'@(NpmPackageFile)' != ''"

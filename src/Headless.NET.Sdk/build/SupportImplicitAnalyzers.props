@@ -1,6 +1,10 @@
 <Project>
-  <!-- Implicit analyzer + banned-API references injected for every consuming project. -->
-  <ItemGroup Condition="'$(DisableImplicitAnalyzers)' != 'true'">
+  <!--
+    Implicit analyzer + banned-API references injected for every consuming project.
+    Opt out with DisableSupportImplicitAnalyzers=true (which also skips the import from
+    Headless.NET.Sdk.props); the inner gate here covers consumers who import this file directly.
+  -->
+  <ItemGroup Condition="'$(DisableSupportImplicitAnalyzers)' != 'true'">
     <PackageReference
       Include="Meziantou.Analyzer"
       Version="3.0.75"

@@ -9,6 +9,22 @@
       Condition="'$(EnableCodeCoverage)' == '' AND ('$(IsContinuousIntegration)' == 'true' OR '$(ContinuousIntegrationBuild)' == 'true')"
       >true</EnableCodeCoverage
     >
+
+    <!--
+      Microsoft Testing Platform (MTP) detection - computed once and reused below. Either an
+      explicit UseMicrosoftTestingPlatform=true, or the presence of an MTP-aware test framework
+      (xunit.v3.mtp-v2, TUnit) selects MTP. Override with UseMicrosoftTestingPlatform=true|false.
+    -->
+    <_HeadlessUseMicrosoftTestingPlatform>false</_HeadlessUseMicrosoftTestingPlatform>
+    <_HeadlessUseMicrosoftTestingPlatform Condition="'$(UseMicrosoftTestingPlatform)' == 'true'"
+      >true</_HeadlessUseMicrosoftTestingPlatform
+    >
+    <_HeadlessUseMicrosoftTestingPlatform
+      Condition="'$(UseMicrosoftTestingPlatform)' == '' AND (
+        @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) == 'true' OR
+        @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) == 'true')"
+      >true</_HeadlessUseMicrosoftTestingPlatform
+    >
   </PropertyGroup>
 
   <!--
@@ -26,16 +42,8 @@
     </PropertyGroup>
   </Target>
 
-  <!--
-    Microsoft Testing Platform (MTP) - auto-detected from xunit.v3.mtp-v2 or TUnit references.
-    Override with UseMicrosoftTestingPlatform=true|false.
-  -->
-  <ItemGroup
-    Condition="'$(UseMicrosoftTestingPlatform)' == 'true' OR ('$(UseMicrosoftTestingPlatform)' == '' AND (
-                        @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) == 'true' OR
-                        @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) == 'true'
-                        ))"
-  >
+  <!-- Microsoft Testing Platform (MTP) implicit references; selection via _HeadlessUseMicrosoftTestingPlatform. -->
+  <ItemGroup Condition="'$(_HeadlessUseMicrosoftTestingPlatform)' == 'true'">
     <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" Version="2.2.2" IsImplicitlyDefined="true" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.6.2" IsImplicitlyDefined="true" />
     <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="2.2.2" IsImplicitlyDefined="true" />
@@ -47,11 +55,7 @@
   <Target
     Name="HeadlessApplyMicrosoftTestingPlatformSettings"
     BeforeTargets="_MTPBuild"
-    Condition="'$(EnableDefaultTestSettings)' != 'false' AND ('$(UseMicrosoftTestingPlatform)' == 'true' OR (
-                            '$(UseMicrosoftTestingPlatform)' == '' AND (
-                            @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) == 'true' OR
-                            @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) == 'true'
-                            )))"
+    Condition="'$(EnableDefaultTestSettings)' != 'false' AND '$(_HeadlessUseMicrosoftTestingPlatform)' == 'true'"
   >
     <PropertyGroup>
       <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --report-trx</TestingPlatformCommandLineArguments>
@@ -65,12 +69,7 @@
   </Target>
 
   <!-- VSTest path (xUnit v2, MSTest, NUnit, etc.) -->
-  <ItemGroup
-    Condition="!('$(UseMicrosoftTestingPlatform)' == 'true' OR ('$(UseMicrosoftTestingPlatform)' == '' AND (
-                         @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) == 'true' OR
-                         @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) == 'true'
-                         )))"
-  >
+  <ItemGroup Condition="'$(_HeadlessUseMicrosoftTestingPlatform)' != 'true'">
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" IsImplicitlyDefined="true" />
   </ItemGroup>
 

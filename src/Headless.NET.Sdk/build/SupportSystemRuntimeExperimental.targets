@@ -2,7 +2,7 @@
   <Target
     Name="RemoveSystemRuntimeFromRefPack"
     BeforeTargets="_HandlePackageFileConflicts"
-    Condition="'@(Reference -> WithMetadataValue('NugetPackageId', 'System.Runtime.Experimental'))' != ''"
+    Condition="'@(Reference -> WithMetadataValue('NuGetPackageId', 'System.Runtime.Experimental'))' != ''"
   >
     <ItemGroup>
       <Reference

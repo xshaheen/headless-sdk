@@ -3,8 +3,8 @@
     <PackageId Condition=" '$(PackageId)' == '' ">$(MSBuildProjectName)</PackageId>
     <Title Condition=" '$(Title)' == '' ">$(MSBuildProjectName)</Title>
 
-    <Company Condition=" '$(Company)' == '' or '$(Company)' == '$(Authors)' ">Mahmoud Shaheen</Company>
-    <Authors Condition=" '$(Authors)' == '' or '$(Authors)' == '$(AssemblyName)' ">Mahmoud Shaheen</Authors>
+    <Company Condition=" '$(Company)' == '' and $(MSBuildProjectName.StartsWith('Headless.')) ">Mahmoud Shaheen</Company>
+    <Authors Condition=" '$(Authors)' == '' and $(MSBuildProjectName.StartsWith('Headless.')) ">Mahmoud Shaheen</Authors>
 
     <!-- Optional: Declare that the Repository URL can be published to NuSpec -->
     <PublishRepositoryUrl Condition=" '$(PublishRepositoryUrl)' == '' ">true</PublishRepositoryUrl>

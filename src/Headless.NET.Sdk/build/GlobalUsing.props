@@ -1,16 +1,21 @@
 <Project>
-  <ItemGroup Condition="'$(ImplicitUsings)' != 'true'">
+  <!--
+    Extra global usings beyond the standard ImplicitUsings set. <Using> items only take effect
+    when ImplicitUsings is enabled, so MSBuild itself handles the conditionality. The TFM gates
+    keep us from injecting types that don't exist on older targets.
+  -->
+  <ItemGroup>
     <Using Include="System.Diagnostics.CodeAnalysis" />
     <Using Include="System.Globalization" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(ImplicitUsings)' != 'true' AND $([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0')) == 'true'">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0')) == 'true'">
     <Using Include="System.Text" />
     <Using Include="System.Text.Json" />
     <Using Include="System.Text.Json.Serialization" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(ImplicitUsings)' != 'true' AND $([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net8.0')) == 'true'">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net8.0')) == 'true'">
     <Using Include="System.Collections.Frozen" />
     <Using Include="System.Collections.Immutable" />
   </ItemGroup>

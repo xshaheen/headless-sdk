@@ -9,7 +9,7 @@
 
   <PropertyGroup Label="Project Categorisation" Condition=" '$(IsTestableProject)' == '' ">
     <IsTestableProject>false</IsTestableProject>
-    <IsTestableProject Condition="$(MSBuildProjectName.Contains('.Tests.'))">true</IsTestableProject>
+    <IsTestableProject Condition="$(MSBuildProjectName.Contains('.Tests.')) or $(MSBuildProjectName.EndsWith('.Tests'))">true</IsTestableProject>
   </PropertyGroup>
 
   <PropertyGroup Label="General Configurations">

@@ -12,7 +12,8 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Properties correction">
-    <IsTestProject Condition=" '$(IsTestProject)' != 'true' and $(MSBuildProjectName.Contains('.Tests.')) "
+    <IsTestProject
+      Condition=" '$(IsTestProject)' != 'true' and ($(MSBuildProjectName.Contains('.Tests.')) or $(MSBuildProjectName.EndsWith('.Tests'))) "
       >true</IsTestProject
     >
     <IsTestProject Condition=" '$(IsTestProject)' != 'true' ">false</IsTestProject>

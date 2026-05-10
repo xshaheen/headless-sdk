@@ -6,7 +6,7 @@
     <RepositoryUrl>https://github.com/xshaheen/headless-sdk.git</RepositoryUrl>
     <PackageProjectUrl>https://github.com/xshaheen/headless-sdk</PackageProjectUrl>
     <PackageReleaseNotes>$(PackageProjectUrl)/releases</PackageReleaseNotes>
-    <PackageTags>editorconfig;configuration;settings;props;targets</PackageTags>
+    <PackageTags>sdk;msbuild-sdk;msbuild;editorconfig;configuration;settings;props;targets</PackageTags>
     <CopyrightYearStart>2024</CopyrightYearStart>
   </PropertyGroup>
 

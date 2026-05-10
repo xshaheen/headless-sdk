@@ -658,8 +658,7 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
         }
 
         PackagePath = packagePaths["Headless.NET.Sdk"];
-        PackageVersion = Path.GetFileNameWithoutExtension(PackagePath)
-            .Replace("Headless.NET.Sdk.", string.Empty, StringComparison.Ordinal);
+        PackageVersion = Path.GetFileNameWithoutExtension(PackagePath)["Headless.NET.Sdk.".Length..];
     }
 
     public string GetPackagePath(string packageId) => packagePaths[packageId];
@@ -679,8 +678,14 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
                 Directory.Delete(PackageRootDirectory, recursive: true);
             }
         }
-        catch (IOException) { }
-        catch (UnauthorizedAccessException) { }
+        catch (IOException ex)
+        {
+            Console.Error.WriteLine($"[fixture] Failed to delete '{PackageRootDirectory}': {ex.Message}");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Console.Error.WriteLine($"[fixture] Failed to delete '{PackageRootDirectory}': {ex.Message}");
+        }
 
         return Task.CompletedTask;
     }

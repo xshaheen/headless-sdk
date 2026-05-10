@@ -2,8 +2,8 @@
   <PropertyGroup>
     <HeadlessSdkName>Headless.NET.Sdk.Test</HeadlessSdkName>
     <HeadlessSdkProjectType>Test</HeadlessSdkProjectType>
-    <IsTestableProject>true</IsTestableProject>
-    <IsTestProject>true</IsTestProject>
+    <IsTestableProject Condition="'$(IsTestableProject)' == ''">true</IsTestableProject>
+    <IsTestProject Condition="'$(IsTestProject)' == ''">true</IsTestProject>
     <_MustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_MustImportMicrosoftNETSdk>
     <_HeadlessDeferTargetFrameworkInference Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'"
       >true</_HeadlessDeferTargetFrameworkInference

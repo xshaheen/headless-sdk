@@ -6,7 +6,7 @@
     <_CopyrightYearStart Condition=" '$(CopyrightYearStart)' != '' ">$(CopyrightYearStart)</_CopyrightYearStart>
     <_CopyrightInternal>$([System.DateTime]::UtcNow.Year)</_CopyrightInternal>
 
-    <Copyright>Copyright @ $(Company) $(_CopyrightYearStart)</Copyright>
+    <Copyright>Copyright © $(Company) $(_CopyrightYearStart)</Copyright>
     <Copyright Condition=" '$(_CopyrightInternal)' > '$(_CopyrightYearStart)' "
       >$(Copyright) - $(_CopyrightInternal)</Copyright
     >

@@ -1,6 +1,6 @@
 # Headless.NET.Sdk
 
-`Headless.NET.Sdk` is an opinionated MSBuild SDK and source-only package for Headless Framework projects. It centralizes the build defaults, analyzer setup, test behavior, package metadata, CI detection, and repository configuration files that otherwise drift across solutions.
+`Headless.NET.Sdk` is an opinionated MSBuild SDK I built for my own .NET projects and the teams I work with. The repo is public and you're welcome to consume it, but the defaults reflect a strict house style — `Newtonsoft.Json` banned, `latest-all` analyzer level, MSBuild warnings as errors on CI, `RollForward=LatestMajor` for executables, implicit analyzer hygiene. If any of that doesn't fit your project, every default is overridable via the `Disable*` and `Headless*` properties documented in the Configuration Reference below.
 
 The intent is simple: every project starts with the same strict baseline, then opts out only where the local project has a clear reason.
 
@@ -276,7 +276,6 @@ Use these when a consumer needs to remove a whole feature area.
 | `DisableSupportPackageInformation` | Skips package metadata defaults. |
 | `DisableSupportImplicitAnalyzers` | Skips implicit analyzer package references. |
 | `DisableSupportAnalyzerEditorConfigs` | Skips bundled analyzer editorconfig imports. |
-| `DisableImplicitAnalyzers` | Keeps the import but skips analyzer references. |
 | `DisableSupportBannedSymbols` | Skips banned-symbol additional files. |
 | `DisableSupportWebContainer` | Skips GitHub Actions web container defaults. |
 | `DisableSupportAnalyzerHygiene` | Skips analyzer cleanup such as SponsorLink removal. |
@@ -285,5 +284,5 @@ Use these when a consumer needs to remove a whole feature area.
 | `DisableSupportNpm` | Skips npm restore targets. |
 | `DisableSupportSbom` | Skips SBOM generation support. |
 | `DisableSupportEmbedBinlog` | Skips binlog enrichment. |
-| `DisableSupportCopyrightTargets` | Skips copyright target imports. |
-| `DisableSupportNuGetAuditTargets` | Skips NuGet audit target imports. |
+| `DisableSupportCopyright` | Skips copyright target imports. |
+| `DisableSupportNuGetAudit` | Skips NuGet audit target imports. |
