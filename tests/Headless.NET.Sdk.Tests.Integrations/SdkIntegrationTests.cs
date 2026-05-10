@@ -500,6 +500,66 @@ public static class JsonConsumer
     }
 
     [Fact]
+    public async Task BuildSucceedsWhenConsumedViaSdkImport()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            includePackageReference: false
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+    }
+
+    [Theory]
+    [InlineData("Microsoft.NET.Sdk", true)]
+    [InlineData("Headless.NET.Sdk/{version}", false)]
+    public async Task BuildSucceedsForConsumersUsingCentralPackageManagement(
+        string sdkTemplate,
+        bool includePackageReference
+    )
+    {
+        var sdk = sdkTemplate.Replace("{version}", fixture.PackageVersion, StringComparison.Ordinal);
+        var packageVersionItems = includePackageReference
+            ? $@"<PackageVersion Include=""Headless.NET.Sdk"" Version=""{fixture.PackageVersion}"" />"
+            : string.Empty;
+
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: sdk,
+            includePackageReference: includePackageReference,
+            useCentralPackageManagement: true,
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Directory.Packages.props"] = $$"""
+                <Project>
+                  <PropertyGroup>
+                    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+                    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+                  </PropertyGroup>
+                  <ItemGroup>
+                    {{packageVersionItems}}
+                  </ItemGroup>
+                </Project>
+                """,
+            }
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.DoesNotContain("NU1008", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task MsBuildPropertiesSkipToolPackagingForWebProjects()
     {
         await using var project = await ConsumerProject.CreateAsync(
@@ -841,6 +901,7 @@ internal sealed class ConsumerProject : IAsyncDisposable
         string? warningsAsErrors = null,
         bool includePackageReference = true,
         string packageReferenceId = "Headless.NET.Sdk",
+        bool useCentralPackageManagement = false,
         IReadOnlyDictionary<string, string>? extraProperties = null,
         IReadOnlyDictionary<string, string>? additionalFiles = null
     )
@@ -861,6 +922,7 @@ internal sealed class ConsumerProject : IAsyncDisposable
                 warningsAsErrors,
                 includePackageReference,
                 packageReferenceId,
+                useCentralPackageManagement,
                 extraProperties
             ),
             Encoding.UTF8
@@ -985,6 +1047,7 @@ public sealed class Class1;
         string? warningsAsErrors,
         bool includePackageReference,
         string packageReferenceId,
+        bool useCentralPackageManagement,
         IReadOnlyDictionary<string, string>? extraProperties
     )
     {
@@ -1032,11 +1095,12 @@ public sealed class Class1;
                 ? string.Empty
                 : $"{Environment.NewLine}{string.Join(Environment.NewLine, propertyLines)}";
 
+        var versionAttribute = useCentralPackageManagement ? string.Empty : $@" Version=""{PackageVersion}""";
         var packageReferenceBlock = includePackageReference
             ? $$"""
 
                   <ItemGroup>
-                    <PackageReference Include="{{packageReferenceId}}" Version="{{PackageVersion}}" PrivateAssets="all" />
+                    <PackageReference Include="{{packageReferenceId}}"{{versionAttribute}} PrivateAssets="all" />
                   </ItemGroup>
                 """
             : string.Empty;
