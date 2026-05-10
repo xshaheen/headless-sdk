@@ -9,7 +9,10 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 Copyright (c) Mahmoud Shaheen. All rights reserved.
 ***********************************************************************************************
 -->
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" Condition="'$(_HeadlessSdkBuildTargetsImported)' != 'true'">
+<Project
+  xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+  Condition="'$(_HeadlessSdkBuildTargetsImported)' != 'true'"
+>
   <!-- .targets files - Defines build processes or tasks to be executed during the build lifecycle. -->
   <!-- Sentinel guard - see Headless.NET.Sdk.props for rationale. -->
   <PropertyGroup>

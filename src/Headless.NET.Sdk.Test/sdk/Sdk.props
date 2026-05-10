@@ -4,7 +4,9 @@
     <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Test</HeadlessSdkProjectType>
     <IsTestableProject Condition="'$(IsTestableProject)' == ''">true</IsTestableProject>
     <IsTestProject Condition="'$(IsTestProject)' == ''">true</IsTestProject>
-    <_HeadlessMustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_HeadlessMustImportMicrosoftNETSdk>
+    <_HeadlessMustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'"
+      >true</_HeadlessMustImportMicrosoftNETSdk
+    >
     <_HeadlessDeferTargetFrameworkInference Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
       >true</_HeadlessDeferTargetFrameworkInference
     >

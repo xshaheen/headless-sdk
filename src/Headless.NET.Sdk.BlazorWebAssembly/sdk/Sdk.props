@@ -2,7 +2,9 @@
   <PropertyGroup>
     <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk.BlazorWebAssembly</HeadlessSdkName>
     <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">BlazorWebAssembly</HeadlessSdkProjectType>
-    <_HeadlessMustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_HeadlessMustImportMicrosoftNETSdk>
+    <_HeadlessMustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'"
+      >true</_HeadlessMustImportMicrosoftNETSdk
+    >
     <_HeadlessDeferTargetFrameworkInference Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
       >true</_HeadlessDeferTargetFrameworkInference
     >

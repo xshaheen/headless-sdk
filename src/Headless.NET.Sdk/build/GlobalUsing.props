@@ -8,5 +8,4 @@
     <Using Include="System.Diagnostics.CodeAnalysis" />
     <Using Include="System.Globalization" />
   </ItemGroup>
-
 </Project>

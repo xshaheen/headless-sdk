@@ -2,7 +2,9 @@
   <PropertyGroup>
     <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk.Razor</HeadlessSdkName>
     <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Razor</HeadlessSdkProjectType>
-    <_HeadlessMustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_HeadlessMustImportMicrosoftNETSdk>
+    <_HeadlessMustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'"
+      >true</_HeadlessMustImportMicrosoftNETSdk
+    >
     <_HeadlessDeferTargetFrameworkInference Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
       >true</_HeadlessDeferTargetFrameworkInference
     >
@@ -11,7 +13,11 @@
     <BeforeMicrosoftNETSdkTargets>$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.Razor.targets</BeforeMicrosoftNETSdkTargets>
   </PropertyGroup>
 
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk.Razor" Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'" />
+  <Import
+    Project="Sdk.props"
+    Sdk="Microsoft.NET.Sdk.Razor"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
+  />
   <Import
     Project="$(MSBuildThisFileDirectory)../build/SupportTargetFrameworkInference.props"
     Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true' and '$(DisableSupportTargetFrameworkInference)' != 'true'"

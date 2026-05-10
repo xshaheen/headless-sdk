@@ -1,5 +1,9 @@
 <Project>
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk.Web" Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'" />
+  <Import
+    Project="Sdk.targets"
+    Sdk="Microsoft.NET.Sdk.Web"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
+  />
   <Import
     Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.Web.targets"
     Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true'"
