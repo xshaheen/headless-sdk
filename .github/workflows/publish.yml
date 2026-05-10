@@ -1,0 +1,81 @@
+name: Publish Packages
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "true"
+
+jobs:
+  publish:
+    name: Build, test, pack, and publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5.2.0
+        with:
+          global-json-file: ./global.json
+
+      - name: Restore
+        run: dotnet restore headless-sdk.slnx
+
+      - name: Build
+        run: dotnet build headless-sdk.slnx --configuration Release --no-restore --no-incremental -v:q -nologo /clp:ErrorsOnly
+
+      - name: Test
+        run: dotnet test headless-sdk.slnx --configuration Release --no-restore --no-build --logger "trx;LogFilePrefix=headless-sdk" --results-directory ./artifacts/test-results
+
+      - name: Pack
+        run: dotnet pack headless-sdk.slnx --configuration Release --no-restore --output ./artifacts/packages-results
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: test-results
+          path: ./artifacts/test-results
+          if-no-files-found: ignore
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: packages
+          path: ./artifacts/packages-results
+          if-no-files-found: error
+
+      - name: Publish packages to GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          shopt -s nullglob
+          packages=(./artifacts/packages-results/*.nupkg)
+
+          if [ ${#packages[@]} -eq 0 ]; then
+            echo "No .nupkg files found in ./artifacts/packages-results."
+            exit 1
+          fi
+
+          for package in "${packages[@]}"; do
+            dotnet nuget push "$package" \
+              --source "https://nuget.pkg.github.com/xshaheen/index.json" \
+              --api-key "$GITHUB_TOKEN" \
+              --skip-duplicate
+          done
