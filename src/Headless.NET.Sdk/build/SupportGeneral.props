@@ -8,8 +8,12 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Project Categorisation" Condition=" '$(IsTestableProject)' == '' ">
+    <!--
+      Test classification is explicit. Consumers signal a test project via either:
+        (1) <Project Sdk="Headless.NET.Sdk.Test"> sets IsTestableProject=true automatically.
+        (2) <IsTestableProject>true</IsTestableProject> in the csproj or Directory.Build.props.
+    -->
     <IsTestableProject>false</IsTestableProject>
-    <IsTestableProject Condition="$(MSBuildProjectName.Contains('.Tests.')) or $(MSBuildProjectName.EndsWith('.Tests'))">true</IsTestableProject>
   </PropertyGroup>
 
   <PropertyGroup Label="General Configurations">
@@ -19,7 +23,7 @@
     <LangVersion Condition="'$(LangVersion)' == ''">latest</LangVersion>
     <WarningLevel>9999</WarningLevel>
     <Nullable Condition="'$(Nullable)' == ''">enable</Nullable>
-    <WarningsAsErrors>nullable</WarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
     <ImplicitUsings>enable</ImplicitUsings>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

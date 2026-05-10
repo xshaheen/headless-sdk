@@ -3,6 +3,8 @@
     <Title>$(MSBuildProjectName)</Title>
     <Description>Source Only package, which provides the standard configurations and settings for
       the Framework projects. Such as `.editorconfig`, build props and targets.</Description>
+    <Authors>Mahmoud Shaheen</Authors>
+    <Company>Mahmoud Shaheen</Company>
     <RepositoryUrl>https://github.com/xshaheen/headless-sdk.git</RepositoryUrl>
     <PackageProjectUrl>https://github.com/xshaheen/headless-sdk</PackageProjectUrl>
     <PackageReleaseNotes>$(PackageProjectUrl)/releases</PackageReleaseNotes>

@@ -1,9 +1,9 @@
 <Project>
   <PropertyGroup>
-    <HeadlessSdkName>Headless.NET.Sdk.BlazorWebAssembly</HeadlessSdkName>
-    <HeadlessSdkProjectType>BlazorWebAssembly</HeadlessSdkProjectType>
-    <_MustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_MustImportMicrosoftNETSdk>
-    <_HeadlessDeferTargetFrameworkInference Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'"
+    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk.BlazorWebAssembly</HeadlessSdkName>
+    <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">BlazorWebAssembly</HeadlessSdkProjectType>
+    <_HeadlessMustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_HeadlessMustImportMicrosoftNETSdk>
+    <_HeadlessDeferTargetFrameworkInference Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
       >true</_HeadlessDeferTargetFrameworkInference
     >
 
@@ -14,14 +14,14 @@
   <Import
     Project="Sdk.props"
     Sdk="Microsoft.NET.Sdk.BlazorWebAssembly"
-    Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
   />
   <Import
     Project="$(MSBuildThisFileDirectory)../build/SupportTargetFrameworkInference.props"
-    Condition="'$(_MustImportMicrosoftNETSdk)' == 'true' and '$(DisableSupportTargetFrameworkInference)' != 'true'"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true' and '$(DisableSupportTargetFrameworkInference)' != 'true'"
   />
   <Import
     Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.BlazorWebAssembly.props"
-    Condition="'$(_MustImportMicrosoftNETSdk)' != 'true'"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true'"
   />
 </Project>

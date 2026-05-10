@@ -1,11 +1,11 @@
 <Project>
   <PropertyGroup>
-    <HeadlessSdkName>Headless.NET.Sdk.Test</HeadlessSdkName>
-    <HeadlessSdkProjectType>Test</HeadlessSdkProjectType>
+    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk.Test</HeadlessSdkName>
+    <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Test</HeadlessSdkProjectType>
     <IsTestableProject Condition="'$(IsTestableProject)' == ''">true</IsTestableProject>
     <IsTestProject Condition="'$(IsTestProject)' == ''">true</IsTestProject>
-    <_MustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_MustImportMicrosoftNETSdk>
-    <_HeadlessDeferTargetFrameworkInference Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'"
+    <_HeadlessMustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_HeadlessMustImportMicrosoftNETSdk>
+    <_HeadlessDeferTargetFrameworkInference Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
       >true</_HeadlessDeferTargetFrameworkInference
     >
 
@@ -13,13 +13,13 @@
     <BeforeMicrosoftNETSdkTargets>$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.Test.targets</BeforeMicrosoftNETSdkTargets>
   </PropertyGroup>
 
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'" />
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'" />
   <Import
     Project="$(MSBuildThisFileDirectory)../build/SupportTargetFrameworkInference.props"
-    Condition="'$(_MustImportMicrosoftNETSdk)' == 'true' and '$(DisableSupportTargetFrameworkInference)' != 'true'"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true' and '$(DisableSupportTargetFrameworkInference)' != 'true'"
   />
   <Import
     Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.Test.props"
-    Condition="'$(_MustImportMicrosoftNETSdk)' != 'true'"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true'"
   />
 </Project>

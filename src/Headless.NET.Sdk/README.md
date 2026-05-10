@@ -8,11 +8,11 @@ The intent is simple: every project starts with the same strict baseline, then o
 
 - Build defaults: nullable reference types, implicit usings, latest C#, strict compiler features, deterministic output, static graph restore, and package validation.
 - Quality gates: `AnalysisLevel=latest-all`, .NET analyzers, Meziantou, AsyncFixer, Asyncify, Microsoft.VisualStudio.Threading, SmartAnalyzers multithreading, Roslynator, ReflectionAnalyzers, ErrorProne.NET, banned API rules, NuGet audit, and code style enforcement.
-- Test projects: automatic test-project detection, MTP or VSTest defaults, dumps on crash or hang, CI coverage, GitHub Actions logging, and faster `dotnet test` runs.
+- Test projects: explicit classification via `Headless.NET.Sdk.Test` or `IsTestableProject=true`, MTP or VSTest defaults, dumps on crash or hang, CI coverage, GitHub Actions logging, and faster `dotnet test` runs.
 - CI behavior: provider detection, `ContinuousIntegrationBuild`, locked restore behavior, SBOM generation, and stricter warning handling.
 - Packaging: default authors/company metadata, README/LICENSE/logo packing, Source Link, symbol packages, and repository metadata.
-- App support: web container tagging on GitHub Actions, optional npm restore, file-based app relaxations, optional target framework inference, and optional strict System.Text.Json runtime switches.
-- Diagnostics: embeds editorconfig, banned-symbol files, npm lock files, and GitHub Actions environment details into binlogs.
+- App support: web container tagging on GitHub Actions, file-based app relaxations, optional target framework inference, and optional strict System.Text.Json runtime switches.
+- Diagnostics: embeds editorconfig, banned-symbol files, and GitHub Actions environment details into binlogs.
 
 ## Usage
 
@@ -178,12 +178,17 @@ Many values apply only when the consuming project has not already set the proper
 
 ### Test Projects
 
-Projects whose names contain `.Tests.` are treated as test projects.
+Test classification is explicit. A project becomes a test project via either:
+
+1. `<Project Sdk="Headless.NET.Sdk.Test">` — the Test SDK forces `IsTestableProject=true` and `IsTestProject=true`.
+2. `<IsTestableProject>true</IsTestableProject>` in the consumer's csproj or `Directory.Build.props`.
+
+Name-based inference (`MyApp.Tests`, `.UnitTests`, etc.) is intentionally not supported — too many false positives and false negatives for a public SDK.
 
 | Property | Default | Effect |
 | --- | --- | --- |
-| `IsTestableProject` | `true` when project name contains `.Tests.` | Marks projects that should receive test defaults. |
-| `IsTestProject` | `true` for testable projects | Marks the project for test tooling. |
+| `IsTestableProject` | `false` (set to `true` by `Headless.NET.Sdk.Test` or by the consumer) | Marks projects that should receive test defaults. |
+| `IsTestProject` | `false` (set to `true` for testable projects via `Headless.NET.Sdk.Test`) | Marks the project for test tooling. |
 | `IsPublishable` | `false` for test projects | Prevents publishing test projects. |
 | `IsPackable` | `false` for test projects | Prevents packing test projects. |
 | `EnableCodeCoverage` | `true` on CI | Enables coverage collection. |
@@ -208,18 +213,6 @@ Container defaults only activate for `Microsoft.NET.Sdk.Web` projects running on
 | `ContainerImageTagsMainVersionPrefix` | `1.0` | Prefix for main-branch image tags. |
 | `ContainerImageTagsIncludeLatest` | `true` | Adds `latest` on main. |
 | `ContainerImageTags` | Computed | Uses `<prefix>.<run-number>;latest` on main and `0.0.1-preview.<sha>` elsewhere. |
-
-### Npm Restore
-
-Npm restore is opt-in.
-
-| Property or item | Default | Effect |
-| --- | --- | --- |
-| `HeadlessEnableNpmRestore` | `false` | Enables npm restore integration. |
-| `EnableDefaultNpmPackageFile` | Enabled unless `false` | Adds `$(MSBuildProjectDirectory)/package.json` as an `NpmPackageFile` when present. |
-| `NpmPackageFile` | Explicit item | Adds custom package files to restore. |
-| `NpmRestoreLockedMode` | `true` on CI or locked restore | Uses `npm ci`; otherwise uses `npm install`. |
-| `HeadlessNpmInstall` | Target | Runs `npm install --no-fund --no-audit` for configured package files. |
 
 ### Packaging Metadata
 
@@ -281,7 +274,6 @@ Use these when a consumer needs to remove a whole feature area.
 | `DisableSupportAnalyzerHygiene` | Skips analyzer cleanup such as SponsorLink removal. |
 | `DisableSupportSingleFileApp` | Skips file-based app analyzer relaxations. |
 | `DisableSupportTargetFrameworkInference` | Skips target framework inference support. |
-| `DisableSupportNpm` | Skips npm restore targets. |
 | `DisableSupportSbom` | Skips SBOM generation support. |
 | `DisableSupportEmbedBinlog` | Skips binlog enrichment. |
 | `DisableSupportCopyright` | Skips copyright target imports. |

@@ -201,13 +201,13 @@ indent_size = 2
     }
 
     [Fact]
-    public void PackedPackageContainsSingleFileTargetFrameworkNpmAndSdkMetadataSupport()
+    public void PackedPackageContainsSingleFileTargetFrameworkAndSdkMetadataSupport()
     {
         using var package = ZipFile.OpenRead(fixture.PackagePath);
 
         Assert.NotNull(package.GetEntry("build/SupportSingleFileApp.props"));
         Assert.NotNull(package.GetEntry("build/SupportTargetFrameworkInference.props"));
-        Assert.NotNull(package.GetEntry("build/SupportNpm.targets"));
+        Assert.Null(package.GetEntry("build/SupportNpm.targets"));
         Assert.NotNull(package.GetEntry("configurations/Headless.NET.Sdk.SingleFileApp.editorconfig"));
 
         var bannedNewtonsoftJson = ReadPackageEntry(package, "configurations/BannedSymbols.NewtonsoftJson.txt");
@@ -216,10 +216,6 @@ indent_size = 2
 
         var assemblyAttributes = ReadPackageEntry(package, "build/SupportAssemblyAttributes.targets");
         Assert.Contains("Headless.NET.Sdk.SdkName", assemblyAttributes, StringComparison.Ordinal);
-
-        var npmTargets = ReadPackageEntry(package, "build/SupportNpm.targets");
-        Assert.Contains("HeadlessEnableNpmRestore", npmTargets, StringComparison.Ordinal);
-        Assert.Contains("npm $(_HeadlessNpmRestoreCommand) --no-fund --no-audit", npmTargets, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -250,7 +246,11 @@ indent_size = 2
             Assert.NotNull(package.GetEntry("configurations/editorconfig.txt"));
 
             var sdkProps = ReadPackageEntry(package, "sdk/Sdk.props");
-            Assert.Contains($"<HeadlessSdkName>{packageId}</HeadlessSdkName>", sdkProps, StringComparison.Ordinal);
+            Assert.Contains(
+                $"<HeadlessSdkName Condition=\"'$(HeadlessSdkName)' == ''\">{packageId}</HeadlessSdkName>",
+                sdkProps,
+                StringComparison.Ordinal
+            );
             Assert.Contains($"Sdk=\"{baseSdk}\"", sdkProps, StringComparison.Ordinal);
 
             var buildProps = ReadPackageEntry(package, $"build/{packageId}.props");
@@ -362,6 +362,20 @@ class Foo { }
     }
 
     [Fact]
+    public async Task MsBuildPropertiesTreatWarningsAsErrorsOnContinuousIntegration()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            outputType: "Exe"
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync("-p:CI=true");
+
+        Assert.Equal("true", properties["MSBuildTreatWarningsAsErrors"]);
+    }
+
+    [Fact]
     public async Task MsBuildPropertiesInferTargetFrameworkWhenExplicitlyEnabled()
     {
         await using var project = await ConsumerProject.CreateAsync(
@@ -376,6 +390,32 @@ class Foo { }
 
         Assert.StartsWith("net", properties["TargetFramework"], StringComparison.Ordinal);
         Assert.NotEqual("net", properties["TargetFramework"]);
+    }
+
+    [Fact]
+    public async Task BuildIncludesTargetFrameworkGatedGlobalUsings()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            additionalFiles: new Dictionary<string, string>
+            {
+                ["JsonConsumer.cs"] = """
+namespace ConsumerProject;
+
+public static class JsonConsumer
+{
+    public static string Serialize(object value) => JsonSerializer.Serialize(value);
+}
+""",
+            }
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
     }
 
     [Fact]
@@ -1013,7 +1053,7 @@ public sealed class Class1;
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
-                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);VSTestSetting=$(VSTestSetting)"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors)"
                   Overwrite="true"
                 />
               </Target>

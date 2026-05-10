@@ -1,0 +1,16 @@
+<Project>
+  <!--
+    These TFM-gated usings need TargetFramework from the consumer project body, so they are
+    evaluated from .targets instead of .props.
+  -->
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0')) == 'true'">
+    <Using Include="System.Text" />
+    <Using Include="System.Text.Json" />
+    <Using Include="System.Text.Json.Serialization" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net8.0')) == 'true'">
+    <Using Include="System.Collections.Frozen" />
+    <Using Include="System.Collections.Immutable" />
+  </ItemGroup>
+</Project>

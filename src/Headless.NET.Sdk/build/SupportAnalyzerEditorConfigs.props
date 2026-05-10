@@ -2,7 +2,7 @@
   <ItemGroup>
     <EditorConfigFiles
       Include="$(MSBuildThisFileDirectory)..\configurations\Headless.NET.Sdk.Analyzers.editorconfig"
-      Condition="'$(HeadlessEnableAnalyzerEditorConfigs)' != 'false'"
+      Condition="'$(DisableSupportAnalyzerEditorConfigs)' != 'true'"
     />
   </ItemGroup>
 </Project>

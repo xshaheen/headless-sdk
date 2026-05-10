@@ -21,6 +21,7 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
     <_HeadlessSdkBuildPropsImported>true</_HeadlessSdkBuildPropsImported>
   </PropertyGroup>
 
+  <Import Project="$(MSBuildThisFileDirectory)SupportDetectContinuousIntegration.props" />
   <Import Project="$(MSBuildThisFileDirectory)SupportGeneral.props" />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportTargetFrameworkInference.props"
@@ -28,7 +29,6 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
       and '$(_HeadlessSupportTargetFrameworkInferenceImported)' != 'true'
       and '$(_HeadlessDeferTargetFrameworkInference)' != 'true' "
   />
-  <Import Project="$(MSBuildThisFileDirectory)SupportDetectContinuousIntegration.props" />
   <Import Project="$(MSBuildThisFileDirectory)RuntimeHostConfigurationOption.props" />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportSingleFileApp.props"

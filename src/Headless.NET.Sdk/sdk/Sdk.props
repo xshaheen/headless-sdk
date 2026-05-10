@@ -8,10 +8,10 @@
     AFTER Directory.Build.props - that path is unaffected.
   -->
   <PropertyGroup>
-    <HeadlessSdkName>Headless.NET.Sdk</HeadlessSdkName>
-    <HeadlessSdkProjectType>Default</HeadlessSdkProjectType>
-    <_MustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_MustImportMicrosoftNETSdk>
-    <_HeadlessDeferTargetFrameworkInference Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'"
+    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk</HeadlessSdkName>
+    <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Default</HeadlessSdkProjectType>
+    <_HeadlessMustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'">true</_HeadlessMustImportMicrosoftNETSdk>
+    <_HeadlessDeferTargetFrameworkInference Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
       >true</_HeadlessDeferTargetFrameworkInference
     >
 
@@ -19,14 +19,14 @@
     <BeforeMicrosoftNETSdkTargets>$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.targets</BeforeMicrosoftNETSdkTargets>
   </PropertyGroup>
 
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'" />
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'" />
   <Import
     Project="$(MSBuildThisFileDirectory)../build/SupportTargetFrameworkInference.props"
-    Condition="'$(_MustImportMicrosoftNETSdk)' == 'true' and '$(DisableSupportTargetFrameworkInference)' != 'true'"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true' and '$(DisableSupportTargetFrameworkInference)' != 'true'"
   />
   <!-- Inner SDK case (parent project already imported Microsoft.NET.Sdk via <Sdk Name="Headless.NET.Sdk"...>) -->
   <Import
     Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.props"
-    Condition="'$(_MustImportMicrosoftNETSdk)' != 'true'"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true'"
   />
 </Project>

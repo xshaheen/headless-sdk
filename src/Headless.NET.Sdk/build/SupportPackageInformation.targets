@@ -3,8 +3,12 @@
     <PackageId Condition=" '$(PackageId)' == '' ">$(MSBuildProjectName)</PackageId>
     <Title Condition=" '$(Title)' == '' ">$(MSBuildProjectName)</Title>
 
-    <Company Condition=" '$(Company)' == '' and $(MSBuildProjectName.StartsWith('Headless.')) ">Mahmoud Shaheen</Company>
-    <Authors Condition=" '$(Authors)' == '' and $(MSBuildProjectName.StartsWith('Headless.')) ">Mahmoud Shaheen</Authors>
+    <!--
+      Authors / Company are intentionally not defaulted here. Microsoft.NET.Sdk falls back to
+      $(AssemblyName); consumers should set their own. The Headless author's repo sets these
+      in its own Directory.Build.props (which does not ship) so the SDK's own packages keep
+      attribution without leaking the SDK author's name into consumer-built packages.
+    -->
 
     <!-- Optional: Declare that the Repository URL can be published to NuSpec -->
     <PublishRepositoryUrl Condition=" '$(PublishRepositoryUrl)' == '' ">true</PublishRepositoryUrl>
