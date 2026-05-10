@@ -16,6 +16,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference
+      Update="Meziantou.Analyzer;Microsoft.CodeAnalysis.BannedApiAnalyzers;AsyncFixer;Asyncify;Microsoft.VisualStudio.Threading.Analyzers;SmartAnalyzers.MultithreadingAnalyzer;Roslynator.Analyzers;ReflectionAnalyzers;ErrorProne.NET.CoreAnalyzers"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Files that should have no role in the build process -->
     <None Include="sdk/Sdk.props;sdk/Sdk.targets" Pack="true" PackagePath="sdk/%(Filename)%(Extension)" />
     <None Include="build/**/*.*" Pack="true" PackagePath="build/%(RecursiveDir)%(Filename)%(Extension)" />

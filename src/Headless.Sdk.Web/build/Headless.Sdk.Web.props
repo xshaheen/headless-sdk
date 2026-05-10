@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.Sdk.Web</HeadlessSdkName>
+    <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Web</HeadlessSdkProjectType>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)Headless.Sdk.props" />
+</Project>

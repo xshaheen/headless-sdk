@@ -9,8 +9,4 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Headless.Sdk\Headless.Sdk.csproj" />
-  </ItemGroup>
 </Project>

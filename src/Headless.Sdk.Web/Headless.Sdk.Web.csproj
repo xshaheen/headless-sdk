@@ -22,31 +22,39 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference
+      Update="Meziantou.Analyzer;Microsoft.CodeAnalysis.BannedApiAnalyzers;AsyncFixer;Asyncify;Microsoft.VisualStudio.Threading.Analyzers;SmartAnalyzers.MultithreadingAnalyzer;Roslynator.Analyzers;ReflectionAnalyzers;ErrorProne.NET.CoreAnalyzers"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="sdk/Sdk.props;sdk/Sdk.targets" Pack="true" PackagePath="sdk/%(Filename)%(Extension)" />
-    <None Include="..\Headless.Sdk\build\Headless.Sdk.props" Pack="true" PackagePath="build\$(PackageId).props" />
-    <None Include="..\Headless.Sdk\build\Headless.Sdk.targets" Pack="true" PackagePath="build\$(PackageId).targets" />
+    <None Include="build\$(PackageId).props" Pack="true" PackagePath="build\$(PackageId).props" />
+    <None Include="build\$(PackageId).targets" Pack="true" PackagePath="build\$(PackageId).targets" />
     <None
       Include="..\Headless.Sdk\build\**\*.*"
       Pack="true"
       PackagePath="build/%(RecursiveDir)%(Filename)%(Extension)"
     />
     <None
-      Include="..\Headless.Sdk\buildMultiTargeting\Headless.Sdk.props"
+      Include="buildMultiTargeting\$(PackageId).props"
       Pack="true"
       PackagePath="buildMultiTargeting\$(PackageId).props"
     />
     <None
-      Include="..\Headless.Sdk\buildMultiTargeting\Headless.Sdk.targets"
+      Include="buildMultiTargeting\$(PackageId).targets"
       Pack="true"
       PackagePath="buildMultiTargeting\$(PackageId).targets"
     />
     <None
-      Include="..\Headless.Sdk\buildTransitive\Headless.Sdk.props"
+      Include="buildTransitive\$(PackageId).props"
       Pack="true"
       PackagePath="buildTransitive\$(PackageId).props"
     />
     <None
-      Include="..\Headless.Sdk\buildTransitive\Headless.Sdk.targets"
+      Include="buildTransitive\$(PackageId).targets"
       Pack="true"
       PackagePath="buildTransitive\$(PackageId).targets"
     />

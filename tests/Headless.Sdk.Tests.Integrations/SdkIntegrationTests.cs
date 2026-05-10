@@ -245,7 +245,37 @@ indent_size = 2
             var sdkProps = ReadPackageEntry(package, "sdk/Sdk.props");
             Assert.Contains($"<HeadlessSdkName>{packageId}</HeadlessSdkName>", sdkProps, StringComparison.Ordinal);
             Assert.Contains($"Sdk=\"{baseSdk}\"", sdkProps, StringComparison.Ordinal);
+
+            var buildProps = ReadPackageEntry(package, $"build/{packageId}.props");
+            Assert.Contains(
+                $"<HeadlessSdkName Condition=\"'$(HeadlessSdkName)' == ''\">{packageId}</HeadlessSdkName>",
+                buildProps,
+                StringComparison.Ordinal
+            );
         }
+    }
+
+    [Fact]
+    public async Task PackageReferenceRestoreIncludesImplicitAnalyzerPackages()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"restore {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+
+        var assets = await File.ReadAllTextAsync(project.ProjectAssetsPath);
+        Assert.Contains("\"Meziantou.Analyzer/", assets, StringComparison.Ordinal);
+        Assert.Contains("\"Microsoft.CodeAnalysis.BannedApiAnalyzers/", assets, StringComparison.Ordinal);
+        Assert.Contains("\"AsyncFixer/", assets, StringComparison.Ordinal);
+        Assert.Contains("Meziantou.Analyzer.dll", assets, StringComparison.Ordinal);
+        Assert.Contains("Microsoft.CodeAnalysis.BannedApiAnalyzers.dll", assets, StringComparison.Ordinal);
+        Assert.Contains("AsyncFixer.dll", assets, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -299,6 +329,41 @@ indent_size = 2
         Assert.Equal("true", properties["IsTestableProject"]);
         Assert.Equal("true", properties["IsTestProject"]);
         Assert.Equal("false", properties["IsPackable"]);
+    }
+
+    [Theory]
+    [InlineData("Headless.Sdk.Web", "Microsoft.NET.Sdk.Web", "Web", "false", "false")]
+    [InlineData("Headless.Sdk.Test", "Microsoft.NET.Sdk", "Test", "true", "true")]
+    [InlineData("Headless.Sdk.Razor", "Microsoft.NET.Sdk.Razor", "Razor", "false", "false")]
+    [InlineData(
+        "Headless.Sdk.BlazorWebAssembly",
+        "Microsoft.NET.Sdk.BlazorWebAssembly",
+        "BlazorWebAssembly",
+        "false",
+        "false"
+    )]
+    [InlineData("Headless.Sdk.WindowsDesktop", "Microsoft.NET.Sdk.WindowsDesktop", "WindowsDesktop", "false", "false")]
+    public async Task MsBuildPropertiesUseProjectTypePackageReference(
+        string packageId,
+        string sdkName,
+        string projectType,
+        string isTestableProject,
+        string isTestProject
+    )
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: sdkName,
+            packageReferenceId: packageId
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal(packageId, properties["HeadlessSdkName"]);
+        Assert.Equal(projectType, properties["HeadlessSdkProjectType"]);
+        Assert.Equal(isTestableProject, properties["IsTestableProject"]);
+        Assert.Equal(isTestProject, properties["IsTestProject"]);
     }
 
     [Theory]
@@ -586,6 +651,8 @@ internal sealed class ConsumerProject : IAsyncDisposable
 
     public string PackagesDirectory { get; }
 
+    public string ProjectAssetsPath => Path.Combine(RootDirectory, "obj", "project.assets.json");
+
     public string ProjectFilePath { get; }
 
     public string RootDirectory { get; }
@@ -603,6 +670,7 @@ internal sealed class ConsumerProject : IAsyncDisposable
         bool enableDefaultConfigFilesCopy = false,
         string? warningsAsErrors = null,
         bool includePackageReference = true,
+        string packageReferenceId = "Headless.Sdk",
         IReadOnlyDictionary<string, string>? extraProperties = null,
         IReadOnlyDictionary<string, string>? additionalFiles = null
     )
@@ -622,6 +690,7 @@ internal sealed class ConsumerProject : IAsyncDisposable
                 enableDefaultConfigFilesCopy,
                 warningsAsErrors,
                 includePackageReference,
+                packageReferenceId,
                 extraProperties
             ),
             Encoding.UTF8
@@ -723,6 +792,7 @@ public sealed class Class1;
         bool enableDefaultConfigFilesCopy,
         string? warningsAsErrors,
         bool includePackageReference,
+        string packageReferenceId,
         IReadOnlyDictionary<string, string>? extraProperties
     )
     {
@@ -774,7 +844,7 @@ public sealed class Class1;
             ? $$"""
 
                   <ItemGroup>
-                    <PackageReference Include="Headless.Sdk" Version="{{PackageVersion}}" PrivateAssets="all" />
+                    <PackageReference Include="{{packageReferenceId}}" Version="{{PackageVersion}}" PrivateAssets="all" />
                   </ItemGroup>
                 """
             : string.Empty;

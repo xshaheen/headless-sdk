@@ -31,6 +31,15 @@ dotnet add package Headless.Sdk --version x.y.z
 ```
 
 In this mode, NuGet imports `build/Headless.Sdk.props` and `build/Headless.Sdk.targets` through the normal package asset pipeline.
+Project-type packages can also be used by matching them with the corresponding Microsoft SDK:
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <PackageReference Include="Headless.Sdk.Web" Version="x.y.z" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
+```
 
 ### MSBuild SDK
 
@@ -104,7 +113,7 @@ dotnet run Program.cs
 
 | Mode | Import timing | Use when |
 | --- | --- | --- |
-| `PackageReference` | NuGet imports package build assets through the standard package flow. | You want the current default consumption path. |
+| `PackageReference` | NuGet imports package build assets through the standard package flow. Project-type packages set Headless identity, but the project still chooses the matching Microsoft SDK. | You want the current default consumption path. |
 | `<Project Sdk="Headless.Sdk">` | `sdk/Sdk.props` wires `build/Headless.Sdk.props` before `Directory.Build.props` and targets before `Microsoft.NET.Sdk` targets. | Repository-wide defaults need to be visible early. |
 | `<Project Sdk="Headless.Sdk.Web">` and project-type SDKs | The wrapper SDK imports its matching Microsoft SDK and wires the corresponding `build/Headless.Sdk.*.props` and `.targets` files. | You want defaults plus the right base SDK from a single SDK name. |
 | `<Sdk Name="Headless.Sdk" />` | Imported as an additional SDK inside a `Microsoft.NET.Sdk` project. | You want normal .NET SDK behavior plus Headless defaults. |
