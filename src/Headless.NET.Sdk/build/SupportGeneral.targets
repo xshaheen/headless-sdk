@@ -7,7 +7,10 @@
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(IsTestableProject)' == 'false' ">
-    <IsPackable Condition=" '$(IsPackable)' == '' ">true</IsPackable>
+    <_HeadlessSdkDefaultIsPackable Condition=" '$(_HeadlessSdkDefaultIsPackable)' == '' "
+      >true</_HeadlessSdkDefaultIsPackable
+    >
+    <IsPackable Condition=" '$(IsPackable)' == '' ">$(_HeadlessSdkDefaultIsPackable)</IsPackable>
     <IsTestProject Condition=" '$(IsTestProject)' == '' ">false</IsTestProject>
   </PropertyGroup>
 
@@ -18,6 +21,13 @@
     -->
     <IsTestProject Condition=" '$(IsTestProject)' == '' ">false</IsTestProject>
     <IsPackable Condition=" '$(IsPackable)' != 'true' or '$(IsTestProject)' == 'true' ">false</IsPackable>
+    <HeadlessSuppressNonPackablePackWarning Condition=" '$(HeadlessSuppressNonPackablePackWarning)' == '' "
+      >true</HeadlessSuppressNonPackablePackWarning
+    >
+    <WarnOnPackingNonPackableProject
+      Condition=" '$(IsPackable)' == 'false' and '$(HeadlessSuppressNonPackablePackWarning)' == 'true' "
+      >false</WarnOnPackingNonPackableProject
+    >
   </PropertyGroup>
 
   <PropertyGroup Label="Documentation Warnings">

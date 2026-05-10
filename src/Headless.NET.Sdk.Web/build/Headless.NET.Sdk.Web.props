@@ -2,6 +2,9 @@
   <PropertyGroup>
     <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk.Web</HeadlessSdkName>
     <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Web</HeadlessSdkProjectType>
+    <_HeadlessSdkDefaultIsPackable Condition="'$(_HeadlessSdkDefaultIsPackable)' == ''"
+      >false</_HeadlessSdkDefaultIsPackable
+    >
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)Headless.NET.Sdk.props" />

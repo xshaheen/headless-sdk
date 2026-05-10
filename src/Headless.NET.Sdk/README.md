@@ -145,6 +145,8 @@ Many values apply only when the consuming project has not already set the proper
 | `EnablePackageValidation` | `true` | Checks packages for breaking API changes. |
 | `MSBuildTreatWarningsAsErrors` | `true` on CI or Release | Promotes MSBuild warnings to errors. |
 | `RollForward` | `LatestMajor` for non-test apps | Allows apps to run on newer installed runtime majors. |
+| `IsPackable` | Matches the selected SDK | Defaults to `true` for `Headless.NET.Sdk`, Razor, and Windows Desktop; `false` for Web and Blazor WebAssembly. Test projects force `false`. |
+| `HeadlessSuppressNonPackablePackWarning` | `true` | Suppresses NuGet's non-packable project warning when `IsPackable=false`, keeping solution-level `dotnet pack` CI-safe. |
 | `PackAsTool` | `true` for non-test, non-Web executables | Packages executable projects as .NET tools by default. |
 
 ### Analysis And API Hygiene
@@ -190,7 +192,7 @@ Name-based inference (`MyApp.Tests`, `.UnitTests`, etc.) is intentionally not su
 | `IsTestableProject` | `false` (set to `true` by `Headless.NET.Sdk.Test` or by the consumer) | Marks projects that should receive test defaults. |
 | `IsTestProject` | `false` (set to `true` for testable projects via `Headless.NET.Sdk.Test`) | Marks the project for test tooling. |
 | `IsPublishable` | `false` for test projects | Prevents publishing test projects. |
-| `IsPackable` | `false` for test projects | Prevents packing test projects. |
+| `IsPackable` | `false` for test projects | Prevents packing test projects and suppresses the non-packable pack warning so solution-level `dotnet pack` remains CI-safe. |
 | `EnableCodeCoverage` | `true` on CI | Enables coverage collection. |
 | `OptimizeVsTestRun` | `true` | Disables analyzers during `dotnet test`. Set `false` to keep analyzers enabled. |
 | `UseMicrosoftTestingPlatform` | Auto | Uses MTP when `xunit.v3.mtp-v2` or `TUnit` is referenced. Force with `true` or `false`. |

@@ -2,6 +2,9 @@
   <PropertyGroup>
     <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk.Razor</HeadlessSdkName>
     <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Razor</HeadlessSdkProjectType>
+    <_HeadlessSdkDefaultIsPackable Condition="'$(_HeadlessSdkDefaultIsPackable)' == ''"
+      >true</_HeadlessSdkDefaultIsPackable
+    >
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)Headless.NET.Sdk.props" />

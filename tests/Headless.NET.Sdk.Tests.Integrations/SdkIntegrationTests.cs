@@ -403,6 +403,7 @@ class Foo { }
         Assert.Equal("true", properties["PackAsTool"]);
         Assert.Equal("Headless.NET.Sdk", properties["HeadlessSdkName"]);
         Assert.Equal("Default", properties["HeadlessSdkProjectType"]);
+        Assert.Equal("true", properties["IsPackable"]);
     }
 
     [Fact]
@@ -523,11 +524,11 @@ public static class JsonConsumer
     }
 
     [Theory]
-    [InlineData("Headless.NET.Sdk.Web", "Web")]
-    [InlineData("Headless.NET.Sdk.Razor", "Razor")]
-    [InlineData("Headless.NET.Sdk.BlazorWebAssembly", "BlazorWebAssembly")]
-    [InlineData("Headless.NET.Sdk.WindowsDesktop", "WindowsDesktop")]
-    public async Task MsBuildPropertiesUseProjectTypeSdk(string sdkName, string projectType)
+    [InlineData("Headless.NET.Sdk.Web", "Web", "false")]
+    [InlineData("Headless.NET.Sdk.Razor", "Razor", "true")]
+    [InlineData("Headless.NET.Sdk.BlazorWebAssembly", "BlazorWebAssembly", "false")]
+    [InlineData("Headless.NET.Sdk.WindowsDesktop", "WindowsDesktop", "true")]
+    public async Task MsBuildPropertiesUseProjectTypeSdk(string sdkName, string projectType, string isPackable)
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -541,6 +542,47 @@ public static class JsonConsumer
         Assert.Equal(sdkName, properties["HeadlessSdkName"]);
         Assert.Equal(projectType, properties["HeadlessSdkProjectType"]);
         Assert.Equal("false", properties["IsTestableProject"]);
+        Assert.Equal(isPackable, properties["IsPackable"]);
+    }
+
+    [Theory]
+    [InlineData("Headless.NET.Sdk.Web")]
+    [InlineData("Headless.NET.Sdk.BlazorWebAssembly")]
+    public async Task MsBuildPropertiesPreserveExplicitPackableOverrideForProjectTypeSdk(string sdkName)
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"{sdkName}/{fixture.PackageVersion}",
+            includePackageReference: false,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal) { ["IsPackable"] = "true" }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("true", properties["IsPackable"]);
+    }
+
+    [Theory]
+    [InlineData("Headless.NET.Sdk.Web")]
+    [InlineData("Headless.NET.Sdk.BlazorWebAssembly")]
+    [InlineData("Headless.NET.Sdk.Test")]
+    public async Task PackSkipsDefaultNonPackableProjectTypeSdkWhenWarningsAreErrors(string sdkName)
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"{sdkName}/{fixture.PackageVersion}",
+            includePackageReference: false
+        );
+        Directory.CreateDirectory(project.PackagesDirectory);
+
+        var result = await project.RunDotNetAsync(
+            $"pack {Quote(project.ProjectFilePath)} -c Release -o {Quote(project.PackagesDirectory)} -p:MSBuildTreatWarningsAsErrors=true -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.Empty(Directory.EnumerateFiles(project.PackagesDirectory, "*.nupkg", SearchOption.TopDirectoryOnly));
     }
 
     [Fact]
@@ -774,7 +816,8 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
         foreach (var packageId in packageIds)
         {
             var projectPath = Path.Combine(repositoryRoot, "src", packageId, $"{packageId}.csproj");
-            var command = $"pack {Quote(projectPath)} -c Debug -o {Quote(PackageSourceDirectory)}";
+            var command =
+                $"pack {Quote(projectPath)} -c Debug -o {Quote(PackageSourceDirectory)} -p:RestorePackagesWithLockFile=false -p:RestoreLockedMode=false";
             var result = await DotNetCommand.RunAsync(repositoryRoot, command, env);
 
             if (result.ExitCode != 0)
