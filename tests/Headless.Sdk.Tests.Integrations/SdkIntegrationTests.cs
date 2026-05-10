@@ -5,10 +5,13 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Xunit;
+using StructuredLoggerSerialization = Microsoft.Build.Logging.StructuredLogger.Serialization;
 
 #nullable enable
 
@@ -181,6 +184,10 @@ indent_size = 2
         Assert.Contains("DisableSponsorLink", analyzerHygiene, StringComparison.Ordinal);
         Assert.Contains("Disable_SponsorLink", analyzerHygiene, StringComparison.Ordinal);
 
+        var analyzerEditorConfigs = ReadPackageEntry(package, "build/SupportAnalyzerEditorConfigs.props");
+        Assert.Contains("Headless.Sdk.Analyzers.editorconfig", analyzerEditorConfigs, StringComparison.Ordinal);
+        Assert.NotNull(package.GetEntry("configurations/Headless.Sdk.Analyzers.editorconfig"));
+
         var testTargets = ReadPackageEntry(package, "build/SupportTestProjects.targets");
         Assert.Contains("configurations/default.runsettings", testTargets, StringComparison.Ordinal);
 
@@ -256,6 +263,36 @@ indent_size = 2
     }
 
     [Fact]
+    public void PackedBuildAssetsOnlyUseImplicitPackageReferences()
+    {
+        var packageIds = new[]
+        {
+            "Headless.Sdk",
+            "Headless.Sdk.Web",
+            "Headless.Sdk.Test",
+            "Headless.Sdk.Razor",
+            "Headless.Sdk.BlazorWebAssembly",
+            "Headless.Sdk.WindowsDesktop",
+        };
+
+        foreach (var packageId in packageIds)
+        {
+            using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
+
+            foreach (var entry in package.Entries.Where(IsBuildAsset))
+            {
+                using var stream = entry.Open();
+                var document = XDocument.Load(stream);
+
+                foreach (var packageReference in document.Descendants("PackageReference"))
+                {
+                    Assert.Equal("true", packageReference.Attribute("IsImplicitlyDefined")?.Value);
+                }
+            }
+        }
+    }
+
+    [Fact]
     public async Task PackageReferenceRestoreIncludesImplicitAnalyzerPackages()
     {
         await using var project = await ConsumerProject.CreateAsync(
@@ -276,6 +313,35 @@ indent_size = 2
         Assert.Contains("Meziantou.Analyzer.dll", assets, StringComparison.Ordinal);
         Assert.Contains("Microsoft.CodeAnalysis.BannedApiAnalyzers.dll", assets, StringComparison.Ordinal);
         Assert.Contains("AsyncFixer.dll", assets, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task BuildImportsBundledAnalyzerEditorConfig()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            outputType: "Exe",
+            additionalFiles: new Dictionary<string, string>
+            {
+                ["Sample.cs"] = """
+Console.WriteLine();
+
+class Foo { }
+""",
+            }
+        );
+
+        var result = await project.BuildAndCollectDiagnosticsAsync(
+            $"-p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.Contains(
+            result.GetBinLogFiles(),
+            file => file.EndsWith("Headless.Sdk.Analyzers.editorconfig", StringComparison.OrdinalIgnoreCase)
+        );
+        Assert.True(result.HasWarning("MA0047"), result.SarifSummary);
     }
 
     [Fact]
@@ -421,6 +487,40 @@ indent_size = 2
     }
 
     [Fact]
+    public async Task MsBuildPropertiesIncludeBundledAnalyzerEditorConfigByDefault()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Contains(
+            "Headless.Sdk.Analyzers.editorconfig",
+            properties["EditorConfigFiles"],
+            StringComparison.Ordinal
+        );
+    }
+
+    [Fact]
+    public async Task MsBuildPropertiesCanDisableBundledAnalyzerEditorConfig()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync("-p:DisableSupportAnalyzerEditorConfigs=true");
+
+        Assert.DoesNotContain(
+            "Headless.Sdk.Analyzers.editorconfig",
+            properties["EditorConfigFiles"],
+            StringComparison.Ordinal
+        );
+    }
+
+    [Fact]
     public async Task PackIncludesReadmeLicenseAndThirdPartyNotices()
     {
         await using var project = await ConsumerProject.CreateAsync(
@@ -465,6 +565,21 @@ indent_size = 2
         Assert.Equal("true", packageReference.Attribute("IsImplicitlyDefined")?.Value);
         Assert.Equal("all", packageReference.Element("PrivateAssets")?.Value);
         Assert.Contains("analyzers", packageReference.Element("IncludeAssets")?.Value, StringComparison.Ordinal);
+    }
+
+    private static bool IsBuildAsset(ZipArchiveEntry entry)
+    {
+        if (
+            !entry.FullName.EndsWith(".props", StringComparison.Ordinal)
+            && !entry.FullName.EndsWith(".targets", StringComparison.Ordinal)
+        )
+        {
+            return false;
+        }
+
+        return entry.FullName.StartsWith("build/", StringComparison.Ordinal)
+            || entry.FullName.StartsWith("buildMultiTargeting/", StringComparison.Ordinal)
+            || entry.FullName.StartsWith("buildTransitive/", StringComparison.Ordinal);
     }
 
     private static string ReadPackageEntry(ZipArchive package, string entryName)
@@ -641,6 +756,10 @@ internal sealed class ConsumerProject : IAsyncDisposable
 
     public string CSharpierIgnorePath => Path.Combine(RootDirectory, ".csharpierignore");
 
+    public string BinLogPath => Path.Combine(RootDirectory, "msbuild.binlog");
+
+    public string BuildOutputSarifPath => Path.Combine(RootDirectory, "BuildOutput.sarif");
+
     public string GitAttributesPath => Path.Combine(RootDirectory, ".gitattributes");
 
     public string GitIgnorePath => Path.Combine(RootDirectory, ".gitignore");
@@ -732,6 +851,28 @@ public sealed class Class1;
 
     public Task<DotNetCommandResult> RunDotNetAsync(string arguments) =>
         DotNetCommand.RunAsync(RootDirectory, arguments, environment);
+
+    public async Task<BuildDiagnosticsResult> BuildAndCollectDiagnosticsAsync(string additionalArguments = "")
+    {
+        if (File.Exists(BinLogPath))
+        {
+            File.Delete(BinLogPath);
+        }
+
+        if (File.Exists(BuildOutputSarifPath))
+        {
+            File.Delete(BuildOutputSarifPath);
+        }
+
+        var argumentsSuffix = string.IsNullOrWhiteSpace(additionalArguments) ? string.Empty : $" {additionalArguments}";
+        var result = await RunDotNetAsync(
+            $"build {Quote(ProjectFilePath)}{argumentsSuffix} -p:ErrorLog={Quote($"{BuildOutputSarifPath},version=2.1")} /bl:{Quote(BinLogPath)}"
+        );
+        var binLogContent = File.Exists(BinLogPath) ? await File.ReadAllBytesAsync(BinLogPath) : [];
+        var sarif = await SarifFile.LoadAsync(BuildOutputSarifPath);
+
+        return new BuildDiagnosticsResult(result.ExitCode, result.Output, binLogContent, sarif);
+    }
 
     public async Task<Dictionary<string, string>> EvaluateHeadlessPropertiesAsync(string additionalArguments = "")
     {
@@ -857,7 +998,7 @@ public sealed class Class1;
 
               <Target Name="WriteHeadlessProperties">
                 <PropertyGroup>
-                  <_HeadlessEvaluatedEditorConfigFiles>@(EditorConfigFiles)</_HeadlessEvaluatedEditorConfigFiles>
+                  <_HeadlessEvaluatedEditorConfigFiles>@(EditorConfigFiles, '|')</_HeadlessEvaluatedEditorConfigFiles>
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
@@ -870,6 +1011,91 @@ public sealed class Class1;
     }
 
     private static string Quote(string value) => $"\"{value}\"";
+}
+
+internal sealed record BuildDiagnosticsResult(int ExitCode, string Output, byte[] BinLogContent, SarifFile Sarif)
+{
+    public string SarifSummary =>
+        string.Join(Environment.NewLine, Sarif.AllResults().Select(result => result.ToString()));
+
+    public bool HasWarning(string ruleId) =>
+        Sarif
+            .AllResults()
+            .Any(result =>
+                string.Equals(result.Level, "warning", StringComparison.Ordinal)
+                && string.Equals(result.RuleId, ruleId, StringComparison.OrdinalIgnoreCase)
+            );
+
+    public IReadOnlyCollection<string> GetBinLogFiles()
+    {
+        if (BinLogContent.Length == 0)
+        {
+            return [];
+        }
+
+        using var stream = new MemoryStream(BinLogContent);
+        var build = StructuredLoggerSerialization.ReadBinLog(stream);
+
+        return build.SourceFiles.Select(file => file.FullPath).ToArray();
+    }
+}
+
+internal sealed class SarifFile
+{
+    [JsonPropertyName("runs")]
+    public SarifRun[] Runs { get; init; } = [];
+
+    public static async Task<SarifFile> LoadAsync(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return new SarifFile();
+        }
+
+        await using var stream = File.OpenRead(path);
+        return await JsonSerializer.DeserializeAsync<SarifFile>(stream) ?? new SarifFile();
+    }
+
+    public IEnumerable<SarifResult> AllResults() => Runs.SelectMany(run => run.Results);
+}
+
+internal sealed class SarifRun
+{
+    [JsonPropertyName("results")]
+    public SarifResult[] Results { get; init; } = [];
+}
+
+internal sealed class SarifResult
+{
+    [JsonPropertyName("level")]
+    public string? Level { get; init; }
+
+    [JsonPropertyName("message")]
+    public JsonElement Message { get; init; }
+
+    [JsonPropertyName("ruleId")]
+    public string? RuleId { get; init; }
+
+    public override string ToString() => $"{Level}: {RuleId}: {GetMessageText()}";
+
+    private string? GetMessageText()
+    {
+        if (Message.ValueKind == JsonValueKind.String)
+        {
+            return Message.GetString();
+        }
+
+        if (
+            Message.ValueKind == JsonValueKind.Object
+            && Message.TryGetProperty("text", out var text)
+            && text.ValueKind == JsonValueKind.String
+        )
+        {
+            return text.GetString();
+        }
+
+        return Message.ValueKind == JsonValueKind.Undefined ? null : Message.ToString();
+    }
 }
 
 internal static class DotNetCommand

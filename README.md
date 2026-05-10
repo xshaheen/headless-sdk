@@ -274,6 +274,7 @@ Use these when a consumer needs to remove a whole feature area.
 | --- | --- |
 | `DisableSupportPackageInformation` | Skips package metadata defaults. |
 | `DisableSupportImplicitAnalyzers` | Skips implicit analyzer package references. |
+| `DisableSupportAnalyzerEditorConfigs` | Skips bundled analyzer editorconfig imports. |
 | `DisableImplicitAnalyzers` | Keeps the import but skips analyzer references. |
 | `DisableSupportBannedSymbols` | Skips banned-symbol additional files. |
 | `DisableSupportWebContainer` | Skips GitHub Actions web container defaults. |

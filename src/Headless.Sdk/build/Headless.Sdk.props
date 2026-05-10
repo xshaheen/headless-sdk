@@ -34,4 +34,8 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
     Project="$(MSBuildThisFileDirectory)SupportImplicitAnalyzers.props"
     Condition=" '$(DisableSupportImplicitAnalyzers)' != 'true' "
   />
+  <Import
+    Project="$(MSBuildThisFileDirectory)SupportAnalyzerEditorConfigs.props"
+    Condition=" '$(DisableSupportAnalyzerEditorConfigs)' != 'true' "
+  />
 </Project>
