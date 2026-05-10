@@ -201,6 +201,50 @@ indent_size = 2
     }
 
     [Fact]
+    public void PackedPackageFlowsImplicitAnalyzersAsTransitiveDependencies()
+    {
+        // PackageReference consumers receive the implicit analyzers via transitive nuspec deps,
+        // not via SupportImplicitAnalyzers.props -- props in build/ are imported during MSBuild
+        // evaluation, AFTER NuGet restore has resolved the package graph. The analyzers must
+        // therefore appear in the SDK's nuspec as <dependency> entries, with include="all" so
+        // analyzer assets flow into the consumer's compile context. DevelopmentDependency=true on
+        // the SDK itself prevents two-hop leakage (a consumer's nupkg won't list Headless.NET.Sdk
+        // as a dep, so the analyzers don't reach grandparent consumers). Removing the
+        // <PackageReference Update=... PrivateAssets="none" IncludeAssets="all"> block in
+        // Headless.NET.Sdk.csproj would break analyzer delivery on the PackageReference path.
+        var implicitAnalyzerIds = new[]
+        {
+            "Meziantou.Analyzer",
+            "Microsoft.CodeAnalysis.BannedApiAnalyzers",
+            "AsyncFixer",
+            "Asyncify",
+            "Microsoft.VisualStudio.Threading.Analyzers",
+            "SmartAnalyzers.MultithreadingAnalyzer",
+            "Roslynator.Analyzers",
+            "ReflectionAnalyzers",
+            "ErrorProne.NET.CoreAnalyzers",
+        };
+
+        using var package = ZipFile.OpenRead(fixture.PackagePath);
+        var nuspec = ReadPackageEntry(package, "Headless.NET.Sdk.nuspec");
+        var dependencies = XDocument
+            .Parse(nuspec)
+            .Descendants()
+            .Where(element => string.Equals(element.Name.LocalName, "dependency", StringComparison.Ordinal))
+            .ToDictionary(
+                element => element.Attribute("id")?.Value ?? string.Empty,
+                element => element,
+                StringComparer.Ordinal
+            );
+
+        foreach (var id in implicitAnalyzerIds)
+        {
+            Assert.True(dependencies.TryGetValue(id, out var dependency), $"Missing transitive dependency: {id}.");
+            Assert.Equal("All", dependency.Attribute("include")?.Value);
+        }
+    }
+
+    [Fact]
     public void PackedPackageContainsSingleFileTargetFrameworkAndSdkMetadataSupport()
     {
         using var package = ZipFile.OpenRead(fixture.PackagePath);
