@@ -1,0 +1,25 @@
+<Project>
+  <PropertyGroup>
+    <_HeadlessSupportTargetFrameworkInferenceImported>true</_HeadlessSupportTargetFrameworkInferenceImported>
+    <_HeadlessDefaultNetCoreAppVersion Condition="'$(_HeadlessDefaultNetCoreAppVersion)' == ''"
+      >$(NETCoreAppMaximumVersion)</_HeadlessDefaultNetCoreAppVersion
+    >
+    <_HeadlessDefaultNetCoreAppVersion
+      Condition="'$(_HeadlessDefaultNetCoreAppVersion)' == '' and '$(NETCoreSdkVersion)' != ''"
+      >$([System.Text.RegularExpressions.Regex]::Replace('$(NETCoreSdkVersion)', '^(\d+)\.(\d+).*$', '$1.$2'))</_HeadlessDefaultNetCoreAppVersion
+    >
+    <!--
+      Inferred only when neither $(TargetFramework) nor $(TargetFrameworks) is set on the
+      evaluated property graph. The previous regex over the raw csproj text matched values inside
+      XML comments and conditional declarations; MSBuild's own evaluation already accounts for
+      those, so the regex was both fragile and redundant.
+    -->
+    <TargetFramework
+      Condition="'$(HeadlessInferTargetFramework)' == 'true'
+        and '$(TargetFramework)' == ''
+        and '$(TargetFrameworks)' == ''
+        and '$(_HeadlessDefaultNetCoreAppVersion)' != ''"
+      >net$(_HeadlessDefaultNetCoreAppVersion)</TargetFramework
+    >
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <HeadlessSdkName>Headless.NET.Sdk.Test</HeadlessSdkName>
+    <HeadlessSdkProjectType>Test</HeadlessSdkProjectType>
+  </PropertyGroup>
+
+  <Import Project="..\Headless.NET.Sdk\build\Headless.NET.Sdk.props" />
+  <Import Project="..\_shared\Satellite.props" />
+  <Import Project="..\Headless.NET.Sdk\build\Headless.NET.Sdk.targets" />
+</Project>

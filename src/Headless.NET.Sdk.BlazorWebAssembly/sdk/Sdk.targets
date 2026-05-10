@@ -1,0 +1,11 @@
+<Project>
+  <Import
+    Project="Sdk.targets"
+    Sdk="Microsoft.NET.Sdk.BlazorWebAssembly"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
+  />
+  <Import
+    Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.BlazorWebAssembly.targets"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true'"
+  />
+</Project>

@@ -1,0 +1,34 @@
+<Project>
+  <!--
+    Hook into MSBuild's Custom* extension points so build/Headless.NET.Sdk.props is loaded
+    BEFORE the consumer's Directory.Build.props, and build/Headless.NET.Sdk.targets BEFORE
+    Microsoft.NET.Sdk's targets. This only kicks in when consumed as an MSBuild SDK
+    (`<Project Sdk="Headless.NET.Sdk">`, global.json msbuild-sdks, or `#:sdk` directive on .NET 10+).
+    PackageReference consumption goes through NuGet's auto-import of build/*.props which runs
+    AFTER Directory.Build.props - that path is unaffected.
+  -->
+  <PropertyGroup>
+    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk</HeadlessSdkName>
+    <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Default</HeadlessSdkProjectType>
+    <_HeadlessMustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'"
+      >true</_HeadlessMustImportMicrosoftNETSdk
+    >
+    <_HeadlessDeferTargetFrameworkInference Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
+      >true</_HeadlessDeferTargetFrameworkInference
+    >
+
+    <CustomBeforeDirectoryBuildProps>$(CustomBeforeDirectoryBuildProps);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.props</CustomBeforeDirectoryBuildProps>
+    <BeforeMicrosoftNETSdkTargets>$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.targets</BeforeMicrosoftNETSdkTargets>
+  </PropertyGroup>
+
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)../build/SupportTargetFrameworkInference.props"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true' and '$(DisableSupportTargetFrameworkInference)' != 'true'"
+  />
+  <!-- Inner SDK case (parent project already imported Microsoft.NET.Sdk via <Sdk Name="Headless.NET.Sdk"...>) -->
+  <Import
+    Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.props"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true'"
+  />
+</Project>

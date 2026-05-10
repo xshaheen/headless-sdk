@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="$(MSBuildThisFileDirectory)\..\build\Headless.Defaults.props" />
-</Project>

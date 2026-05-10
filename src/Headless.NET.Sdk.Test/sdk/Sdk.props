@@ -1,0 +1,27 @@
+<Project>
+  <PropertyGroup>
+    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk.Test</HeadlessSdkName>
+    <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Test</HeadlessSdkProjectType>
+    <IsTestableProject Condition="'$(IsTestableProject)' == ''">true</IsTestableProject>
+    <IsTestProject Condition="'$(IsTestProject)' == ''">true</IsTestProject>
+    <_HeadlessMustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'"
+      >true</_HeadlessMustImportMicrosoftNETSdk
+    >
+    <_HeadlessDeferTargetFrameworkInference Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
+      >true</_HeadlessDeferTargetFrameworkInference
+    >
+
+    <CustomBeforeDirectoryBuildProps>$(CustomBeforeDirectoryBuildProps);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.Test.props</CustomBeforeDirectoryBuildProps>
+    <BeforeMicrosoftNETSdkTargets>$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.Test.targets</BeforeMicrosoftNETSdkTargets>
+  </PropertyGroup>
+
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)../build/SupportTargetFrameworkInference.props"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true' and '$(DisableSupportTargetFrameworkInference)' != 'true'"
+  />
+  <Import
+    Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.Test.props"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true'"
+  />
+</Project>

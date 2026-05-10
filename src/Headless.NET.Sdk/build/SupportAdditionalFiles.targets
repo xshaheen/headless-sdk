@@ -1,0 +1,64 @@
+<Project>
+  <PropertyGroup>
+    <HeadlessCopyDefaultConfigFilesToSolutionDir Condition="'$(HeadlessCopyDefaultConfigFilesToSolutionDir)' == ''"
+      >false</HeadlessCopyDefaultConfigFilesToSolutionDir
+    >
+    <HeadlessCopyEditorConfigToSolutionDir Condition="'$(HeadlessCopyEditorConfigToSolutionDir)' == ''"
+      >false</HeadlessCopyEditorConfigToSolutionDir
+    >
+    <HeadlessCopyCSharpierIgnoreToSolutionDir Condition="'$(HeadlessCopyCSharpierIgnoreToSolutionDir)' == ''"
+      >$(HeadlessCopyDefaultConfigFilesToSolutionDir)</HeadlessCopyCSharpierIgnoreToSolutionDir
+    >
+    <HeadlessCopyGitIgnoreToSolutionDir Condition="'$(HeadlessCopyGitIgnoreToSolutionDir)' == ''"
+      >$(HeadlessCopyDefaultConfigFilesToSolutionDir)</HeadlessCopyGitIgnoreToSolutionDir
+    >
+    <HeadlessCopyGitAttributesToSolutionDir Condition="'$(HeadlessCopyGitAttributesToSolutionDir)' == ''"
+      >$(HeadlessCopyDefaultConfigFilesToSolutionDir)</HeadlessCopyGitAttributesToSolutionDir
+    >
+  </PropertyGroup>
+
+  <Target
+    Condition="('$(HeadlessCopyDefaultConfigFilesToSolutionDir)' == 'true'
+      or '$(HeadlessCopyEditorConfigToSolutionDir)' == 'true'
+      or '$(HeadlessCopyCSharpierIgnoreToSolutionDir)' == 'true'
+      or '$(HeadlessCopyGitIgnoreToSolutionDir)' == 'true'
+      or '$(HeadlessCopyGitAttributesToSolutionDir)' == 'true')
+      and '$(SolutionDir)' != ''
+      and '$(SolutionDir)' != '*Undefined*'"
+    Name="UpdateHeadlessConfigFiles"
+    BeforeTargets="Build"
+  >
+    <ItemGroup>
+      <_HeadlessConfigFile
+        Include="$(MSBuildThisFileDirectory)../configurations/editorconfig.txt"
+        Condition="'$(HeadlessCopyDefaultConfigFilesToSolutionDir)' == 'true' or '$(HeadlessCopyEditorConfigToSolutionDir)' == 'true'"
+      >
+        <DestinationFile>.editorconfig</DestinationFile>
+      </_HeadlessConfigFile>
+      <_HeadlessConfigFile
+        Include="$(MSBuildThisFileDirectory)../configurations/template.csharpierignore"
+        Condition="'$(HeadlessCopyCSharpierIgnoreToSolutionDir)' == 'true'"
+      >
+        <DestinationFile>.csharpierignore</DestinationFile>
+      </_HeadlessConfigFile>
+      <_HeadlessConfigFile
+        Include="$(MSBuildThisFileDirectory)../configurations/template.gitignore"
+        Condition="'$(HeadlessCopyGitIgnoreToSolutionDir)' == 'true'"
+      >
+        <DestinationFile>.gitignore</DestinationFile>
+      </_HeadlessConfigFile>
+      <_HeadlessConfigFile
+        Include="$(MSBuildThisFileDirectory)../configurations/template.gitattributes"
+        Condition="'$(HeadlessCopyGitAttributesToSolutionDir)' == 'true'"
+      >
+        <DestinationFile>.gitattributes</DestinationFile>
+      </_HeadlessConfigFile>
+    </ItemGroup>
+
+    <Copy
+      SourceFiles="@(_HeadlessConfigFile)"
+      DestinationFiles="@(_HeadlessConfigFile->'$(SolutionDir)%(DestinationFile)')"
+      SkipUnchangedFiles="true"
+    />
+  </Target>
+</Project>

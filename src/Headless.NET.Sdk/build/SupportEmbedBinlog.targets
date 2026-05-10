@@ -1,0 +1,50 @@
+<Project>
+  <!--
+    Embed extra context in the .binlog so post-mortem CI debugging has everything in one file:
+      - Banned-symbols .txt files we shipped
+      - All EditorConfig files contributing to the build
+      - GitHub Actions environment variables (when running in GHA)
+
+    EmbedInBinlog is a no-op outside of `-bl` / `/bl` builds, so this is free at runtime.
+  -->
+
+  <Target Name="HeadlessEmbedBannedSymbolsInBinLog" AfterTargets="CoreCompile">
+    <ItemGroup>
+      <EmbedInBinlog
+        Include="@(AdditionalFiles)"
+        Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Filename)%(Extension)', '^BannedSymbols(\..+)?\.txt$'))"
+      />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="HeadlessEmbedEditorConfigInBinLog" AfterTargets="CoreCompile">
+    <ItemGroup>
+      <EmbedInBinlog Include="@(EditorConfigFiles)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Surface GitHub Actions context inside the binlog as MSBuild properties. -->
+  <Target
+    Name="HeadlessEmbedGitHubActionsEnvironmentVariablesInBinLog"
+    AfterTargets="CoreCompile"
+    Condition="'$(GITHUB_ACTIONS)' == 'true'"
+  >
+    <PropertyGroup>
+      <_GitHubJobId>$(GITHUB_JOB)</_GitHubJobId>
+      <_GitHubWorkflow>$(GITHUB_WORKFLOW)</_GitHubWorkflow>
+      <_GitHubAction>$(GITHUB_ACTION)</_GitHubAction>
+      <_GitHubRunId>$(GITHUB_RUN_ID)</_GitHubRunId>
+      <_GitHubRunNumber>$(GITHUB_RUN_NUMBER)</_GitHubRunNumber>
+      <_GitHubRunAttempt>$(GITHUB_RUN_ATTEMPT)</_GitHubRunAttempt>
+      <_GitHubRepository>$(GITHUB_REPOSITORY)</_GitHubRepository>
+      <_GitHubRepositoryOwner>$(GITHUB_REPOSITORY_OWNER)</_GitHubRepositoryOwner>
+      <_GitHubRef>$(GITHUB_REF)</_GitHubRef>
+      <_GitHubRefName>$(GITHUB_REF_NAME)</_GitHubRefName>
+      <_GitHubSha>$(GITHUB_SHA)</_GitHubSha>
+      <_GitHubActor>$(GITHUB_ACTOR)</_GitHubActor>
+      <_RunnerName>$(RUNNER_NAME)</_RunnerName>
+      <_RunnerOs>$(RUNNER_OS)</_RunnerOs>
+      <_RunnerArch>$(RUNNER_ARCH)</_RunnerArch>
+    </PropertyGroup>
+  </Target>
+</Project>

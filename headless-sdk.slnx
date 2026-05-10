@@ -1,0 +1,20 @@
+<Solution>
+    <Folder Name="/Solution Items/">
+        <File Path=".editorconfig" />
+        <File Path=".gitattributes" />
+        <File Path=".gitignore" />
+        <File Path="Directory.Build.props" />
+        <File Path="Directory.Build.targets" />
+        <File Path="Directory.Packages.props" />
+        <File Path="Directory.Solution.props" />
+        <File Path="nuget.config" />
+        <File Path="README.md" />
+    </Folder>
+    <Project Path="src\Headless.NET.Sdk.BlazorWebAssembly\Headless.NET.Sdk.BlazorWebAssembly.csproj" />
+    <Project Path="src\Headless.NET.Sdk.Razor\Headless.NET.Sdk.Razor.csproj" />
+    <Project Path="src\Headless.NET.Sdk.Test\Headless.NET.Sdk.Test.csproj" />
+    <Project Path="src\Headless.NET.Sdk.Web\Headless.NET.Sdk.Web.csproj" />
+    <Project Path="src\Headless.NET.Sdk.WindowsDesktop\Headless.NET.Sdk.WindowsDesktop.csproj" />
+    <Project Path="src\Headless.NET.Sdk\Headless.NET.Sdk.csproj" />
+    <Project Path="tests\Headless.NET.Sdk.Tests.Integrations\Headless.NET.Sdk.Tests.Integrations.csproj" />
+</Solution>

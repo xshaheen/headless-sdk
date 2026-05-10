@@ -1,0 +1,11 @@
+<Project>
+  <!--
+    Extra global usings beyond the standard ImplicitUsings set. <Using> items only take effect
+    when ImplicitUsings is enabled, so MSBuild itself handles the conditionality. The TFM gates
+    keep us from injecting types that don't exist on older targets.
+  -->
+  <ItemGroup>
+    <Using Include="System.Diagnostics.CodeAnalysis" />
+    <Using Include="System.Globalization" />
+  </ItemGroup>
+</Project>

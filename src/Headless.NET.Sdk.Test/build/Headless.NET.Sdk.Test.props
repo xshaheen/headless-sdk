@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk.Test</HeadlessSdkName>
+    <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Test</HeadlessSdkProjectType>
+    <IsTestableProject Condition="'$(IsTestableProject)' == ''">true</IsTestableProject>
+    <IsTestProject Condition="'$(IsTestProject)' == ''">true</IsTestProject>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)Headless.NET.Sdk.props" />
+</Project>

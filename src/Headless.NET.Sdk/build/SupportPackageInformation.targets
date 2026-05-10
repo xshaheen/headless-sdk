@@ -1,0 +1,160 @@
+<Project TreatAsLocalProperty="_LicensePath;_PackageReadmeFilePath;_PackageThirdPartyNoticesPath;_SolutionLicense;_ProjectReadme;_SolutionReadme">
+  <PropertyGroup Label="Package Information" Condition=" '$(IsTestableProject)' != 'true' ">
+    <PackageId Condition=" '$(PackageId)' == '' ">$(MSBuildProjectName)</PackageId>
+    <Title Condition=" '$(Title)' == '' ">$(MSBuildProjectName)</Title>
+
+    <!--
+      Authors / Company are intentionally not defaulted here. Microsoft.NET.Sdk falls back to
+      $(AssemblyName); consumers should set their own. The Headless author's repo sets these
+      in its own Directory.Build.props (which does not ship) so the SDK's own packages keep
+      attribution without leaking the SDK author's name into consumer-built packages.
+    -->
+
+    <!-- Optional: Declare that the Repository URL can be published to NuSpec -->
+    <PublishRepositoryUrl Condition=" '$(PublishRepositoryUrl)' == '' ">true</PublishRepositoryUrl>
+    <RepositoryType Condition=" '$(RepositoryType)' == '' ">git</RepositoryType>
+    <!-- Optional (set by default in .NET SDK 8+): Embed source files that are not tracked by the source control manager in the PDB -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <!--  Ensures that debugging symbols `.pdb` are generated -->
+    <IncludeSymbols Condition=" '$(IncludeSymbols)' == '' ">true</IncludeSymbols>
+    <!-- Specifies that the symbol package should be generated in the `.snupkg` format instead of the legacy `.nupkg` -->
+    <SymbolPackageFormat Condition=" '$(SymbolPackageFormat)' == '' ">snupkg</SymbolPackageFormat>
+    <!-- Readme -->
+    <_PackageReadmeFilePath
+      Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/README.md')"
+      >$(MSBuildProjectDirectory)/README.md</_PackageReadmeFilePath
+    >
+    <_PackageReadmeFilePath
+      Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/readme.md')"
+      >$(MSBuildProjectDirectory)/readme.md</_PackageReadmeFilePath
+    >
+    <_PackageReadmeFilePath
+      Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/Readme.md')"
+      >$(MSBuildProjectDirectory)/Readme.md</_PackageReadmeFilePath
+    >
+    <_PackageReadmeFilePath
+      Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/ReadMe.md')"
+      >$(MSBuildProjectDirectory)/ReadMe.md</_PackageReadmeFilePath
+    >
+    <_PackageReadmeFilePath
+      Condition="'$(_PackageReadmeFilePath)' == '' and '$(SearchReadmeFileAbove)' == 'true' and Exists($([MSBuild]::GetPathOfFileAbove('README.md', '$(MSBuildProjectDirectory)')))"
+      >$([MSBuild]::GetPathOfFileAbove('README.md', '$(MSBuildProjectDirectory)'))</_PackageReadmeFilePath
+    >
+    <_PackageReadmeFilePath
+      Condition="'$(_PackageReadmeFilePath)' == '' and '$(SearchReadmeFileAbove)' == 'true' and Exists($([MSBuild]::GetPathOfFileAbove('readme.md', '$(MSBuildProjectDirectory)')))"
+      >$([MSBuild]::GetPathOfFileAbove('readme.md', '$(MSBuildProjectDirectory)'))</_PackageReadmeFilePath
+    >
+    <_PackageReadmeFilePath
+      Condition="'$(_PackageReadmeFilePath)' == '' and '$(SearchReadmeFileAbove)' == 'true' and Exists($([MSBuild]::GetPathOfFileAbove('Readme.md', '$(MSBuildProjectDirectory)')))"
+      >$([MSBuild]::GetPathOfFileAbove('Readme.md', '$(MSBuildProjectDirectory)'))</_PackageReadmeFilePath
+    >
+    <_PackageReadmeFilePath
+      Condition="'$(_PackageReadmeFilePath)' == '' and '$(SearchReadmeFileAbove)' == 'true' and Exists($([MSBuild]::GetPathOfFileAbove('ReadMe.md', '$(MSBuildProjectDirectory)')))"
+      >$([MSBuild]::GetPathOfFileAbove('ReadMe.md', '$(MSBuildProjectDirectory)'))</_PackageReadmeFilePath
+    >
+    <PackageReadmeFile
+      Condition="'$(DisableReadme)' != 'true' and '$(PackageReadmeFile)' == '' and '$(_PackageReadmeFilePath)' != ''"
+      >README.md</PackageReadmeFile
+    >
+
+    <!-- Logo -->
+    <PackageIcon
+      Condition="'$(DisablePackageLogo)' != 'true'
+        and '$(PackageIcon)' == ''
+        and (Exists('$(ProjectDir)logo.png') or Exists('$(SolutionDir)logo.png'))"
+      >logo.png</PackageIcon
+    >
+  </PropertyGroup>
+
+  <ItemGroup Label="Package Files" Condition=" '$(IsTestableProject)' != 'true' ">
+    <!-- License -->
+    <_SolutionLicense Include="LICENSE" Condition="Exists('LICENSE')" />
+    <_SolutionLicense Include="LICENSE.txt" Condition="@(_SolutionLicense) == '' and Exists('LICENSE.txt')" />
+    <_SolutionLicense
+      Include="$(SolutionDir)LICENSE"
+      Condition="@(_SolutionLicense) == '' and Exists('$(SolutionDir)LICENSE')"
+    />
+    <_SolutionLicense
+      Include="$(SolutionDir)LICENSE.txt"
+      Condition="@(_SolutionLicense) == '' and Exists('$(SolutionDir)LICENSE.txt')"
+    />
+    <_LicensePath
+      Include="$([MSBuild]::GetPathOfFileAbove('LICENSE'))"
+      Condition="@(_SolutionLicense) == '' and Exists($([MSBuild]::GetPathOfFileAbove('LICENSE')))"
+    />
+    <_LicensePath
+      Include="$([MSBuild]::GetPathOfFileAbove('LICENSE.txt'))"
+      Condition="@(_SolutionLicense) == '' and '@(_LicensePath)' == '' and Exists($([MSBuild]::GetPathOfFileAbove('LICENSE.txt')))"
+    />
+    <None
+      Include="@(_SolutionLicense)"
+      Pack="true"
+      PackagePath=""
+      Visible="false"
+      Condition="Exists(@(_SolutionLicense))"
+    />
+    <None Include="@(_LicensePath)" Pack="true" PackagePath="" Visible="false" Condition="Exists(@(_LicensePath))" />
+  </ItemGroup>
+
+  <Target
+    Name="HeadlessSetPackageLicenseFile"
+    BeforeTargets="GenerateNuspec"
+    Condition=" '$(IsTestableProject)' != 'true'
+      and '$(PackageLicenseExpression)' == ''
+      and '$(PackageLicenseFile)' == '' "
+  >
+    <PropertyGroup>
+      <PackageLicenseFile Condition=" '@(_SolutionLicense)' != '' "
+        >@(_SolutionLicense->'%(Filename)%(Extension)')</PackageLicenseFile
+      >
+      <PackageLicenseFile Condition=" '$(PackageLicenseFile)' == '' and '@(_LicensePath)' != '' "
+        >@(_LicensePath->'%(Filename)%(Extension)')</PackageLicenseFile
+      >
+    </PropertyGroup>
+  </Target>
+
+  <ItemGroup Label="Package Additional Files" Condition=" '$(IsTestableProject)' != 'true' ">
+    <!-- Readme -->
+    <None
+      Include="$(_PackageReadmeFilePath)"
+      Pack="true"
+      PackagePath="README.md"
+      Visible="true"
+      Condition="'$(DisableReadme)' != 'true' and '$(_PackageReadmeFilePath)' != ''"
+    />
+
+    <!-- Third-party notices -->
+    <_PackageThirdPartyNoticesPath
+      Include="$(MSBuildProjectDirectory)/THIRD-PARTY-NOTICES.TXT"
+      Condition="Exists('$(MSBuildProjectDirectory)/THIRD-PARTY-NOTICES.TXT')"
+    />
+    <None
+      Include="@(_PackageThirdPartyNoticesPath)"
+      Pack="true"
+      PackagePath=""
+      Visible="false"
+      Condition="Exists(@(_PackageThirdPartyNoticesPath))"
+    />
+
+    <!-- Logo -->
+    <_ProjectLogo Include="$(ProjectDir)logo.png" Condition="Exists('$(ProjectDir)logo.png')" />
+    <_SolutionLogo
+      Include="$(SolutionDir)logo.png"
+      Condition="@(_ProjectLogo) == '' and Exists('$(SolutionDir)logo.png')"
+    />
+    <None
+      Include="@(_ProjectLogo)"
+      Pack="true"
+      PackagePath=""
+      Visible="true"
+      Condition="'$(DisablePackageLogo)' != 'true' and Exists(@(_ProjectLogo))"
+    />
+    <None
+      Include="@(_SolutionLogo)"
+      Pack="true"
+      PackagePath=""
+      Visible="false"
+      Condition="'$(DisablePackageLogo)' != 'true' and !Exists(@(_ProjectLogo)) and Exists(@(_SolutionLogo))"
+    />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,54 @@
+<Project>
+  <ItemGroup Label="Test compability" Condition=" '$(IsTestableProject)' == 'false' ">
+    <InternalsVisibleTo Include="$(MSBuildProjectName).Tests.Architecture" />
+    <InternalsVisibleTo Include="$(MSBuildProjectName).Tests.Unit" />
+    <InternalsVisibleTo Include="$(MSBuildProjectName).Tests.Integration" />
+    <InternalsVisibleTo Include="$(MSBuildProjectName).Tests.Acceptance" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(IsTestableProject)' == 'false' ">
+    <IsPackable Condition=" '$(IsPackable)' == '' ">true</IsPackable>
+    <IsTestProject Condition=" '$(IsTestProject)' == '' ">false</IsTestProject>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Properties correction">
+    <!--
+      No name-based auto-classification. See SupportGeneral.props "Project Categorisation" for
+      rationale: test projects use Headless.NET.Sdk.Test or set IsTestableProject explicitly.
+    -->
+    <IsTestProject Condition=" '$(IsTestProject)' == '' ">false</IsTestProject>
+    <IsPackable Condition=" '$(IsPackable)' != 'true' or '$(IsTestProject)' == 'true' ">false</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Documentation Warnings">
+    <!--
+      Generate XML documentation files by default, but do not require every public API to be
+      documented unless the consuming project opts in with DisableDocumentationWarnings=false.
+    -->
+    <NoWarn Condition="'$(DisableDocumentationWarnings)' != 'false'">$(NoWarn);CS1573;CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!--
+    Allow apps to run on a newer major .NET runtime if their pinned major isn't installed.
+    Skipped for test projects (they should pin to the SDK they were built against) and libraries
+    (RollForward only applies to executables / shared frameworks).
+  -->
+  <PropertyGroup
+    Label="RollForward"
+    Condition=" '$(RollForward)' == '' and '$(IsTestProject)' != 'true' and '$(IsTestableProject)' != 'true' "
+  >
+    <RollForward>LatestMajor</RollForward>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Tool Packaging">
+    <PackAsTool
+      Condition=" '$(PackAsTool)' == ''
+        and '$(OutputType)' == 'Exe'
+        and '$(IsTestProject)' != 'true'
+        and '$(IsTestableProject)' != 'true'
+        and '$(UsingMicrosoftNETSdkWeb)' != 'true'
+        and '$(IsAspireHost)' != 'true' "
+      >true</PackAsTool
+    >
+  </PropertyGroup>
+</Project>

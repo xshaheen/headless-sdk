@@ -1,0 +1,11 @@
+<Project>
+  <Import
+    Project="Sdk.targets"
+    Sdk="Microsoft.NET.Sdk.Razor"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
+  />
+  <Import
+    Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.Razor.targets"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true'"
+  />
+</Project>

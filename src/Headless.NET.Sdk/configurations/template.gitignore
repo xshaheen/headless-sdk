@@ -1,0 +1,85 @@
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.bak
+*- [Bb]ackup.*
+*.userprefs
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+[Gg]enerated/
+_[Gg]enerated/
+artifacts/
+publish/
+
+# IDEs
+.vs/
+.sarif/
+**/.idea/
+Generated\ Files/
+
+# Test results and snapshots
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.received.*
+*.coverage
+*.coveragexml
+TestResult.xml
+nunit-*.xml
+
+# Diagnostics
+*.sarif
+*.log
+*.binlog
+
+# BenchmarkDotNet
+BenchmarkDotNet.Artifacts/
+
+# NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# ReSharper / Rider / dotCover
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+*.dotCover
+
+# NCrunch
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
+
+# Temporary files
+*.tmp
+*.tmp_proj
+*.cache
+*.pidb
+~$*
+*~
+
+# Publish profiles can contain secrets.
+*.pubxml
+*.publishproj
+PublishScripts/

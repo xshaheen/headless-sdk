@@ -1,0 +1,53 @@
+<!--
+***********************************************************************************************
+Headless.NET.Sdk.props
+
+WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+          created a backup copy.  Incorrect changes to this file will make it
+          impossible to load or build your projects from the command-line or the IDE.
+
+Copyright (c) Mahmoud Shaheen. All rights reserved.
+***********************************************************************************************
+-->
+<Project
+  xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+  Condition="'$(_HeadlessSdkBuildPropsImported)' != 'true'"
+>
+  <!-- .props files - Defines properties used during the build process. -->
+  <!--
+    Sentinel guard: when a project consumes this SDK as both <Project Sdk="Headless.NET.Sdk">
+    and <PackageReference Include="Headless.NET.Sdk">, NuGet's auto-import and the SDK's
+    CustomBeforeDirectoryBuildProps hook would each pull in this file, doubling all
+    PackageReference items and AdditionalFiles. This sentinel makes subsequent imports a no-op.
+  -->
+  <PropertyGroup>
+    <_HeadlessSdkBuildPropsImported>true</_HeadlessSdkBuildPropsImported>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)SupportDetectContinuousIntegration.props" />
+  <Import Project="$(MSBuildThisFileDirectory)SupportGeneral.props" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)SupportTargetFrameworkInference.props"
+    Condition=" '$(DisableSupportTargetFrameworkInference)' != 'true'
+      and '$(_HeadlessSupportTargetFrameworkInferenceImported)' != 'true'
+      and '$(_HeadlessDeferTargetFrameworkInference)' != 'true' "
+  />
+  <Import Project="$(MSBuildThisFileDirectory)RuntimeHostConfigurationOption.props" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)SupportSingleFileApp.props"
+    Condition=" '$(DisableSupportSingleFileApp)' != 'true' "
+  />
+  <Import
+    Project="$(MSBuildThisFileDirectory)SupportPackageInformation.props"
+    Condition=" '$(DisableSupportPackageInformation)' != 'true' "
+  />
+  <Import Project="$(MSBuildThisFileDirectory)GlobalUsing.props" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)SupportImplicitAnalyzers.props"
+    Condition=" '$(DisableSupportImplicitAnalyzers)' != 'true' "
+  />
+  <Import
+    Project="$(MSBuildThisFileDirectory)SupportAnalyzerEditorConfigs.props"
+    Condition=" '$(DisableSupportAnalyzerEditorConfigs)' != 'true' "
+  />
+</Project>

@@ -1,0 +1,62 @@
+<Project>
+  <!--
+    Implicit analyzer + banned-API references injected for every consuming project.
+    Opt out with DisableSupportImplicitAnalyzers=true (which also skips the import from
+    Headless.NET.Sdk.props); the inner gate here covers consumers who import this file directly.
+  -->
+  <ItemGroup Condition="'$(DisableSupportImplicitAnalyzers)' != 'true'">
+    <PackageReference
+      Include="Meziantou.Analyzer"
+      Version="3.0.75"
+      Condition="'$(PackageId)' != 'Meziantou.Analyzer'"
+      IsImplicitlyDefined="true"
+    >
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="4.14.0" IsImplicitlyDefined="true">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="AsyncFixer" Version="2.1.0" IsImplicitlyDefined="true">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="Asyncify" Version="0.9.7" IsImplicitlyDefined="true">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference
+      Include="Microsoft.VisualStudio.Threading.Analyzers"
+      Version="17.14.15"
+      IsImplicitlyDefined="true"
+    >
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="SmartAnalyzers.MultithreadingAnalyzer" Version="1.1.31" IsImplicitlyDefined="true">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="Roslynator.Analyzers" Version="4.15.0" IsImplicitlyDefined="true">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="ReflectionAnalyzers" Version="0.3.1" IsImplicitlyDefined="true">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="ErrorProne.NET.CoreAnalyzers" Version="0.1.2" IsImplicitlyDefined="true">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>
