@@ -816,8 +816,12 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
         foreach (var packageId in packageIds)
         {
             var projectPath = Path.Combine(repositoryRoot, "src", packageId, $"{packageId}.csproj");
+            var baseIntermediateOutputPath = EnsureTrailingDirectorySeparator(
+                Path.Combine(PackageRootDirectory, "obj", packageId)
+            );
+            var baseOutputPath = EnsureTrailingDirectorySeparator(Path.Combine(PackageRootDirectory, "bin", packageId));
             var command =
-                $"pack {Quote(projectPath)} -c Debug -o {Quote(PackageSourceDirectory)} -p:RestorePackagesWithLockFile=false -p:RestoreLockedMode=false";
+                $"pack {Quote(projectPath)} -c Debug -o {Quote(PackageSourceDirectory)} -p:BaseIntermediateOutputPath={Quote(baseIntermediateOutputPath)} -p:BaseOutputPath={Quote(baseOutputPath)} -p:RestorePackagesWithLockFile=false -p:RestoreLockedMode=false";
             var result = await DotNetCommand.RunAsync(repositoryRoot, command, env);
 
             if (result.ExitCode != 0)
@@ -855,6 +859,9 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
         var versionStart = packageId.Length + 1;
         return fileName.Length > versionStart && char.IsDigit(fileName[versionStart]);
     }
+
+    private static string EnsureTrailingDirectorySeparator(string path) =>
+        $"{Path.TrimEndingDirectorySeparator(path)}{Path.DirectorySeparatorChar}";
 
     public Task DisposeAsync()
     {
