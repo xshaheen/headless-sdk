@@ -894,6 +894,8 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
             Directory.CreateDirectory(value);
         }
 
+        DotNetCommandEnvironment.AddNeutralBuildEnvironment(env);
+
         return env;
     }
 
@@ -948,6 +950,8 @@ internal sealed class ConsumerProject : IAsyncDisposable
         {
             Directory.CreateDirectory(value);
         }
+
+        DotNetCommandEnvironment.AddNeutralBuildEnvironment(environment);
     }
 
     public string EditorConfigPath { get; }
@@ -1213,6 +1217,31 @@ public sealed class Class1;
     }
 
     private static string Quote(string value) => $"\"{value}\"";
+}
+
+internal static class DotNetCommandEnvironment
+{
+    public static void AddNeutralBuildEnvironment(IDictionary<string, string> environment)
+    {
+        // Workflow-level environment variables should not change default consumer-project behavior.
+        environment["CONFIGURATION"] = "Debug";
+        environment["CI"] = "false";
+        environment["TF_BUILD"] = "false";
+        environment["GITHUB_ACTIONS"] = "false";
+        environment["GITLAB_CI"] = "false";
+        environment["TEAMCITY_VERSION"] = string.Empty;
+        environment["BUILD_COMMAND"] = string.Empty;
+        environment["APPVEYOR"] = string.Empty;
+        environment["TRAVIS"] = "false";
+        environment["CIRCLECI"] = "false";
+        environment["CODEBUILD_BUILD_ID"] = string.Empty;
+        environment["AWS_REGION"] = string.Empty;
+        environment["JENKINS_URL"] = string.Empty;
+        environment["BUILD_ID"] = string.Empty;
+        environment["BUILD_URL"] = string.Empty;
+        environment["PROJECT_ID"] = string.Empty;
+        environment["JB_SPACE_API_URL"] = string.Empty;
+    }
 }
 
 internal sealed record BuildDiagnosticsResult(int ExitCode, string Output, byte[] BinLogContent, SarifFile Sarif)
