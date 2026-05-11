@@ -155,6 +155,28 @@ indent_size = 2
     }
 
     [Fact]
+    public void PackedPackageSuppressesBlockingAsyncWarningsForTestProjects()
+    {
+        using var package = ZipFile.OpenRead(fixture.PackagePath);
+        var content = ReadPackageEntry(package, "build/SupportGeneral.props");
+        var document = XDocument.Parse(content);
+        var testNoWarn = document
+            .Root!.Elements("PropertyGroup")
+            .Elements("NoWarn")
+            .Single(element =>
+                string.Equals(
+                    element.Attribute("Condition")?.Value,
+                    "'$(IsTestableProject)' == 'true'",
+                    StringComparison.Ordinal
+                )
+            )
+            .Value;
+
+        Assert.Contains("CA1849", testNoWarn, StringComparison.Ordinal);
+        Assert.Contains("MA0042", testNoWarn, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void PackedPackageContainsAnalyzerHygieneAndCoverageSettings()
     {
         using var package = ZipFile.OpenRead(fixture.PackagePath);

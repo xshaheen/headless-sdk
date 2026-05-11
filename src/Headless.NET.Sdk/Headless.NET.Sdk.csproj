@@ -12,6 +12,7 @@
     <IsBuildTaskProject>true</IsBuildTaskProject>
     <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -37,6 +38,7 @@
       PackagePath="buildTransitive/%(RecursiveDir)%(Filename)%(Extension)"
     />
     <None Include="configurations/**" Pack="true" PackagePath="configurations/" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="README.md" Visible="true" />
     <None Include="_._" Pack="true" PackagePath="lib\$(TargetFramework)" Visible="false" />
   </ItemGroup>
 

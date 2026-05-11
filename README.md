@@ -204,6 +204,7 @@ Name-based inference (`MyApp.Tests`, `.UnitTests`, etc.) is intentionally not su
 | `IsTestProject` | `false` (set to `true` for testable projects via `Headless.NET.Sdk.Test`) | Marks the project for test tooling. |
 | `IsPublishable` | `false` for test projects | Prevents publishing test projects. |
 | `IsPackable` | `false` for test projects | Prevents packing test projects and suppresses the non-packable pack warning so solution-level `dotnet pack` remains CI-safe. |
+| `NoWarn` | Adds test-noise suppressions, including `CA1849` and `MA0042` | Allows controlled blocking calls in tests without per-file pragmas. |
 | `EnableCodeCoverage` | `true` on CI | Enables coverage collection. |
 | `OptimizeVsTestRun` | `true` | Disables analyzers during `dotnet test`. Set `false` to keep analyzers enabled. |
 | `UseMicrosoftTestingPlatform` | Auto | Uses MTP when `xunit.v3.mtp-v2` or `TUnit` is referenced. Force with `true` or `false`. |

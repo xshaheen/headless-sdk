@@ -59,7 +59,7 @@
       PackagePath="buildTransitive\$(PackageId).targets"
     />
     <None Include="..\Headless.NET.Sdk\configurations\**" Pack="true" PackagePath="configurations/" />
-    <None Include="..\Headless.NET.Sdk\README.md" Pack="true" PackagePath="README.md" Visible="true" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="README.md" Visible="true" />
     <None Include="..\Headless.NET.Sdk\_._" Pack="true" PackagePath="lib\$(TargetFramework)" Visible="false" />
   </ItemGroup>
 </Project>

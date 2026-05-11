@@ -126,9 +126,11 @@
       MA0003: Add parameter name to improve readability
       CA2254: Log template should be a static expression
       IDE0039: Use local function
+      CA1849: Call async methods when in an async method
+      MA0042: Do not use blocking calls when the calling method is async
     -->
     <NoWarn Condition="'$(IsTestableProject)' == 'true'"
-      >$(NoWarn);CA1707;IDE1006;IDE0022;CS8604;S4144;CA5394;CA1848;MA0076;MA0003;RCS1046;CA2254;IDE0039</NoWarn
+      >$(NoWarn);CA1707;IDE1006;IDE0022;CS8604;S4144;CA5394;CA1848;MA0076;MA0003;RCS1046;CA2254;IDE0039;CA1849;MA0042</NoWarn
     >
     <!--
       CA1707: Identifiers should not contain underscores
