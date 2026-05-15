@@ -100,11 +100,11 @@
   <!-- xUnit (v2 + v3) implicit using -->
   <ItemGroup
     Condition="'$(ImplicitUsings)' == 'enable' AND (
-                            @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit')) == 'true' OR
-                            @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3')) == 'true' OR
-                            @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v1')) == 'true' OR
-                            @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) == 'true'
-                            )"
+      @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit')) == 'true' OR
+      @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3')) == 'true' OR
+      @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v1')) == 'true' OR
+      @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) == 'true'
+    )"
   >
     <Using Include="Xunit" />
   </ItemGroup>

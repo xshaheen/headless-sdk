@@ -20,6 +20,8 @@
     <RootNamespace>$(MSBuildProjectName)</RootNamespace>
     <AssemblyName>$(MSBuildProjectName)</AssemblyName>
 
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/*.lscache</DefaultItemExcludes>
+
     <LangVersion Condition="'$(LangVersion)' == ''">latest</LangVersion>
     <WarningLevel>9999</WarningLevel>
     <Nullable Condition="'$(Nullable)' == ''">enable</Nullable>
