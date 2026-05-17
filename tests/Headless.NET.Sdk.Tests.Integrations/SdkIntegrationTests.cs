@@ -212,10 +212,15 @@ indent_size = 2
 
         var testTargets = ReadPackageEntry(package, "build/SupportTestProjects.targets");
         Assert.Contains("configurations/default.runsettings", testTargets, StringComparison.Ordinal);
+        Assert.Contains("--settings", testTargets, StringComparison.Ordinal);
 
         var runsettings = ReadPackageEntry(package, "configurations/default.runsettings");
         Assert.Contains("<TreatNoTestsAsError>true</TreatNoTestsAsError>", runsettings, StringComparison.Ordinal);
         Assert.Contains("GitHubActionsTestLogger.dll", runsettings, StringComparison.Ordinal);
+        Assert.Contains(@".*\.Tests\.[^.]+\.dll$", runsettings, StringComparison.Ordinal);
+        Assert.Contains(@".*\.Testing\.[^.]+\.dll$", runsettings, StringComparison.Ordinal);
+        Assert.Contains(@".*\.g\.cs$", runsettings, StringComparison.Ordinal);
+        Assert.Contains(@"^.*\.Migrations\..*$", runsettings, StringComparison.Ordinal);
 
         var generalTargets = ReadPackageEntry(package, "build/SupportGeneral.targets");
         Assert.Contains("DisableDocumentationWarnings", generalTargets, StringComparison.Ordinal);

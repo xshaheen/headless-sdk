@@ -205,7 +205,7 @@ Name-based inference (`MyApp.Tests`, `.UnitTests`, etc.) is intentionally not su
 | `IsPublishable` | `false` for test projects | Prevents publishing test projects. |
 | `IsPackable` | `false` for test projects | Prevents packing test projects and suppresses the non-packable pack warning so solution-level `dotnet pack` remains CI-safe. |
 | `NoWarn` | Adds test-noise suppressions, including `CA1849` and `MA0042` | Allows controlled blocking calls in tests without per-file pragmas. |
-| `EnableCodeCoverage` | `true` on CI | Enables coverage collection. |
+| `EnableCodeCoverage` | `true` on CI | Enables coverage collection and applies the SDK runsettings exclusions for test assemblies, generated sources, and EF migrations. |
 | `OptimizeVsTestRun` | `true` | Disables analyzers during `dotnet test`. Set `false` to keep analyzers enabled. |
 | `UseMicrosoftTestingPlatform` | Auto | Uses MTP when `xunit.v3.mtp-v2` or `TUnit` is referenced. Force with `true` or `false`. |
 | `EnableDefaultTestSettings` | `true` | Adds crash dumps, hang dumps, TRX output, loggers, and minimum-test expectations. |

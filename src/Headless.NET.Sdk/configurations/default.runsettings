@@ -15,8 +15,22 @@
             <ModulePaths>
               <Exclude>
                 <ModulePath>.*\\GitHubActionsTestLogger.dll$</ModulePath>
+                <ModulePath>.*\.Tests\.[^.]+\.dll$</ModulePath>
+                <ModulePath>.*\.Testing\.dll$</ModulePath>
+                <ModulePath>.*\.Testing\.[^.]+\.dll$</ModulePath>
               </Exclude>
             </ModulePaths>
+            <Sources>
+              <Exclude>
+                <Source>.*\.g\.cs$</Source>
+                <Source>.*\.generated\.cs$</Source>
+              </Exclude>
+            </Sources>
+            <Functions>
+              <Exclude>
+                <Function>^.*\.Migrations\..*$</Function>
+              </Exclude>
+            </Functions>
           </CodeCoverage>
         </Configuration>
       </DataCollector>

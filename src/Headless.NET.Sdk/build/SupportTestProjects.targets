@@ -60,6 +60,9 @@
       <TestingPlatformCommandLineArguments Condition="'$(EnableCodeCoverage)' == 'true'"
         >$(TestingPlatformCommandLineArguments) --coverage</TestingPlatformCommandLineArguments
       >
+      <TestingPlatformCommandLineArguments Condition="'$(EnableCodeCoverage)' == 'true'"
+        >$(TestingPlatformCommandLineArguments) --settings &quot;$(MSBuildThisFileDirectory)../configurations/default.runsettings&quot;</TestingPlatformCommandLineArguments
+      >
       <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --crashdump --crashdump-type mini</TestingPlatformCommandLineArguments>
       <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --hangdump --hangdump-timeout 10m --hangdump-type mini</TestingPlatformCommandLineArguments>
       <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --minimum-expected-tests 1</TestingPlatformCommandLineArguments>
