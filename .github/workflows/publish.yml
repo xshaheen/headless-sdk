@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - "*.*.*"
+  release:
+    types:
+      - published
   workflow_dispatch:
 
 permissions:
@@ -77,7 +80,7 @@ jobs:
           path: ${{ env.PACKAGES_DIR }}
           if-no-files-found: error
 
-  publish:
+  publish-github-packages:
     name: Publish GitHub Packages
     needs: build
     runs-on: ubuntu-latest
@@ -99,7 +102,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           shopt -s nullglob
+
           packages=(./artifacts/packages-results/*.nupkg)
 
           if [ ${#packages[@]} -eq 0 ]; then
@@ -111,5 +116,62 @@ jobs:
             dotnet nuget push "$package" \
               --source "https://nuget.pkg.github.com/xshaheen/index.json" \
               --api-key "$GITHUB_TOKEN" \
+              --skip-duplicate
+          done
+
+          symbols=(./artifacts/packages-results/*.snupkg)
+
+          for symbol in "${symbols[@]}"; do
+            dotnet nuget push "$symbol" \
+              --source "https://nuget.pkg.github.com/xshaheen/index.json" \
+              --api-key "$GITHUB_TOKEN" \
+              --skip-duplicate
+          done
+
+  publish-nuget-packages:
+    name: Publish nuget.org packages
+    needs: publish-github-packages
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    permissions:
+      contents: read
+    environment:
+      name: NuGet Release
+      url: https://www.nuget.org/packages?q=Headless.NET.Sdk
+
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v8
+        with:
+          name: packages
+          path: ./artifacts/packages-results
+
+      - name: Publish packages to nuget.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          packages=(./artifacts/packages-results/*.nupkg)
+
+          if [ ${#packages[@]} -eq 0 ]; then
+            echo "No .nupkg files found in ./artifacts/packages-results."
+            exit 1
+          fi
+
+          for package in "${packages[@]}"; do
+            dotnet nuget push "$package" \
+              --source "https://api.nuget.org/v3/index.json" \
+              --api-key "$NUGET_API_KEY" \
+              --skip-duplicate
+          done
+
+          symbols=(./artifacts/packages-results/*.snupkg)
+
+          for symbol in "${symbols[@]}"; do
+            dotnet nuget push "$symbol" \
+              --source "https://api.nuget.org/v3/index.json" \
+              --api-key "$NUGET_API_KEY" \
               --skip-duplicate
           done
