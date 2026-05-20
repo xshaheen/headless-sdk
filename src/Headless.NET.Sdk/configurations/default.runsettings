@@ -24,6 +24,7 @@
               <Exclude>
                 <Source>.*\.g\.cs$</Source>
                 <Source>.*\.generated\.cs$</Source>
+                <Source>.*\.Designer\.cs$</Source>
               </Exclude>
             </Sources>
             <Functions>
