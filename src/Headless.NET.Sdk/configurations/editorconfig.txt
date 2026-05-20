@@ -132,7 +132,7 @@ dotnet_diagnostic.ca1000.severity = suggestion
 # CA1032: Implement standard exception constructors
 dotnet_diagnostic.ca1032.severity = silent
 # CA2016: Forward the CancellationToken parameter to methods that take one
-dotnet_diagnostic.ca2016.severity = suggestion
+dotnet_diagnostic.ca2016.severity = warning
 # CA1859: Use concrete types when possible for improved performance
 dotnet_diagnostic.ca1859.severity = suggestion
 # CA1024: Use properties where appropriate
@@ -411,12 +411,12 @@ csharp_new_line_between_query_expression_clauses = true
 # Indentation options
 csharp_indent_case_contents = true
 csharp_indent_switch_labels = true
-csharp_indent_labels = one_less_than_current
+csharp_indent_labels = no_change
 csharp_indent_block_contents = true
 csharp_indent_braces = false
 csharp_indent_case_contents_when_block = false
 # Spacing options
-csharp_space_after_cast = true
+csharp_space_after_cast = false
 csharp_space_after_keywords_in_control_flow_statements = true
 csharp_space_before_colon_in_inheritance_clause = true
 csharp_space_after_colon_in_inheritance_clause = true
