@@ -27,6 +27,11 @@
                 <Source>.*\.Designer\.cs$</Source>
               </Exclude>
             </Sources>
+            <Attributes>
+              <Exclude>
+                <Attribute>System.CodeDom.Compiler.GeneratedCodeAttribute</Attribute>
+              </Exclude>
+            </Attributes>
             <Functions>
               <Exclude>
                 <Function>^.*\.Migrations\..*$</Function>
