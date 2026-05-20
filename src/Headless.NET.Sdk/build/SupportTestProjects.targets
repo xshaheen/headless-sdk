@@ -46,28 +46,30 @@
     <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.2.2" IsImplicitlyDefined="true" />
   </ItemGroup>
 
-  <Target
-    Name="HeadlessApplyMicrosoftTestingPlatformSettings"
-    BeforeTargets="_MTPBuild"
-    Condition="'$(EnableDefaultTestSettings)' != 'false' AND (
-      '$(UseMicrosoftTestingPlatform)' == 'true' OR (
-        '$(UseMicrosoftTestingPlatform)' == '' AND (
-          @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) == 'true' OR
-          @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) == 'true')))"
-  >
-    <PropertyGroup>
-      <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --report-trx</TestingPlatformCommandLineArguments>
-      <TestingPlatformCommandLineArguments Condition="'$(EnableCodeCoverage)' == 'true'"
-        >$(TestingPlatformCommandLineArguments) --coverage</TestingPlatformCommandLineArguments
-      >
-      <TestingPlatformCommandLineArguments Condition="'$(EnableCodeCoverage)' == 'true'"
-        >$(TestingPlatformCommandLineArguments) --settings &quot;$(MSBuildThisFileDirectory)../configurations/default.runsettings&quot;</TestingPlatformCommandLineArguments
-      >
-      <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --crashdump --crashdump-type mini</TestingPlatformCommandLineArguments>
-      <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --hangdump --hangdump-timeout 10m --hangdump-type mini</TestingPlatformCommandLineArguments>
-      <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --minimum-expected-tests 1</TestingPlatformCommandLineArguments>
-    </PropertyGroup>
-  </Target>
+  <!--
+    Default Microsoft Testing Platform (MTP) arguments.
+
+    These MUST be set in a static PropertyGroup, not a BeforeTargets="_MTPBuild" target.
+    The new "dotnet test" experience (global.json "runner": "Microsoft.Testing.Platform")
+    reads TestingPlatformCommandLineArguments during project evaluation and does NOT run the
+    legacy _MTPBuild target, so a target-based assignment never takes effect (the args get
+    silently dropped: no coverage, trx, or dumps). A non-MTP (VSTest) project simply ignores
+    this property, so no MTP-detection gate is needed here. Coverage settings use MTP's
+    "coverage-settings" runner flag; the "settings" dotnet test CLI option is rejected by the
+    MTP runner as unknown.
+  -->
+  <PropertyGroup Condition="'$(EnableDefaultTestSettings)' != 'false'">
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --report-trx</TestingPlatformCommandLineArguments>
+    <TestingPlatformCommandLineArguments Condition="'$(EnableCodeCoverage)' == 'true'"
+      >$(TestingPlatformCommandLineArguments) --coverage</TestingPlatformCommandLineArguments
+    >
+    <TestingPlatformCommandLineArguments Condition="'$(EnableCodeCoverage)' == 'true'"
+      >$(TestingPlatformCommandLineArguments) --coverage-settings &quot;$(MSBuildThisFileDirectory)../configurations/default.runsettings&quot;</TestingPlatformCommandLineArguments
+    >
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --crashdump --crashdump-type mini</TestingPlatformCommandLineArguments>
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --hangdump --hangdump-timeout 10m --hangdump-type mini</TestingPlatformCommandLineArguments>
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --minimum-expected-tests 1</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
 
   <!-- VSTest path (xUnit v2, MSTest, NUnit, etc.) -->
   <ItemGroup

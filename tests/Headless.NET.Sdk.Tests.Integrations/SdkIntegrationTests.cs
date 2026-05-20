@@ -212,7 +212,10 @@ indent_size = 2
 
         var testTargets = ReadPackageEntry(package, "build/SupportTestProjects.targets");
         Assert.Contains("configurations/default.runsettings", testTargets, StringComparison.Ordinal);
-        Assert.Contains("--settings", testTargets, StringComparison.Ordinal);
+        // MTP coverage settings use --coverage-settings; --settings is a dotnet test CLI option the
+        // MTP runner rejects as unknown. (Behavioral check that the args actually flow to an MTP
+        // consumer lives in MsBuildSetsMtpCommandLineArgumentsForTestSdk.)
+        Assert.Contains("--coverage-settings", testTargets, StringComparison.Ordinal);
 
         var runsettings = ReadPackageEntry(package, "configurations/default.runsettings");
         Assert.Contains("<TreatNoTestsAsError>true</TreatNoTestsAsError>", runsettings, StringComparison.Ordinal);
@@ -521,6 +524,37 @@ public static class JsonConsumer
         Assert.Equal("true", properties["IsTestableProject"]);
         Assert.Equal("true", properties["IsTestProject"]);
         Assert.Equal("false", properties["IsPackable"]);
+    }
+
+    [Fact]
+    public async Task MsBuildSetsMtpCommandLineArgumentsForTestSdk()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
+            includePackageReference: false
+        );
+
+        // Defaults: MTP args must be exposed as static evaluated properties. The new dotnet test
+        // experience reads TestingPlatformCommandLineArguments during evaluation and never runs the
+        // legacy _MTPBuild target -- a regression guard against re-introducing a target-based
+        // assignment that silently drops every platform argument.
+        var defaults = await project.EvaluateHeadlessPropertiesAsync();
+        var args = defaults["TestingPlatformCommandLineArguments"];
+        Assert.Contains("--report-trx", args, StringComparison.Ordinal);
+        Assert.Contains("--crashdump", args, StringComparison.Ordinal);
+        Assert.Contains("--hangdump", args, StringComparison.Ordinal);
+        Assert.Contains("--minimum-expected-tests 1", args, StringComparison.Ordinal);
+        Assert.DoesNotContain("--coverage", args, StringComparison.Ordinal);
+
+        // With coverage enabled: add --coverage plus the MTP --coverage-settings flag
+        // (not the VSTest --settings option, which the MTP runner rejects as unknown).
+        var withCoverage = await project.EvaluateHeadlessPropertiesAsync("-p:EnableCodeCoverage=true");
+        var coverageArgs = withCoverage["TestingPlatformCommandLineArguments"];
+        Assert.Contains("--coverage", coverageArgs, StringComparison.Ordinal);
+        Assert.Contains("--coverage-settings", coverageArgs, StringComparison.Ordinal);
+        Assert.Contains("default.runsettings", coverageArgs, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -1257,7 +1291,7 @@ public sealed class Class1;
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
-                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors)"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments)"
                   Overwrite="true"
                 />
               </Target>
