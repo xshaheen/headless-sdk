@@ -78,7 +78,11 @@ jobs:
         run: dotnet build headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -v:q -nologo /clp:ErrorsOnly
 
       - name: Test
-        run: dotnet test headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build --logger "trx;LogFilePrefix=headless-sdk" --results-directory ./artifacts/test-results
+        # Microsoft Testing Platform runner (global.json "test.runner"). The integration project
+        # references xunit.v3.mtp-v2, which bundles Microsoft.Testing.Extensions.CodeCoverage, so
+        # everything after "--" is forwarded to the platform: --report-trx for the trx, --coverage
+        # (cobertura) for code coverage, and --results-directory to pin both to a known path.
+        run: dotnet test headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build -- --report-trx --coverage --coverage-output-format cobertura --results-directory ./artifacts/test-results
 
       - name: Pack
         run: dotnet pack headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --output "${{ env.PACKAGES_DIR }}"
@@ -90,6 +94,19 @@ jobs:
           name: test-results
           path: ./artifacts/test-results
           if-no-files-found: ignore
+
+      # Coverage of the C# harness that drives the SDK props/targets, NOT of the shipped MSBuild
+      # assets themselves -- a numeric coverage gate would be low value here, so we collect and
+      # upload only and never fail the build on a threshold.
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: coverage
+          path: |
+            ./artifacts/test-results/**/*.cobertura.xml
+            ./artifacts/test-results/**/*.coverage
+          if-no-files-found: warn
 
       - name: Upload packages
         uses: actions/upload-artifact@v7.0.1
