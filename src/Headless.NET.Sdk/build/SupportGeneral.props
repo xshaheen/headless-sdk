@@ -64,6 +64,13 @@
 
     <!-- Catch breaking API changes between package versions. -->
     <EnablePackageValidation Condition="'$(EnablePackageValidation)' == ''">true</EnablePackageValidation>
+    <!--
+      Set the baseline AFTER the first stable (non-preview) publish so package validation compares
+      the current build against the last shipped version (not just internal structure). Leave it
+      unset until then: pointing it at a version that was never published fails the build.
+      Example: <PackageValidationBaselineVersion>1.0.0</PackageValidationBaselineVersion>
+    -->
+
   </PropertyGroup>
 
   <PropertyGroup
@@ -96,16 +103,16 @@
       CA1034: Nested types should not be visible
       CA1724: Type names should not match namespaces
       CA1040: Avoid empty interfaces
-      CA1819: Properties should not return arrays (I prefer perfornamce)
+      CA1819: Properties should not return arrays (I prefer performance)
       CA1515: Consider making public types internal
-      CA1002: Do not expose generic lists (I prefer perfornamce)
+      CA1002: Do not expose generic lists (I prefer performance)
       NU5104: A stable release of a package should not have a prerelease dependency.
       MA0018: Do not declare static members on generic types (deprecated - use CA1000)
       MA0038: Make method static (deprecated - use CA1822)
       MA0041: Make property static (deprecated - use CA1822)
       MA0040: Flow the cancellation token when available (deprecated)
       MA0032: Use an overload with a CancellationToken argument (deprecated)
-      MA0016: Prefer returning collection abstraction instead of implementation (I prefer perfornamce)
+      MA0016: Prefer returning collection abstraction instead of implementation (I prefer performance)
       MA0048: File name must match type name (I use multiple types per file)
       MA0051: Method is too long
       MA0097: A class that implements IComparable<T> or IComparable should override comparison operators (deprecated - use  CA1036)
@@ -141,8 +148,17 @@
     <NoWarn Condition="'$(IsAspireHost)' == 'true'">$(NoWarn);CA1707</NoWarn>
   </PropertyGroup>
 
-  <PropertyGroup Label="Error Handling" Condition="'$(Configuration)' == 'Release'">
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  <!--
+    Compiler warnings-as-errors policy (overridable: set <TreatWarningsAsErrors> in the consumer project to win).
+      - Local / Debug builds: warnings ARE errors, so issues surface during development.
+      - Release builds (CI and downstream consumers): warnings stay warnings so a publish/pack
+        is never blocked by analyzer churn.
+    Note: nullable warnings are always errors (see WarningsAsErrors in "General Configurations"
+    above), and MSBuild-level warnings are errored on CI/Release (see "MSBuild Warnings As Errors" above).
+  -->
+  <PropertyGroup Label="Compiler Warnings As Errors" Condition="'$(TreatWarningsAsErrors)' == ''">
+    <TreatWarningsAsErrors Condition="'$(Configuration)' != 'Release'">true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors Condition="'$(Configuration)' == 'Release'">false</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Label="Language Configuration">
