@@ -79,7 +79,7 @@ jobs:
 
       - name: Test
         # Microsoft Testing Platform runner (global.json "test.runner"). The integration project
-        # references xunit.v3.mtp-v2, which bundles Microsoft.Testing.Extensions.CodeCoverage, so
+        # references the Microsoft.Testing.Extensions.TrxReport and .CodeCoverage packages, so
         # everything after "--" is forwarded to the platform: --report-trx for the trx, --coverage
         # (cobertura) for code coverage, and --results-directory to pin both to a known path.
         run: dotnet test headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build -- --report-trx --coverage --coverage-output-format cobertura --results-directory ./artifacts/test-results

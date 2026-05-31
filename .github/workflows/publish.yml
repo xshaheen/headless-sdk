@@ -60,7 +60,8 @@ jobs:
         run: dotnet build headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -v:q -nologo /clp:ErrorsOnly
 
       - name: Test
-        run: dotnet test headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build --logger "trx;LogFilePrefix=headless-sdk" --results-directory ./artifacts/test-results
+        # Microsoft Testing Platform runner (global.json "test.runner"); same MTP arg shape as ci.yml.
+        run: dotnet test headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build -- --report-trx --results-directory ./artifacts/test-results
 
       - name: Pack
         run: dotnet pack headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --output "${{ env.PACKAGES_DIR }}"

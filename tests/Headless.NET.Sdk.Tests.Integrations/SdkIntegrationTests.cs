@@ -1704,10 +1704,14 @@ internal static class DotNetCommand
             try
             {
                 process.Kill(entireProcessTree: true);
-                // The token already fired (timeout/cancellation); wait unconditionally for the kill to settle.
+                // A token already fired (caller cancellation or our timeout); wait unconditionally for the kill to settle.
                 await process.WaitForExitAsync(CancellationToken.None);
             }
             catch (InvalidOperationException) { }
+
+            // Distinguish caller cancellation from the internal timeout: if the caller's token fired,
+            // propagate real cancellation semantics rather than masking it as a command timeout.
+            cancellationToken.ThrowIfCancellationRequested();
 
             var timeoutOutput = $"{await standardOutputTask}{await standardErrorTask}".Trim();
             throw new TimeoutException(
