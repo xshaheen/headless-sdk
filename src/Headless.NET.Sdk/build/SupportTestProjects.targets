@@ -78,7 +78,12 @@
         @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) != 'true' AND
         @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) != 'true'))"
   >
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" IsImplicitlyDefined="true" />
+    <!--
+      Hardcoded pin: this version is injected into consumer test projects and is NOT governed
+      by the consumer's Central Package Management. Keep it in sync with the repo's own
+      Directory.Packages.props Microsoft.NET.Test.Sdk version whenever bumping.
+    -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.1" IsImplicitlyDefined="true" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(EnableDefaultTestSettings)' != 'false'">
