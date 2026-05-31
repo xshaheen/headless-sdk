@@ -291,3 +291,5 @@ __pycache__/
 
 # Husky
 /.husky/pre-commit
+# Scratch / agent working dir
+tmp/

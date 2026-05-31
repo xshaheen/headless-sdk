@@ -1,13 +1,32 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <!-- xUnit v3 + Microsoft Testing Platform test projects are executables. -->
+    <OutputType>Exe</OutputType>
+    <!--
+      Test-project allowances. This project consumes the plain Microsoft.NET.Sdk (so the Headless
+      SDK's IsTestableProject NoWarn set does not apply): the repo test convention
+      should_{action}_{expected}_when_{condition} uses underscores (CA1707), and the integration
+      harness deliberately runs blocking/process I/O (CA1849, MA0042, MA0166).
+    -->
+    <NoWarn>$(NoWarn);CA1707;CA1849;MA0042;MA0166</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <!--
+      xunit.v3.mtp-v2 drives the Microsoft Testing Platform path of this very SDK's
+      SupportTestProjects.targets (identity-gated detection) so the test project dogfoods
+      the feature it ships. xunit.v3 build props set OutputType=Exe automatically.
+    -->
+    <PackageReference Include="xunit.v3.mtp-v2" />
+    <!--
+      MTP report/coverage extensions. This project consumes the plain Microsoft.NET.Sdk (not the
+      Headless SDK), so it does NOT get the extension injection SupportTestProjects.targets gives
+      consumer test projects. Reference them directly so the report-trx / coverage CLI flags
+      used by the CI and publish workflows are recognized by the MTP runner.
+    -->
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
     <PackageReference Include="MSBuild.StructuredLogger" />
-    <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
 </Project>

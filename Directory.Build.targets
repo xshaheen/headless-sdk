@@ -3,6 +3,11 @@
     <PropertyGroup Label="Build">
       <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
       <MinVerVerbosity>normal</MinVerVerbosity>
+      <!--
+        Intentional: release tags use NO prefix (e.g. 1.2.3, not v1.2.3), which is what an
+        empty MinVerTagPrefix matches. If the tagging convention ever changes to a "v" prefix,
+        set this to "v" or MinVer will ignore the tags and versions stay at the preview baseline.
+      -->
       <MinVerTagPrefix />
     </PropertyGroup>
   </Target>

@@ -59,7 +59,7 @@
       PackagePath="buildTransitive\$(PackageId).targets"
     />
     <None Include="..\Headless.NET.Sdk\configurations\**" Pack="true" PackagePath="configurations/" />
-    <None Include="..\..\README.md" Pack="true" PackagePath="README.md" Visible="true" />
+    <!-- README.md is resolved and packed by SupportPackageInformation.targets from each satellite's own README.md -->
     <None Include="..\Headless.NET.Sdk\_._" Pack="true" PackagePath="lib\$(TargetFramework)" Visible="false" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -24,7 +25,7 @@ public sealed class HeadlessSdkPackageCollection : ICollectionFixture<HeadlessSd
 public sealed class SdkIntegrationTests(HeadlessSdkPackageFixture fixture)
 {
     [Fact]
-    public async Task PackDoesNotRequireLogoByDefault()
+    public async Task should_pack_without_error_when_no_logo_is_provided()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -41,7 +42,7 @@ public sealed class SdkIntegrationTests(HeadlessSdkPackageFixture fixture)
     }
 
     [Fact]
-    public async Task DocumentationWarningsAreReportedWhenExplicitlyEnabled()
+    public async Task should_report_documentation_warnings_when_explicitly_enabled()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -62,7 +63,7 @@ public sealed class SdkIntegrationTests(HeadlessSdkPackageFixture fixture)
     }
 
     [Fact]
-    public async Task BuildDoesNotOverwriteExistingEditorConfigByDefault()
+    public async Task should_not_overwrite_existing_editorconfig_when_using_defaults()
     {
         const string ExistingEditorConfig = """
 root = true
@@ -84,12 +85,14 @@ indent_size = 2
         Assert.True(result.ExitCode == 0, result.Output);
         Assert.Equal(
             NormalizeLineEndings(ExistingEditorConfig),
-            NormalizeLineEndings(await File.ReadAllTextAsync(project.EditorConfigPath))
+            NormalizeLineEndings(
+                await File.ReadAllTextAsync(project.EditorConfigPath, TestContext.Current.CancellationToken)
+            )
         );
     }
 
     [Fact]
-    public async Task BuildCopiesEditorConfigWhenExplicitlyEnabled()
+    public async Task should_copy_editorconfig_when_explicitly_enabled()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -107,12 +110,15 @@ indent_size = 2
             "Expected build to copy .editorconfig when opt-in property is set."
         );
 
-        var copiedEditorConfig = await File.ReadAllTextAsync(project.EditorConfigPath);
+        var copiedEditorConfig = await File.ReadAllTextAsync(
+            project.EditorConfigPath,
+            TestContext.Current.CancellationToken
+        );
         Assert.Contains("# Common Settings", copiedEditorConfig, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task BuildCopiesDefaultConfigFilesWhenExplicitlyEnabled()
+    public async Task should_copy_default_config_files_when_explicitly_enabled()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -130,20 +136,23 @@ indent_size = 2
         Assert.True(File.Exists(project.GitIgnorePath), "Expected build to copy .gitignore.");
         Assert.True(File.Exists(project.GitAttributesPath), "Expected build to copy .gitattributes.");
 
-        var csharpierIgnore = await File.ReadAllTextAsync(project.CSharpierIgnorePath);
+        var csharpierIgnore = await File.ReadAllTextAsync(
+            project.CSharpierIgnorePath,
+            TestContext.Current.CancellationToken
+        );
         Assert.Contains("**/*.verified.*", csharpierIgnore, StringComparison.Ordinal);
         Assert.Contains("**/*.received.*", csharpierIgnore, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void PackedPackageContainsFixedNuGetAuditWarningsAsErrorsExpression()
+    public void should_pack_nuget_audit_targets_with_fixed_warnings_as_errors_expression()
     {
         using var package = ZipFile.OpenRead(fixture.PackagePath);
         var entry = package.GetEntry("build/SupportNuGetAudit.targets");
 
         Assert.NotNull(entry);
 
-        using var reader = new StreamReader(entry!.Open());
+        using var reader = new StreamReader(entry.Open());
         var content = reader.ReadToEnd();
 
         Assert.Contains("$(WarningsAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904", content, StringComparison.Ordinal);
@@ -155,7 +164,7 @@ indent_size = 2
     }
 
     [Fact]
-    public void PackedPackageSuppressesBlockingAsyncWarningsForTestProjects()
+    public void should_suppress_blocking_async_warnings_when_project_is_a_test_project()
     {
         using var package = ZipFile.OpenRead(fixture.PackagePath);
         var content = ReadPackageEntry(package, "build/SupportGeneral.props");
@@ -177,7 +186,7 @@ indent_size = 2
     }
 
     [Fact]
-    public void PackedPackageContainsAnalyzerHygieneAndCoverageSettings()
+    public void should_pack_analyzer_hygiene_and_coverage_settings()
     {
         using var package = ZipFile.OpenRead(fixture.PackagePath);
 
@@ -231,7 +240,7 @@ indent_size = 2
     }
 
     [Fact]
-    public void PackedPackageFlowsImplicitAnalyzersAsTransitiveDependencies()
+    public void should_flow_implicit_analyzers_as_transitive_dependencies_when_packed()
     {
         // PackageReference consumers receive the implicit analyzers via transitive nuspec deps,
         // not via SupportImplicitAnalyzers.props -- props in build/ are imported during MSBuild
@@ -275,7 +284,7 @@ indent_size = 2
     }
 
     [Fact]
-    public void PackedPackageContainsSingleFileTargetFrameworkAndSdkMetadataSupport()
+    public void should_pack_single_file_target_framework_and_sdk_metadata_support()
     {
         using var package = ZipFile.OpenRead(fixture.PackagePath);
 
@@ -293,7 +302,7 @@ indent_size = 2
     }
 
     [Fact]
-    public void PackedProjectTypePackagesContainSdkWrappersAndBuildAssets()
+    public void should_pack_sdk_wrappers_and_build_assets_for_project_type_packages()
     {
         var expectedPackages = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -337,7 +346,7 @@ indent_size = 2
     }
 
     [Fact]
-    public void PackedBuildAssetsOnlyUseImplicitPackageReferences()
+    public void should_only_use_implicit_package_references_in_packed_build_assets()
     {
         var packageIds = new[]
         {
@@ -367,7 +376,7 @@ indent_size = 2
     }
 
     [Fact]
-    public async Task PackageReferenceRestoreIncludesImplicitAnalyzerPackages()
+    public async Task should_include_implicit_analyzer_packages_when_restoring_via_package_reference()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -380,7 +389,7 @@ indent_size = 2
 
         Assert.True(result.ExitCode == 0, result.Output);
 
-        var assets = await File.ReadAllTextAsync(project.ProjectAssetsPath);
+        var assets = await File.ReadAllTextAsync(project.ProjectAssetsPath, TestContext.Current.CancellationToken);
         Assert.Contains("\"Meziantou.Analyzer/", assets, StringComparison.Ordinal);
         Assert.Contains("\"Microsoft.CodeAnalysis.BannedApiAnalyzers/", assets, StringComparison.Ordinal);
         Assert.Contains("\"AsyncFixer/", assets, StringComparison.Ordinal);
@@ -390,12 +399,19 @@ indent_size = 2
     }
 
     [Fact]
-    public async Task BuildImportsBundledAnalyzerEditorConfig()
+    public async Task should_import_bundled_analyzer_editorconfig_when_building()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
             fixture.PackageSourceDirectory,
             outputType: "Exe",
+            // The Headless SDK defaults TreatWarningsAsErrors=true in Debug; this test asserts MA0047
+            // surfaces as a *warning* (proving the bundled analyzer editorconfig was imported), so keep
+            // warnings non-fatal here -- the warnings-as-error policy is covered by its own tests.
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["TreatWarningsAsErrors"] = "false",
+            },
             additionalFiles: new Dictionary<string, string>
             {
                 ["Sample.cs"] = """
@@ -419,7 +435,7 @@ class Foo { }
     }
 
     [Fact]
-    public async Task MsBuildPropertiesUseExpectedDefaults()
+    public async Task should_use_expected_msbuild_property_defaults()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -437,7 +453,7 @@ class Foo { }
     }
 
     [Fact]
-    public async Task MsBuildDefaultItemsExcludeLscacheFiles()
+    public async Task should_exclude_lscache_files_from_default_items()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -451,7 +467,7 @@ class Foo { }
     }
 
     [Fact]
-    public async Task MsBuildPropertiesTreatWarningsAsErrorsOnContinuousIntegration()
+    public async Task should_treat_warnings_as_errors_when_on_continuous_integration()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -465,7 +481,7 @@ class Foo { }
     }
 
     [Fact]
-    public async Task MsBuildPropertiesInferTargetFrameworkWhenExplicitlyEnabled()
+    public async Task should_infer_target_framework_when_explicitly_enabled()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -482,7 +498,7 @@ class Foo { }
     }
 
     [Fact]
-    public async Task BuildIncludesTargetFrameworkGatedGlobalUsings()
+    public async Task should_include_target_framework_gated_global_usings_when_building()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -508,7 +524,7 @@ public static class JsonConsumer
     }
 
     [Fact]
-    public async Task MsBuildPropertiesUseTestProjectTypeSdk()
+    public async Task should_set_test_project_properties_when_using_test_project_type_sdk()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -527,7 +543,7 @@ public static class JsonConsumer
     }
 
     [Fact]
-    public async Task MsBuildSetsMtpCommandLineArgumentsForTestSdk()
+    public async Task should_set_mtp_command_line_arguments_when_using_test_project_type_sdk()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -575,7 +591,7 @@ public static class JsonConsumer
         "false",
         "false"
     )]
-    public async Task MsBuildPropertiesUseProjectTypePackageReference(
+    public async Task should_set_project_type_properties_when_using_project_type_package_reference(
         string packageId,
         string sdkName,
         string projectType,
@@ -603,7 +619,11 @@ public static class JsonConsumer
     [InlineData("Headless.NET.Sdk.Razor", "Razor", "true")]
     [InlineData("Headless.NET.Sdk.BlazorWebAssembly", "BlazorWebAssembly", "false")]
     [InlineData("Headless.NET.Sdk.WindowsDesktop", "WindowsDesktop", "true")]
-    public async Task MsBuildPropertiesUseProjectTypeSdk(string sdkName, string projectType, string isPackable)
+    public async Task should_set_project_type_properties_when_using_project_type_sdk(
+        string sdkName,
+        string projectType,
+        string isPackable
+    )
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -623,7 +643,7 @@ public static class JsonConsumer
     [Theory]
     [InlineData("Headless.NET.Sdk.Web")]
     [InlineData("Headless.NET.Sdk.BlazorWebAssembly")]
-    public async Task MsBuildPropertiesPreserveExplicitPackableOverrideForProjectTypeSdk(string sdkName)
+    public async Task should_preserve_explicit_packable_override_when_using_project_type_sdk(string sdkName)
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -642,7 +662,9 @@ public static class JsonConsumer
     [InlineData("Headless.NET.Sdk.Web")]
     [InlineData("Headless.NET.Sdk.BlazorWebAssembly")]
     [InlineData("Headless.NET.Sdk.Test")]
-    public async Task PackSkipsDefaultNonPackableProjectTypeSdkWhenWarningsAreErrors(string sdkName)
+    public async Task should_skip_pack_for_default_non_packable_project_type_sdk_when_warnings_are_errors(
+        string sdkName
+    )
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -661,7 +683,7 @@ public static class JsonConsumer
     }
 
     [Fact]
-    public async Task BuildSucceedsWhenConsumedViaSdkImport()
+    public async Task should_build_successfully_when_consumed_via_sdk_import()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -680,7 +702,7 @@ public static class JsonConsumer
     [Theory]
     [InlineData("Microsoft.NET.Sdk", true)]
     [InlineData("Headless.NET.Sdk/{version}", false)]
-    public async Task BuildSucceedsForConsumersUsingCentralPackageManagement(
+    public async Task should_build_successfully_when_consumer_uses_central_package_management(
         string sdkTemplate,
         bool includePackageReference
     )
@@ -721,7 +743,7 @@ public static class JsonConsumer
     }
 
     [Fact]
-    public async Task MsBuildPropertiesSkipToolPackagingForWebProjects()
+    public async Task should_skip_tool_packaging_when_project_is_a_web_project()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -736,7 +758,7 @@ public static class JsonConsumer
     }
 
     [Fact]
-    public async Task MsBuildPropertiesIncludeSingleFileEditorConfigWhenEnabled()
+    public async Task should_include_single_file_editorconfig_when_enabled()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -754,7 +776,7 @@ public static class JsonConsumer
     }
 
     [Fact]
-    public async Task MsBuildPropertiesIncludeBundledAnalyzerEditorConfigByDefault()
+    public async Task should_include_bundled_analyzer_editorconfig_when_using_defaults()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -771,7 +793,7 @@ public static class JsonConsumer
     }
 
     [Fact]
-    public async Task MsBuildPropertiesCanDisableBundledAnalyzerEditorConfig()
+    public async Task should_disable_bundled_analyzer_editorconfig_when_explicitly_disabled()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -788,7 +810,7 @@ public static class JsonConsumer
     }
 
     [Fact]
-    public async Task PackIncludesReadmeLicenseAndThirdPartyNotices()
+    public async Task should_include_readme_license_and_third_party_notices_when_packed()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -816,6 +838,202 @@ public static class JsonConsumer
         Assert.Contains("<license type=\"file\">LICENSE.txt</license>", nuspec, StringComparison.Ordinal);
         Assert.DoesNotContain("<license type=\"expression\">MIT</license>", nuspec, StringComparison.Ordinal);
         Assert.Contains("<readme>README.md</readme>", nuspec, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_prefix_package_tags_with_author_tag_when_not_a_test_project()
+    {
+        // SupportPackageInformation.props prepends "xshaheen;" to PackageTags for non-test projects.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.StartsWith("xshaheen", properties["PackageTags"], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_set_package_information_defaults_when_not_a_test_project()
+    {
+        // SupportPackageInformation.props defaults publish/symbol metadata for packable projects.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("true", properties["PublishRepositoryUrl"]);
+        Assert.Equal("git", properties["RepositoryType"]);
+        Assert.Equal("true", properties["IncludeSymbols"]);
+        Assert.Equal("snupkg", properties["SymbolPackageFormat"]);
+    }
+
+    [Fact]
+    public async Task should_derive_copyright_from_company_when_not_explicitly_set()
+    {
+        // SupportCopyright.targets builds Copyright as "Copyright © <Company> <year>" when unset.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal) { ["Company"] = "Headless Contoso" }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        var currentYear = DateTime.UtcNow.Year.ToString(CultureInfo.InvariantCulture);
+        Assert.Equal($"Copyright © Headless Contoso {currentYear}", properties["Copyright"]);
+    }
+
+    [Fact]
+    public async Task should_not_override_explicit_copyright()
+    {
+        // SupportCopyright.targets only computes Copyright when it is empty.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Company"] = "Headless Contoso",
+                ["Copyright"] = "All rights reserved by Acme",
+            }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("All rights reserved by Acme", properties["Copyright"]);
+    }
+
+    [Fact]
+    public void should_pack_system_runtime_experimental_ref_pack_cleanup_target()
+    {
+        // SupportSystemRuntimeExperimental.targets has no observable consumer property; it ships a
+        // pack-time target that strips the duplicate System.Runtime.dll reference. Assert the asset.
+        using var package = ZipFile.OpenRead(fixture.PackagePath);
+        var content = ReadPackageEntry(package, "build/SupportSystemRuntimeExperimental.targets");
+
+        Assert.Contains("RemoveSystemRuntimeFromRefPack", content, StringComparison.Ordinal);
+        Assert.Contains("System.Runtime.Experimental", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void should_pack_embed_binlog_targets_for_post_mortem_context()
+    {
+        // SupportEmbedBinlog.targets exposes no consumer property; it injects EmbedInBinlog items
+        // (a no-op outside -bl builds). Assert the shipped asset wires the expected targets.
+        using var package = ZipFile.OpenRead(fixture.PackagePath);
+        var content = ReadPackageEntry(package, "build/SupportEmbedBinlog.targets");
+
+        Assert.Contains("HeadlessEmbedBannedSymbolsInBinLog", content, StringComparison.Ordinal);
+        Assert.Contains("HeadlessEmbedEditorConfigInBinLog", content, StringComparison.Ordinal);
+        Assert.Contains("EmbedInBinlog", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_add_strict_system_text_json_runtime_options_when_enabled_on_net9()
+    {
+        // RuntimeHostConfigurationOption.props -- off by default; opt-in adds STJ runtime switches
+        // on net9.0+.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            targetFramework: "net9.0",
+            outputType: "Exe"
+        );
+
+        var defaults = await project.EvaluateHeadlessPropertiesAsync();
+        Assert.DoesNotContain(
+            "RespectRequiredConstructorParametersDefault",
+            defaults["RuntimeHostConfigurationOptions"],
+            StringComparison.Ordinal
+        );
+
+        var enabled = await project.EvaluateHeadlessPropertiesAsync(
+            "-p:HeadlessEnableStrictSystemTextJsonRuntimeDefaults=true"
+        );
+        Assert.Contains(
+            "System.Text.Json.Serialization.RespectRequiredConstructorParametersDefault=true",
+            enabled["RuntimeHostConfigurationOptions"],
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "System.Text.Json.Serialization.RespectNullableAnnotationsDefault=true",
+            enabled["RuntimeHostConfigurationOptions"],
+            StringComparison.Ordinal
+        );
+    }
+
+    [Fact]
+    public async Task should_enable_container_support_when_consumed_as_web_sdk_on_github_actions()
+    {
+        // SupportWebContainer.targets -- only activates for Microsoft.NET.Sdk.Web on GitHub Actions.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: "Microsoft.NET.Sdk.Web",
+            outputType: "Exe"
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync(
+            "-p:GITHUB_ACTIONS=true -p:GITHUB_REPOSITORY=xshaheen/headless-sdk"
+        );
+
+        Assert.Equal("true", properties["EnableSdkContainerSupport"]);
+        Assert.Equal("ghcr.io", properties["ContainerRegistry"]);
+        Assert.Equal("xshaheen/headless-sdk", properties["ContainerRepository"]);
+    }
+
+    [Fact]
+    public void should_reference_sbom_targets_only_when_sbom_generation_enabled()
+    {
+        // SupportSbom.targets gates a Microsoft.Sbom.Targets PackageReference on GenerateSBOM=true
+        // (auto-enabled on CI). The reference is implicitly defined so it is not governed by the
+        // consumer's CPM; verify the shipped asset contract directly rather than via a network
+        // restore of the SBOM package.
+        using var package = ZipFile.OpenRead(fixture.PackagePath);
+        var content = ReadPackageEntry(package, "build/SupportSbom.targets");
+        var document = XDocument.Parse(content);
+
+        var sbomGroup = document
+            .Root!.Elements("ItemGroup")
+            .Single(group =>
+                string.Equals(
+                    group.Attribute("Condition")?.Value,
+                    "'$(GenerateSBOM)' == 'true'",
+                    StringComparison.Ordinal
+                )
+            );
+        var reference = sbomGroup
+            .Elements("PackageReference")
+            .Single(element =>
+                string.Equals(element.Attribute("Include")?.Value, "Microsoft.Sbom.Targets", StringComparison.Ordinal)
+            );
+
+        Assert.Equal("true", reference.Attribute("IsImplicitlyDefined")?.Value);
+        Assert.Contains("GenerateSBOM", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_copy_config_files_to_solution_dir_when_default_config_copy_enabled()
+    {
+        // SupportAdditionalFiles.targets copies the bundled config files to the solution directory.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            enableDefaultConfigFilesCopy: true
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true -p:SolutionDir={Quote(project.SolutionDirectory)}"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.True(File.Exists(project.GitAttributesPath), "Expected SupportAdditionalFiles to copy .gitattributes.");
+
+        var gitignore = await File.ReadAllTextAsync(project.GitIgnorePath, TestContext.Current.CancellationToken);
+        Assert.False(string.IsNullOrWhiteSpace(gitignore), "Expected a non-empty copied .gitignore.");
     }
 
     private static string NormalizeLineEndings(string value) => value.ReplaceLineEndings("\n");
@@ -854,7 +1072,7 @@ public static class JsonConsumer
         var entry = package.GetEntry(entryName);
         Assert.NotNull(entry);
 
-        using var reader = new StreamReader(entry!.Open());
+        using var reader = new StreamReader(entry.Open());
         return reader.ReadToEnd();
     }
 }
@@ -871,11 +1089,12 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
 
     public string PackageVersion { get; private set; } = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         PackageRootDirectory = Path.Combine(Path.GetTempPath(), "Headless.NET.Sdk.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(PackageSourceDirectory);
 
+        var cancellationToken = TestContext.Current.CancellationToken;
         var repositoryRoot = FindRepositoryRoot();
         var env = CreateDotNetEnvironment(PackageRootDirectory);
         var packageIds = new[]
@@ -897,7 +1116,7 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
             var baseOutputPath = EnsureTrailingDirectorySeparator(Path.Combine(PackageRootDirectory, "bin", packageId));
             var command =
                 $"pack {Quote(projectPath)} -c Debug -o {Quote(PackageSourceDirectory)} -p:BaseIntermediateOutputPath={Quote(baseIntermediateOutputPath)} -p:BaseOutputPath={Quote(baseOutputPath)} -p:RestorePackagesWithLockFile=false -p:RestoreLockedMode=false";
-            var result = await DotNetCommand.RunAsync(repositoryRoot, command, env);
+            var result = await DotNetCommand.RunAsync(repositoryRoot, command, env, cancellationToken);
 
             if (result.ExitCode != 0)
             {
@@ -938,7 +1157,7 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
     private static string EnsureTrailingDirectorySeparator(string path) =>
         $"{Path.TrimEndingDirectorySeparator(path)}{Path.DirectorySeparatorChar}";
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         try
         {
@@ -956,7 +1175,7 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
             Console.Error.WriteLine($"[fixture] Failed to delete '{PackageRootDirectory}': {ex.Message}");
         }
 
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     private static Dictionary<string, string> CreateDotNetEnvironment(string tempRoot)
@@ -1083,6 +1302,7 @@ internal sealed class ConsumerProject : IAsyncDisposable
         Directory.CreateDirectory(rootDirectory);
 
         var project = new ConsumerProject(rootDirectory, packageVersion, packageSourceDirectory);
+        var cancellationToken = TestContext.Current.CancellationToken;
 
         await File.WriteAllTextAsync(
             project.ProjectFilePath,
@@ -1098,7 +1318,8 @@ internal sealed class ConsumerProject : IAsyncDisposable
                 useCentralPackageManagement,
                 extraProperties
             ),
-            Encoding.UTF8
+            Encoding.UTF8,
+            cancellationToken
         );
         await File.WriteAllTextAsync(
             Path.Combine(rootDirectory, "Class1.cs"),
@@ -1107,13 +1328,24 @@ namespace ConsumerProject;
 
 public sealed class Class1;
 """,
-            Encoding.UTF8
+            Encoding.UTF8,
+            cancellationToken
         );
-        await File.WriteAllTextAsync(project.NuGetConfigPath, project.CreateNuGetConfig(), Encoding.UTF8);
+        await File.WriteAllTextAsync(
+            project.NuGetConfigPath,
+            project.CreateNuGetConfig(),
+            Encoding.UTF8,
+            cancellationToken
+        );
 
         if (editorConfigContent is not null)
         {
-            await File.WriteAllTextAsync(project.EditorConfigPath, editorConfigContent, Encoding.UTF8);
+            await File.WriteAllTextAsync(
+                project.EditorConfigPath,
+                editorConfigContent,
+                Encoding.UTF8,
+                cancellationToken
+            );
         }
 
         if (additionalFiles is not null)
@@ -1128,7 +1360,7 @@ public sealed class Class1;
                     Directory.CreateDirectory(directory);
                 }
 
-                await File.WriteAllTextAsync(filePath, content, Encoding.UTF8);
+                await File.WriteAllTextAsync(filePath, content, Encoding.UTF8, cancellationToken);
             }
         }
 
@@ -1136,10 +1368,12 @@ public sealed class Class1;
     }
 
     public Task<DotNetCommandResult> RunDotNetAsync(string arguments) =>
-        DotNetCommand.RunAsync(RootDirectory, arguments, environment);
+        DotNetCommand.RunAsync(RootDirectory, arguments, environment, TestContext.Current.CancellationToken);
 
     public async Task<BuildDiagnosticsResult> BuildAndCollectDiagnosticsAsync(string additionalArguments = "")
     {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
         if (File.Exists(BinLogPath))
         {
             File.Delete(BinLogPath);
@@ -1154,7 +1388,7 @@ public sealed class Class1;
         var result = await RunDotNetAsync(
             $"build {Quote(ProjectFilePath)}{argumentsSuffix} -p:ErrorLog={Quote($"{BuildOutputSarifPath},version=2.1")} /bl:{Quote(BinLogPath)}"
         );
-        var binLogContent = File.Exists(BinLogPath) ? await File.ReadAllBytesAsync(BinLogPath) : [];
+        var binLogContent = File.Exists(BinLogPath) ? await File.ReadAllBytesAsync(BinLogPath, cancellationToken) : [];
         var sarif = await SarifFile.LoadAsync(BuildOutputSarifPath);
 
         return new BuildDiagnosticsResult(result.ExitCode, result.Output, binLogContent, sarif);
@@ -1172,7 +1406,7 @@ public sealed class Class1;
         var properties = new Dictionary<string, string>(StringComparer.Ordinal);
         var propertiesPath = Path.Combine(RootDirectory, "headless-properties.txt");
 
-        foreach (var line in await File.ReadAllLinesAsync(propertiesPath))
+        foreach (var line in await File.ReadAllLinesAsync(propertiesPath, TestContext.Current.CancellationToken))
         {
             var separatorIndex = line.IndexOf('=', StringComparison.Ordinal);
             Assert.True(separatorIndex > 0, $"Invalid property output line: {line}");
@@ -1288,10 +1522,11 @@ public sealed class Class1;
                 <PropertyGroup>
                   <_HeadlessEvaluatedEditorConfigFiles>@(EditorConfigFiles, '|')</_HeadlessEvaluatedEditorConfigFiles>
                   <_HeadlessEvaluatedNoneItems>@(None->'%(Identity)', '|')</_HeadlessEvaluatedNoneItems>
+                  <_HeadlessEvaluatedRuntimeHostOptions>@(RuntimeHostConfigurationOption->'%(Identity)=%(Value)', '|')</_HeadlessEvaluatedRuntimeHostOptions>
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
-                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments)"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
                   Overwrite="true"
                 />
               </Target>
@@ -1419,7 +1654,8 @@ internal static class DotNetCommand
     public static async Task<DotNetCommandResult> RunAsync(
         string workingDirectory,
         string arguments,
-        IReadOnlyDictionary<string, string> environment
+        IReadOnlyDictionary<string, string> environment,
+        CancellationToken cancellationToken = default
     )
     {
         var startInfo = new ProcessStartInfo("dotnet", AddDisableBuildServersArgument(arguments))
@@ -1453,10 +1689,11 @@ internal static class DotNetCommand
         using var process = new Process { StartInfo = startInfo };
         process.Start();
 
-        var standardOutputTask = process.StandardOutput.ReadToEndAsync();
-        var standardErrorTask = process.StandardError.ReadToEndAsync();
+        var standardOutputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var standardErrorTask = process.StandardError.ReadToEndAsync(cancellationToken);
 
-        using var timeout = new CancellationTokenSource(Timeout);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(Timeout);
 
         try
         {
@@ -1467,9 +1704,14 @@ internal static class DotNetCommand
             try
             {
                 process.Kill(entireProcessTree: true);
-                await process.WaitForExitAsync();
+                // A token already fired (caller cancellation or our timeout); wait unconditionally for the kill to settle.
+                await process.WaitForExitAsync(CancellationToken.None);
             }
             catch (InvalidOperationException) { }
+
+            // Distinguish caller cancellation from the internal timeout: if the caller's token fired,
+            // propagate real cancellation semantics rather than masking it as a command timeout.
+            cancellationToken.ThrowIfCancellationRequested();
 
             var timeoutOutput = $"{await standardOutputTask}{await standardErrorTask}".Trim();
             throw new TimeoutException(
