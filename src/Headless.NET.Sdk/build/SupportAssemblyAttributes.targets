@@ -1,6 +1,21 @@
 <Project>
+  <PropertyGroup>
+    <!--
+      The SDK marks consumer assemblies non-CLS-compliant by default. Set
+      HeadlessEmitClsCompliantAttribute=false to skip this so you can declare your own
+      [assembly: CLSCompliant(...)] (e.g. CLSCompliant(true)) without a CS0579 duplicate-attribute
+      conflict.
+    -->
+    <HeadlessEmitClsCompliantAttribute Condition="'$(HeadlessEmitClsCompliantAttribute)' == ''"
+      >true</HeadlessEmitClsCompliantAttribute
+    >
+  </PropertyGroup>
+
   <ItemGroup>
-    <AssemblyAttribute Include="System.CLSCompliantAttribute">
+    <AssemblyAttribute
+      Include="System.CLSCompliantAttribute"
+      Condition="'$(HeadlessEmitClsCompliantAttribute)' == 'true'"
+    >
       <_Parameter1>false</_Parameter1>
     </AssemblyAttribute>
 

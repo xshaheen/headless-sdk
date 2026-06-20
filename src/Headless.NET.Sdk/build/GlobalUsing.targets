@@ -1,7 +1,9 @@
 <Project>
   <!--
-    These TFM-gated usings need TargetFramework from the consumer project body, so they are
-    evaluated from .targets instead of .props.
+    TFM-gated usings. Item conditions are evaluated in MSBuild's item pass, which runs after the
+    property pass that sets the consumer's TargetFramework, so these resolve against the final TFM
+    even though the value comes from the project body. They live in .targets alongside the SDK's
+    other TFM-gated item logic; functionally they would also work from .props.
   -->
   <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0')) == 'true'">
     <Using Include="System.Text" />
