@@ -228,7 +228,7 @@ indent_size = 2
 
         var runsettings = ReadPackageEntry(package, "configurations/default.runsettings");
         Assert.Contains("<TreatNoTestsAsError>true</TreatNoTestsAsError>", runsettings, StringComparison.Ordinal);
-        Assert.Contains("GitHubActionsTestLogger.dll", runsettings, StringComparison.Ordinal);
+        Assert.Contains(@"GitHubActionsTestLogger\.dll", runsettings, StringComparison.Ordinal);
         Assert.Contains(@".*\.Tests\.[^.]+\.dll$", runsettings, StringComparison.Ordinal);
         Assert.Contains(@".*\.Testing\.[^.]+\.dll$", runsettings, StringComparison.Ordinal);
         Assert.Contains(@".*\.g\.cs$", runsettings, StringComparison.Ordinal);
