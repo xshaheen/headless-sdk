@@ -8,7 +8,7 @@
 <_HeadlessMtpHotReloadVersion>2.2.3</_HeadlessMtpHotReloadVersion>
 <_HeadlessMtpRetryVersion>2.2.3</_HeadlessMtpRetryVersion>
 <_HeadlessMtpTrxReportVersion>2.2.3</_HeadlessMtpTrxReportVersion>
-<_HeadlessMtpCodeCoverageVersion>18.7.0</_HeadlessMtpCodeCoverageVersion>
+<_HeadlessMtpCodeCoverageVersion>18.8.0</_HeadlessMtpCodeCoverageVersion>
 <_HeadlessGitHubActionsTestLoggerVersion>2.4.1</_HeadlessGitHubActionsTestLoggerVersion>
 </PropertyGroup>
 </Project>
