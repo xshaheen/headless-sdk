@@ -14,7 +14,7 @@
           <CodeCoverage>
             <ModulePaths>
               <Exclude>
-                <ModulePath>.*\\GitHubActionsTestLogger.dll$</ModulePath>
+                <ModulePath>.*GitHubActionsTestLogger\.dll$</ModulePath>
                 <ModulePath>.*\.Tests\.[^.]+\.dll$</ModulePath>
                 <ModulePath>.*\.Testing\.dll$</ModulePath>
                 <ModulePath>.*\.Testing\.[^.]+\.dll$</ModulePath>
