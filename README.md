@@ -160,6 +160,17 @@ Many values apply only when the consuming project has not already set the proper
 | `HeadlessSuppressNonPackablePackWarning` | `true` | Suppresses NuGet's non-packable project warning when `IsPackable=false`, keeping solution-level `dotnet pack` CI-safe. |
 | `PackAsTool` | `true` for non-test, non-Web executables | Packages executable projects as .NET tools by default. |
 
+### Assembly Metadata
+
+`SupportAssemblyAttributes.targets` emits a few assembly-level attributes into every consuming project.
+
+| Behavior | Default | Effect |
+| --- | --- | --- |
+| `[assembly: CLSCompliant(false)]` | Emitted | Marks the assembly non-CLS-compliant. Set `HeadlessEmitClsCompliantAttribute=false` to skip it so you can declare your own `[assembly: CLSCompliant(...)]` (e.g. `true`) without a `CS0579` duplicate-attribute error. |
+| `[assembly: AssemblyMetadata("Headless.NET.Sdk.SdkName"/"...ProjectType", ...)]` | Emitted | Records which Headless SDK variant and project type produced the assembly. |
+| `InternalsVisibleTo` for `<Project>.Tests.Architecture`, `.Tests.Unit`, `.Tests.Integration`, `.Tests.Acceptance` | Added for non-test projects | Grants the conventionally named test assemblies access to internals. Harmless if those assemblies don't exist — it only bakes in the naming convention. These four names are not configurable; add your own `InternalsVisibleTo` items for other test assembly names. |
+| `[assembly: ExcludeFromCodeCoverage]` | Added for test projects (net5.0+) | Excludes the test assembly itself from coverage. |
+
 ### Analysis And API Hygiene
 
 | Property | Default | Effect |
@@ -321,6 +332,8 @@ dotnet nuget push ./artifacts/packages-results/*.nupkg \
   --skip-duplicate \
   --api-key "$NUGET_API_KEY"
 ```
+
+The test-tool versions injected into consumer test projects (`Microsoft.NET.Test.Sdk`, the `Microsoft.Testing.Extensions.*` packages, and `GitHubActionsTestLogger`) cannot be governed by a consumer's Central Package Management, so they ship as concrete versions inside the SDK package. Their single source of truth is `Directory.Packages.props`: the `GenerateHeadlessTestToolVersions` target regenerates `build/SupportTestProjects.Versions.props` from those pins on every build (CI runs it explicitly before build/pack), and `VersionConsistencyTests` guards the result. To bump one, change only `Directory.Packages.props` (Dependabot does the same) and rebuild — the generated file follows automatically.
 
 ## License
 
