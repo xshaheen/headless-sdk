@@ -1,4 +1,7 @@
 <Project>
+  <!-- Injected test-tool versions, generated from Directory.Packages.props (see VersionConsistencyTests). -->
+  <Import Project="$(MSBuildThisFileDirectory)SupportTestProjects.Versions.props" />
+
   <PropertyGroup>
     <IsTestProject>true</IsTestProject>
     <IsPublishable>false</IsPublishable>
@@ -38,12 +41,12 @@
         @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) == 'true' OR
         @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) == 'true'))"
   >
-    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" Version="2.2.3" IsImplicitlyDefined="true" />
-    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.7.0" IsImplicitlyDefined="true" />
-    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="2.2.3" IsImplicitlyDefined="true" />
-    <PackageReference Include="Microsoft.Testing.Extensions.HotReload" Version="2.2.3" IsImplicitlyDefined="true" />
-    <PackageReference Include="Microsoft.Testing.Extensions.Retry" Version="2.2.3" IsImplicitlyDefined="true" />
-    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.2.3" IsImplicitlyDefined="true" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" Version="$(_HeadlessMtpCrashDumpVersion)" IsImplicitlyDefined="true" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="$(_HeadlessMtpCodeCoverageVersion)" IsImplicitlyDefined="true" />
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="$(_HeadlessMtpHangDumpVersion)" IsImplicitlyDefined="true" />
+    <PackageReference Include="Microsoft.Testing.Extensions.HotReload" Version="$(_HeadlessMtpHotReloadVersion)" IsImplicitlyDefined="true" />
+    <PackageReference Include="Microsoft.Testing.Extensions.Retry" Version="$(_HeadlessMtpRetryVersion)" IsImplicitlyDefined="true" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="$(_HeadlessMtpTrxReportVersion)" IsImplicitlyDefined="true" />
   </ItemGroup>
 
   <!--
@@ -83,7 +86,7 @@
       by the consumer's Central Package Management. Keep it in sync with the repo's own
       Directory.Packages.props Microsoft.NET.Test.Sdk version whenever bumping.
     -->
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.1" IsImplicitlyDefined="true" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(_HeadlessMicrosoftNetTestSdkVersion)" IsImplicitlyDefined="true" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(EnableDefaultTestSettings)' != 'false'">
@@ -126,7 +129,7 @@
         <VSTestLogger>$(VSTestLogger);GitHubActions</VSTestLogger>
       </PropertyGroup>
       <ItemGroup>
-        <PackageReference Include="GitHubActionsTestLogger" Version="2.4.1" IsImplicitlyDefined="true">
+        <PackageReference Include="GitHubActionsTestLogger" Version="$(_HeadlessGitHubActionsTestLoggerVersion)" IsImplicitlyDefined="true">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>

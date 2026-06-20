@@ -17,4 +17,5 @@
     <Project Path="src\Headless.NET.Sdk.WindowsDesktop\Headless.NET.Sdk.WindowsDesktop.csproj" />
     <Project Path="src\Headless.NET.Sdk\Headless.NET.Sdk.csproj" />
     <Project Path="tests\Headless.NET.Sdk.Tests.Integrations\Headless.NET.Sdk.Tests.Integrations.csproj" />
+    <Project Path="tests\Headless.NET.Sdk.TestToolVersions.Anchor\Headless.NET.Sdk.TestToolVersions.Anchor.csproj" />
 </Solution>

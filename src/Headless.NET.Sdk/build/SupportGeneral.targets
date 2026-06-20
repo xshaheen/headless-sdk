@@ -40,8 +40,10 @@
 
   <!--
     Allow apps to run on a newer major .NET runtime if their pinned major isn't installed.
-    Skipped for test projects (they should pin to the SDK they were built against) and libraries
-    (RollForward only applies to executables / shared frameworks).
+    Applied to every non-test project: it is what executables (Exe and WinExe) need, and an inert
+    no-op for libraries (RollForward only affects the runtime host, and libraries emit no
+    runtimeconfig.json). Gating on OutputType is deliberately avoided so WinExe desktop apps are
+    still covered. Skipped only for test projects, which should pin to the SDK they were built against.
   -->
   <PropertyGroup
     Label="RollForward"

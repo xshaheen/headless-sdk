@@ -16,7 +16,20 @@
     <PackageVersion Include="MSBuild.StructuredLogger" Version="2.3.204" />
     <PackageVersion Include="MinVer" Version="7.0.0" />
     <PackageVersion Include="xunit.v3.mtp-v2" Version="3.2.2" />
+    <!--
+      Versions injected into consumer test projects by build/SupportTestProjects.targets
+      (also: Microsoft.NET.Test.Sdk above). A consumer's Central Package Management cannot govern
+      SDK-injected references, so these pins are the single source of truth: the
+      GenerateHeadlessTestToolVersions target (Headless.NET.Sdk.csproj) bakes them into the shipped
+      build/SupportTestProjects.Versions.props on build, and VersionConsistencyTests guards the
+      result. Bump only here (Dependabot does too) and the value flows into the package.
+    -->
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.2.3" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.8.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="2.2.3" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.2.3" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HotReload" Version="2.2.3" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.Retry" Version="2.2.3" />
+    <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
   </ItemGroup>
 </Project>

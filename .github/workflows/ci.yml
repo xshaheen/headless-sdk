@@ -74,6 +74,11 @@ jobs:
       - name: Restore
         run: dotnet restore headless-sdk.slnx -p:RestorePackagesWithLockFile=false -p:RestoreLockedMode=false
 
+      # Refresh the injected test-tool versions from Directory.Packages.props before build/pack so a
+      # Dependabot bump of the central pins flows into the shipped assets without a manual edit.
+      - name: Sync injected test-tool versions
+        run: dotnet msbuild src/Headless.NET.Sdk/Headless.NET.Sdk.csproj -t:GenerateHeadlessTestToolVersions -nologo
+
       - name: Build
         run: dotnet build headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -v:q -nologo /clp:ErrorsOnly
 
