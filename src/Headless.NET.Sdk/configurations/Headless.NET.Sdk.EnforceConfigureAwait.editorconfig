@@ -1,0 +1,5 @@
+is_global = true
+global_level = 1
+
+# CA2007: Consider calling ConfigureAwait on the awaited task
+dotnet_diagnostic.ca2007.severity = warning

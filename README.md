@@ -181,6 +181,7 @@ Many values apply only when the consuming project has not already set the proper
 | `EnforceCodeStyleInBuild` | `true` | Enforces code style during build. |
 | `ReportAnalyzer` | `true` | Includes analyzer timing/reporting data. |
 | `RunAnalyzersDuringBuild` | `true` | Runs analyzers during builds. |
+| `HeadlessEnforceConfigureAwait` | `false` | Suppresses `CA2007` by default since most Headless apps run without a `SynchronizationContext`. Set `true` to surface `CA2007` (`ConfigureAwait(false)`) as a warning — intended for library code consumed by `Headless.NET.Sdk.WindowsDesktop` apps, which carry a `SynchronizationContext`. |
 | Implicit analyzer packages | Enabled | Adds Meziantou, AsyncFixer, Asyncify, Microsoft.VisualStudio.Threading.Analyzers, SmartAnalyzers.MultithreadingAnalyzer, Roslynator.Analyzers, ReflectionAnalyzers, ErrorProne.NET.CoreAnalyzers, and banned API analyzers. |
 | `IncludeDefaultBannedSymbols` | `true` | Adds the bundled banned API list. Set `false` to skip it. |
 | `BannedNewtonsoftJsonSymbols` | `true` | Bans Newtonsoft.Json APIs by default. Set `false` to keep them. |

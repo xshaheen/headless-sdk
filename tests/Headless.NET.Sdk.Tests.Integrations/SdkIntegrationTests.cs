@@ -435,6 +435,66 @@ class Foo { }
     }
 
     [Fact]
+    public async Task should_not_report_configure_await_when_enforcement_is_disabled_by_default()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            targetFramework: "net10.0",
+            includePackageReference: false,
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Repro.cs"] =
+                    "namespace ConsumerProject; public static class Repro { public static async System.Threading.Tasks.Task M() => await System.Threading.Tasks.Task.Delay(1); }",
+            }
+        );
+
+        // --no-incremental: analyzers do not reliably re-run on an incremental build, so force a full
+        // build to make the (absent) CA2007 diagnostic deterministic.
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} --no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.DoesNotContain("CA2007", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_report_configure_await_warning_when_enforcement_is_enabled()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            targetFramework: "net10.0",
+            includePackageReference: false,
+            // The Headless SDK defaults TreatWarningsAsErrors=true in Debug; this test asserts CA2007
+            // surfaces as a *warning* (proving the opt-in enforcement editorconfig was imported), so keep
+            // warnings non-fatal here -- the warnings-as-error policy is covered by its own tests.
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["HeadlessEnforceConfigureAwait"] = "true",
+                ["TreatWarningsAsErrors"] = "false",
+            },
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Repro.cs"] =
+                    "namespace ConsumerProject; public static class Repro { public static async System.Threading.Tasks.Task M() => await System.Threading.Tasks.Task.Delay(1); }",
+            }
+        );
+
+        // --no-incremental: analyzers do not reliably re-run on an incremental build, so force a full
+        // build to make the CA2007 diagnostic deterministic.
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} --no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.Contains("warning CA2007", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task should_use_expected_msbuild_property_defaults()
     {
         await using var project = await ConsumerProject.CreateAsync(

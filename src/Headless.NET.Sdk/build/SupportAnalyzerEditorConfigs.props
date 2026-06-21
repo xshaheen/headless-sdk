@@ -4,5 +4,9 @@
       Include="$(MSBuildThisFileDirectory)..\configurations\Headless.NET.Sdk.Analyzers.editorconfig"
       Condition="'$(DisableSupportAnalyzerEditorConfigs)' != 'true'"
     />
+    <EditorConfigFiles
+      Include="$(MSBuildThisFileDirectory)..\configurations\Headless.NET.Sdk.EnforceConfigureAwait.editorconfig"
+      Condition="'$(HeadlessEnforceConfigureAwait)' == 'true' and '$(DisableSupportAnalyzerEditorConfigs)' != 'true'"
+    />
   </ItemGroup>
 </Project>

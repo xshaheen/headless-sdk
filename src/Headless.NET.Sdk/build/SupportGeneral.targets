@@ -38,6 +38,20 @@
     <NoWarn Condition="'$(DisableDocumentationWarnings)' != 'false'">$(NoWarn);CS1573;CS1591</NoWarn>
   </PropertyGroup>
 
+  <PropertyGroup Label="ConfigureAwait Enforcement">
+    <!--
+      CA2007: Consider calling ConfigureAwait on the awaited task.
+      Suppressed by default because most Headless apps run without a SynchronizationContext. Opt in via
+      <HeadlessEnforceConfigureAwait>true</HeadlessEnforceConfigureAwait> (e.g. libraries consumed by
+      Headless.NET.Sdk.WindowsDesktop apps). When enforced, the bundled
+      Headless.NET.Sdk.EnforceConfigureAwait.editorconfig raises CA2007 to a warning; the redundant
+      ConfigureAwait analyzers (RCS1090, MA0004, VSTHRD111) stay suppressed so only CA2007 reports.
+      Evaluated here (not in SupportGeneral.props) so the consumer's HeadlessEnforceConfigureAwait
+      value is already set before the suppression decision is made.
+    -->
+    <NoWarn Condition="'$(HeadlessEnforceConfigureAwait)' != 'true'">$(NoWarn);CA2007</NoWarn>
+  </PropertyGroup>
+
   <!--
     Allow apps to run on a newer major .NET runtime if their pinned major isn't installed.
     Applied to every non-test project: it is what executables (Exe and WinExe) need, and an inert
