@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.115] - 2026-06-21
+
+### Fixed
+
+- Suppressed `IDE1006` in the injected test analyzer config so test projects can keep snake_case test method names without naming diagnostics.
+
 ## [0.0.114] - 2026-06-21
 
 ### Added

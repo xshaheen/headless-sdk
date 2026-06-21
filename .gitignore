@@ -293,3 +293,6 @@ __pycache__/
 /.husky/pre-commit
 # Scratch / agent working dir
 tmp/
+
+# Local agent/release cache
+.context/*.local.yaml
