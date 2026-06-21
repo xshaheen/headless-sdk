@@ -125,8 +125,6 @@ dotnet_diagnostic.ca1861.severity = suggestion
 dotnet_diagnostic.ca1716.severity = silent
 # CA1000: Do not declare static members on generic types
 dotnet_diagnostic.ca1000.severity = suggestion
-# CA2016: Forward the CancellationToken parameter to methods that take one
-dotnet_diagnostic.ca2016.severity = error
 # CA1859: Use concrete types when possible for improved performance
 dotnet_diagnostic.ca1859.severity = suggestion
 # CA1024: Use properties where appropriate
@@ -159,28 +157,10 @@ dotnet_diagnostic.ca1720.severity = suggestion
 dotnet_diagnostic.ca1725.severity = suggestion
 # CA2009: Do not call ToImmutableCollection on an ImmutableCollection value
 dotnet_diagnostic.ca2009.severity = warning
-# CA5350: Do Not Use Weak Cryptographic Algorithms
-dotnet_diagnostic.ca5350.severity = warning
-# CA5351 Do Not Use Broken Cryptographic Algorithms
-dotnet_diagnostic.ca5351.severity = warning
-# CA5359: Do not disable certificate validation
-dotnet_diagnostic.ca5359.severity = warning
-# CA5360: Do not call dangerous methods in deserialization
-dotnet_diagnostic.ca5360.severity = warning
-# CA5364: Do not use deprecated security protocols
-dotnet_diagnostic.ca5364.severity = warning
-# CA5379: Ensure key derivation function algorithm is sufficiently strong
-dotnet_diagnostic.ca5379.severity = warning
-# CA5384: Do not use digital signature algorithm (DSA)
-dotnet_diagnostic.ca5384.severity = warning
-# CA5385: Use Rivest–Shamir–Adleman (RSA) algorithm with sufficient key size
-dotnet_diagnostic.ca5385.severity = warning
 # CA1851: Possible multiple enumerations of 'IEnumerable' collection
 dotnet_diagnostic.ca1851.severity = suggestion
 # CA1008: Enums should have zero value
 dotnet_diagnostic.ca1008.severity = suggestion
-# CS0184: 'is' expression's given expression is never of the provided type
-dotnet_diagnostic.cs0184.severity = error
 # CA2249: Consider using 'string.Contains' instead of 'string.IndexOf'
 dotnet_diagnostic.ca2249.severity = warning
 # CA1018: Mark attributes with AttributeUsageAttribute
@@ -203,10 +183,6 @@ dotnet_diagnostic.ca1833.severity = warning
 dotnet_diagnostic.ca1837.severity = warning
 # CA1836: Prefer IsEmpty over Count
 dotnet_diagnostic.ca1836.severity = warning
-# CA2011: Avoid infinite recursion
-dotnet_diagnostic.ca2011.severity = warning
-# CA2012: Use ValueTask correctly
-dotnet_diagnostic.ca2012.severity = warning
 # CA1036: A class that implements IComparable<T> or IComparable should override comparison operators
 dotnet_diagnostic.ca1036.severity = suggestion
 # CA1019: Define accessors for attribute arguments
@@ -227,46 +203,14 @@ dotnet_diagnostic.faa0002.severity = warning
 
 # RCS1021: Convert lambda expression body to expression-body
 dotnet_diagnostic.rcs1021.severity = suggestion
-# AsyncFixer02: Long-running or blocking operations inside an async method
-dotnet_diagnostic.asyncfixer02.severity = error
-# VSTHRD103: Call async methods when in an async method
-dotnet_diagnostic.vsthrd103.severity = error
-# AsyncFixer03: Fire & forget async void methods
-dotnet_diagnostic.asyncfixer03.severity = error
-# VSTHRD100: Avoid async void methods
-dotnet_diagnostic.vsthrd100.severity = error
-# VSTHRD101: Avoid unsupported async delegates
-dotnet_diagnostic.vsthrd101.severity = error
-# VSTHRD107: Await Task within using expression
-dotnet_diagnostic.vsthrd107.severity = error
-# AsyncFixer04: Fire & forget async call inside a using block
-dotnet_diagnostic.asyncfixer04.severity = error
-# VSTHRD110: Observe result of async calls
-dotnet_diagnostic.vsthrd110.severity = error
 # VSTHRD002: Avoid problematic synchronous waits
 dotnet_diagnostic.vsthrd002.severity = none
 # MA0045: Do not use blocking call (make method async)
 dotnet_diagnostic.ma0045.severity = suggestion
-# AsyncifyInvocation: Use Task Async
-dotnet_diagnostic.asyncifyinvocation.severity = error
-# AsyncifyVariable: Use Task Async
-dotnet_diagnostic.asyncifyvariable.severity = error
-# MA0025: Implement the functionality (or raise NotSupportedException or PlatformNotSupportedException)
-dotnet_diagnostic.ma0025.severity = suggestion
 # MA0026: TO-DO comment
 dotnet_diagnostic.ma0026.severity = suggestion
-# MA0022: Return Task.FromResult instead of returning null
-dotnet_diagnostic.ma0022.severity = error
-# AsyncFixer05: Down-casting from a nested task to an outer task.
-dotnet_diagnostic.asyncfixer05.severity = error
-# VSTHRD114: Avoid returning a null Task
-dotnet_diagnostic.vsthrd114.severity = error
 # MA0079: Forward the CancellationToken using .WithCancellation()
 dotnet_diagnostic.ma0079.severity = warning
-# MA0080: Use a cancellation token using .WithCancellation()
-dotnet_diagnostic.ma0080.severity = error
-# MA0047: Declare types in namespaces
-dotnet_diagnostic.ma0047.severity = suggestion
 # MA0006: Use String.Equals instead of equality operator
 dotnet_diagnostic.ma0006.severity = suggestion
 
