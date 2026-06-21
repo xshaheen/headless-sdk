@@ -1,2 +1,6 @@
 **/*.verified.*
 **/*.received.*
+
+.nuget/
+.worktrees/
+artifacts/

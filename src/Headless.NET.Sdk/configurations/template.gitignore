@@ -1,12 +1,19 @@
+## Modern .NET / Visual Studio gitignore template
+## Based on the useful current parts of GitHub's VisualStudio.gitignore.
+
 # User-specific files
 *.rsuser
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
-*.bak
-*- [Bb]ackup.*
 *.userprefs
+*.sln.iml
+
+# Local worktrees and agent/tool artifacts
+.worktrees/
+.context/
+artifacts/
 
 # Build results
 [Dd]ebug/
@@ -15,6 +22,7 @@
 [Rr]eleases/
 x64/
 x86/
+[Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
@@ -24,62 +32,133 @@ bld/
 [Ll]ogs/
 [Gg]enerated/
 _[Gg]enerated/
-artifacts/
-publish/
 
-# IDEs
+# IDEs and editors
 .vs/
-.sarif/
-**/.idea/
-Generated\ Files/
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+*.lscache
 
 # Test results and snapshots
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
 *.received.*
-*.coverage
-*.coveragexml
+*.VisualState.xml
 TestResult.xml
 nunit-*.xml
 
-# Diagnostics
+# Coverage and diagnostics
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+*.binlog
 *.sarif
 *.log
-*.binlog
 
-# BenchmarkDotNet
+# Benchmarks
 BenchmarkDotNet.Artifacts/
 
-# NuGet
+# NuGet and package restore
 *.nupkg
 *.snupkg
-project.lock.json
-project.fragment.lock.json
 **/[Pp]ackages/*
 !**/[Pp]ackages/build/
 *.nuget.props
 *.nuget.targets
+project.lock.json
+project.fragment.lock.json
 
-# ReSharper / Rider / dotCover
+# Publish outputs and profiles
+publish/
+*.[Pp]ublish.xml
+*.azurePubxml
+*.pubxml
+*.publishproj
+*.publishsettings
+PublishScripts/
+
+# Visual Studio and MSBuild intermediates
+*_wpftmp.csproj
+*.cachefile
+*.ilk
+*.iobj
+*.ipdb
+*.meta
+*.obj
+*.pch
+*.pdb
+*.rsp
+*.tmp
+*.tmp_proj
+*.tlog
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# ReSharper, Rider, and dotCover
 _ReSharper*/
 *.[Rr]e[Ss]harper
 *.DotSettings.user
 *.dotCover
 
-# NCrunch
-_NCrunch_*
-.*crunch*.local.xml
-nCrunchTemp_*
+# .NET tooling
+ScaffoldingReadMe.txt
+StyleCopReport.xml
+FakesAssemblies/
+FodyWeavers.xsd
+orleans.codegen.cs
 
-# Temporary files
-*.tmp
-*.tmp_proj
-*.cache
-*.pidb
+# SQL Server and BI generated files
+*.mdf
+*.ldf
+*.ndf
+*.rdl.data
+*.bim.layout
+*.bim_*.settings
+*.rptproj.rsuser
+
+# Node and TypeScript tooling
+node_modules/
+typings/
+.ntvs_analysis.dat
+
+# Python tooling
+__pycache__/
+*.pyc
+
+# Backup, temporary, and local history files
+*.bak
+*- [Bb]ackup.*
 ~$*
 *~
+*.[Cc]ache
+!?*.[Cc]ache/
+.localhistory/
+.history/
+.vshistory/
+MigrationBackup/
 
-# Publish profiles can contain secrets.
-*.pubxml
-*.publishproj
-PublishScripts/
+# Secrets and machine-local settings
+*.pfx
+profile.arm.json
+
+# Windows Installer files from build outputs
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# OS generated files
+.DS_Store
+Thumbs.db
