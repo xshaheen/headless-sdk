@@ -1,3 +1,22 @@
+<!--
+  SupportAdditionalFiles.targets
+
+  Scaffolds repo-convenience files (.editorconfig, .csharpierignore, .gitignore, .gitattributes)
+  into the solution/project directory.
+
+  These are version-control and formatting conveniences, NOT build inputs: the build never reads
+  them and never writes them. They are scaffolded ONLY on demand, via the explicit, deliberately
+  invoked target:
+
+      dotnet build -t:HeadlessScaffoldConfigFiles
+
+  This mirrors the `dotnet new` scaffold model: a file is created only when it is absent, and an
+  existing user-owned file is NEVER overwritten unless the consumer explicitly forces it with
+  `-p:HeadlessOverwriteConfigFiles=true`.
+
+  The binding analyzer .editorconfig that drives analyzer severities is injected separately and
+  automatically via SupportAnalyzerEditorConfigs.props; it is unrelated to these scaffold files.
+-->
 <Project>
   <PropertyGroup>
     <HeadlessCopyDefaultConfigFilesToSolutionDir Condition="'$(HeadlessCopyDefaultConfigFilesToSolutionDir)' == ''"
@@ -15,50 +34,172 @@
     <HeadlessCopyGitAttributesToSolutionDir Condition="'$(HeadlessCopyGitAttributesToSolutionDir)' == ''"
       >$(HeadlessCopyDefaultConfigFilesToSolutionDir)</HeadlessCopyGitAttributesToSolutionDir
     >
+
+    <!-- Force-overwrite an existing destination file. Never overwrite by default. -->
+    <HeadlessOverwriteConfigFiles Condition="'$(HeadlessOverwriteConfigFiles)' == ''"
+      >false</HeadlessOverwriteConfigFiles
+    >
   </PropertyGroup>
 
-  <Target
-    Condition="('$(HeadlessCopyDefaultConfigFilesToSolutionDir)' == 'true'
-      or '$(HeadlessCopyEditorConfigToSolutionDir)' == 'true'
-      or '$(HeadlessCopyCSharpierIgnoreToSolutionDir)' == 'true'
-      or '$(HeadlessCopyGitIgnoreToSolutionDir)' == 'true'
-      or '$(HeadlessCopyGitAttributesToSolutionDir)' == 'true')
-      and '$(SolutionDir)' != ''
-      and '$(SolutionDir)' != '*Undefined*'"
-    Name="UpdateHeadlessConfigFiles"
-    BeforeTargets="Build"
-  >
-    <ItemGroup>
-      <_HeadlessConfigFile
-        Include="$(MSBuildThisFileDirectory)../configurations/editorconfig.txt"
-        Condition="'$(HeadlessCopyDefaultConfigFilesToSolutionDir)' == 'true' or '$(HeadlessCopyEditorConfigToSolutionDir)' == 'true'"
-      >
-        <DestinationFile>.editorconfig</DestinationFile>
-      </_HeadlessConfigFile>
-      <_HeadlessConfigFile
-        Include="$(MSBuildThisFileDirectory)../configurations/template.csharpierignore"
-        Condition="'$(HeadlessCopyCSharpierIgnoreToSolutionDir)' == 'true'"
-      >
-        <DestinationFile>.csharpierignore</DestinationFile>
-      </_HeadlessConfigFile>
-      <_HeadlessConfigFile
-        Include="$(MSBuildThisFileDirectory)../configurations/template.gitignore"
-        Condition="'$(HeadlessCopyGitIgnoreToSolutionDir)' == 'true'"
-      >
-        <DestinationFile>.gitignore</DestinationFile>
-      </_HeadlessConfigFile>
-      <_HeadlessConfigFile
-        Include="$(MSBuildThisFileDirectory)../configurations/template.gitattributes"
-        Condition="'$(HeadlessCopyGitAttributesToSolutionDir)' == 'true'"
-      >
-        <DestinationFile>.gitattributes</DestinationFile>
-      </_HeadlessConfigFile>
-    </ItemGroup>
+  <!--
+    Explicit, on-demand scaffold target. Intentionally has NO BeforeTargets/AfterTargets hooks:
+    nothing runs during a normal build. Invoke it directly with `-t:HeadlessScaffoldConfigFiles`.
+  -->
+  <Target Name="HeadlessScaffoldConfigFiles">
+    <PropertyGroup>
+      <!-- Did the consumer select any specific files? If not, scaffold the full default set. -->
+      <_HeadlessScaffoldAnyFlag>false</_HeadlessScaffoldAnyFlag>
+      <_HeadlessScaffoldAnyFlag
+        Condition="'$(HeadlessCopyDefaultConfigFilesToSolutionDir)' == 'true'
+          or '$(HeadlessCopyEditorConfigToSolutionDir)' == 'true'
+          or '$(HeadlessCopyCSharpierIgnoreToSolutionDir)' == 'true'
+          or '$(HeadlessCopyGitIgnoreToSolutionDir)' == 'true'
+          or '$(HeadlessCopyGitAttributesToSolutionDir)' == 'true'"
+      >true</_HeadlessScaffoldAnyFlag>
 
+      <!-- Per-file selection: a file is selected by its own flag, by the master flag, or (when
+           no flag at all was set) by the no-selector default that scaffolds everything. -->
+      <_HeadlessScaffoldEditorConfig>false</_HeadlessScaffoldEditorConfig>
+      <_HeadlessScaffoldEditorConfig
+        Condition="'$(_HeadlessScaffoldAnyFlag)' != 'true'
+          or '$(HeadlessCopyDefaultConfigFilesToSolutionDir)' == 'true'
+          or '$(HeadlessCopyEditorConfigToSolutionDir)' == 'true'"
+      >true</_HeadlessScaffoldEditorConfig>
+
+      <_HeadlessScaffoldCSharpierIgnore>false</_HeadlessScaffoldCSharpierIgnore>
+      <_HeadlessScaffoldCSharpierIgnore
+        Condition="'$(_HeadlessScaffoldAnyFlag)' != 'true'
+          or '$(HeadlessCopyCSharpierIgnoreToSolutionDir)' == 'true'"
+      >true</_HeadlessScaffoldCSharpierIgnore>
+
+      <_HeadlessScaffoldGitIgnore>false</_HeadlessScaffoldGitIgnore>
+      <_HeadlessScaffoldGitIgnore
+        Condition="'$(_HeadlessScaffoldAnyFlag)' != 'true'
+          or '$(HeadlessCopyGitIgnoreToSolutionDir)' == 'true'"
+      >true</_HeadlessScaffoldGitIgnore>
+
+      <_HeadlessScaffoldGitAttributes>false</_HeadlessScaffoldGitAttributes>
+      <_HeadlessScaffoldGitAttributes
+        Condition="'$(_HeadlessScaffoldAnyFlag)' != 'true'
+          or '$(HeadlessCopyGitAttributesToSolutionDir)' == 'true'"
+      >true</_HeadlessScaffoldGitAttributes>
+
+      <!-- Destination directory: prefer an explicit override, then $(SolutionDir), then the
+           project directory (so scaffolding a single csproj works). Always trailing-slashed. -->
+      <_HeadlessScaffoldDir Condition="'$(HeadlessConfigFilesDir)' != ''"
+        >$(HeadlessConfigFilesDir)</_HeadlessScaffoldDir
+      >
+      <_HeadlessScaffoldDir
+        Condition="'$(_HeadlessScaffoldDir)' == ''
+          and '$(SolutionDir)' != ''
+          and '$(SolutionDir)' != '*Undefined*'"
+      >$(SolutionDir)</_HeadlessScaffoldDir>
+      <_HeadlessScaffoldDir Condition="'$(_HeadlessScaffoldDir)' == ''"
+        >$(MSBuildProjectDirectory)/</_HeadlessScaffoldDir
+      >
+      <_HeadlessScaffoldDir Condition="!HasTrailingSlash('$(_HeadlessScaffoldDir)')"
+        >$(_HeadlessScaffoldDir)/</_HeadlessScaffoldDir
+      >
+
+      <!-- Resolved destination paths. -->
+      <_HeadlessEditorConfigDest>$(_HeadlessScaffoldDir).editorconfig</_HeadlessEditorConfigDest>
+      <_HeadlessCSharpierIgnoreDest>$(_HeadlessScaffoldDir).csharpierignore</_HeadlessCSharpierIgnoreDest>
+      <_HeadlessGitIgnoreDest>$(_HeadlessScaffoldDir).gitignore</_HeadlessGitIgnoreDest>
+      <_HeadlessGitAttributesDest>$(_HeadlessScaffoldDir).gitattributes</_HeadlessGitAttributesDest>
+    </PropertyGroup>
+
+    <!--
+      Per-file copies. Each file is written only when selected AND (destination is absent OR the
+      consumer forced an overwrite). Separate <Copy> tasks keep the per-file Exists() guards clean.
+    -->
+
+    <!-- .editorconfig -->
     <Copy
-      SourceFiles="@(_HeadlessConfigFile)"
-      DestinationFiles="@(_HeadlessConfigFile->'$(SolutionDir)%(DestinationFile)')"
+      Condition="'$(_HeadlessScaffoldEditorConfig)' == 'true'
+        and (!Exists('$(_HeadlessEditorConfigDest)') or '$(HeadlessOverwriteConfigFiles)' == 'true')"
+      SourceFiles="$(MSBuildThisFileDirectory)../configurations/editorconfig.txt"
+      DestinationFiles="$(_HeadlessEditorConfigDest)"
       SkipUnchangedFiles="true"
+    />
+    <Message
+      Condition="'$(_HeadlessScaffoldEditorConfig)' == 'true'
+        and (!Exists('$(_HeadlessEditorConfigDest)') or '$(HeadlessOverwriteConfigFiles)' == 'true')"
+      Importance="high"
+      Text="Created $(_HeadlessEditorConfigDest)"
+    />
+    <Message
+      Condition="'$(_HeadlessScaffoldEditorConfig)' == 'true'
+        and Exists('$(_HeadlessEditorConfigDest)') and '$(HeadlessOverwriteConfigFiles)' != 'true'"
+      Importance="high"
+      Text="Skipped $(_HeadlessEditorConfigDest) (already exists; pass -p:HeadlessOverwriteConfigFiles=true to overwrite)"
+    />
+
+    <!-- .csharpierignore -->
+    <Copy
+      Condition="'$(_HeadlessScaffoldCSharpierIgnore)' == 'true'
+        and (!Exists('$(_HeadlessCSharpierIgnoreDest)') or '$(HeadlessOverwriteConfigFiles)' == 'true')"
+      SourceFiles="$(MSBuildThisFileDirectory)../configurations/template.csharpierignore"
+      DestinationFiles="$(_HeadlessCSharpierIgnoreDest)"
+      SkipUnchangedFiles="true"
+    />
+    <Message
+      Condition="'$(_HeadlessScaffoldCSharpierIgnore)' == 'true'
+        and (!Exists('$(_HeadlessCSharpierIgnoreDest)') or '$(HeadlessOverwriteConfigFiles)' == 'true')"
+      Importance="high"
+      Text="Created $(_HeadlessCSharpierIgnoreDest)"
+    />
+    <Message
+      Condition="'$(_HeadlessScaffoldCSharpierIgnore)' == 'true'
+        and Exists('$(_HeadlessCSharpierIgnoreDest)') and '$(HeadlessOverwriteConfigFiles)' != 'true'"
+      Importance="high"
+      Text="Skipped $(_HeadlessCSharpierIgnoreDest) (already exists; pass -p:HeadlessOverwriteConfigFiles=true to overwrite)"
+    />
+
+    <!-- .gitignore -->
+    <Copy
+      Condition="'$(_HeadlessScaffoldGitIgnore)' == 'true'
+        and (!Exists('$(_HeadlessGitIgnoreDest)') or '$(HeadlessOverwriteConfigFiles)' == 'true')"
+      SourceFiles="$(MSBuildThisFileDirectory)../configurations/template.gitignore"
+      DestinationFiles="$(_HeadlessGitIgnoreDest)"
+      SkipUnchangedFiles="true"
+    />
+    <Message
+      Condition="'$(_HeadlessScaffoldGitIgnore)' == 'true'
+        and (!Exists('$(_HeadlessGitIgnoreDest)') or '$(HeadlessOverwriteConfigFiles)' == 'true')"
+      Importance="high"
+      Text="Created $(_HeadlessGitIgnoreDest)"
+    />
+    <Message
+      Condition="'$(_HeadlessScaffoldGitIgnore)' == 'true'
+        and Exists('$(_HeadlessGitIgnoreDest)') and '$(HeadlessOverwriteConfigFiles)' != 'true'"
+      Importance="high"
+      Text="Skipped $(_HeadlessGitIgnoreDest) (already exists; pass -p:HeadlessOverwriteConfigFiles=true to overwrite)"
+    />
+
+    <!-- .gitattributes -->
+    <Copy
+      Condition="'$(_HeadlessScaffoldGitAttributes)' == 'true'
+        and (!Exists('$(_HeadlessGitAttributesDest)') or '$(HeadlessOverwriteConfigFiles)' == 'true')"
+      SourceFiles="$(MSBuildThisFileDirectory)../configurations/template.gitattributes"
+      DestinationFiles="$(_HeadlessGitAttributesDest)"
+      SkipUnchangedFiles="true"
+    />
+    <Message
+      Condition="'$(_HeadlessScaffoldGitAttributes)' == 'true'
+        and (!Exists('$(_HeadlessGitAttributesDest)') or '$(HeadlessOverwriteConfigFiles)' == 'true')"
+      Importance="high"
+      Text="Created $(_HeadlessGitAttributesDest)"
+    />
+    <Message
+      Condition="'$(_HeadlessScaffoldGitAttributes)' == 'true'
+        and Exists('$(_HeadlessGitAttributesDest)') and '$(HeadlessOverwriteConfigFiles)' != 'true'"
+      Importance="high"
+      Text="Skipped $(_HeadlessGitAttributesDest) (already exists; pass -p:HeadlessOverwriteConfigFiles=true to overwrite)"
+    />
+
+    <Message
+      Importance="high"
+      Text="Headless: scaffolded repo config files into $(_HeadlessScaffoldDir) (existing files preserved unless -p:HeadlessOverwriteConfigFiles=true)."
     />
   </Target>
 </Project>

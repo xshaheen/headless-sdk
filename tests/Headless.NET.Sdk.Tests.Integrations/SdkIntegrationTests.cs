@@ -92,7 +92,7 @@ indent_size = 2
     }
 
     [Fact]
-    public async Task should_copy_editorconfig_when_explicitly_enabled()
+    public async Task should_copy_editorconfig_when_scaffold_target_invoked_with_editorconfig_selector()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -101,13 +101,13 @@ indent_size = 2
         );
 
         var result = await project.RunDotNetAsync(
-            $"build {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true -p:SolutionDir={Quote(project.SolutionDirectory)}"
+            $"build {Quote(project.ProjectFilePath)} -t:HeadlessScaffoldConfigFiles -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true -p:SolutionDir={Quote(project.SolutionDirectory)}"
         );
 
         Assert.True(result.ExitCode == 0, result.Output);
         Assert.True(
             File.Exists(project.EditorConfigPath),
-            "Expected build to copy .editorconfig when opt-in property is set."
+            "Expected the scaffold target to create .editorconfig when the selector is set."
         );
 
         var copiedEditorConfig = await File.ReadAllTextAsync(
@@ -115,10 +115,21 @@ indent_size = 2
             TestContext.Current.CancellationToken
         );
         Assert.Contains("# Common Settings", copiedEditorConfig, StringComparison.Ordinal);
+
+        // Selecting only .editorconfig must not pull in the other files.
+        Assert.False(
+            File.Exists(project.CSharpierIgnorePath),
+            "Did not expect .csharpierignore for editorconfig-only selector."
+        );
+        Assert.False(File.Exists(project.GitIgnorePath), "Did not expect .gitignore for editorconfig-only selector.");
+        Assert.False(
+            File.Exists(project.GitAttributesPath),
+            "Did not expect .gitattributes for editorconfig-only selector."
+        );
     }
 
     [Fact]
-    public async Task should_copy_default_config_files_when_explicitly_enabled()
+    public async Task should_copy_default_config_files_when_scaffold_target_invoked_with_master_selector()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -127,14 +138,17 @@ indent_size = 2
         );
 
         var result = await project.RunDotNetAsync(
-            $"build {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true -p:SolutionDir={Quote(project.SolutionDirectory)}"
+            $"build {Quote(project.ProjectFilePath)} -t:HeadlessScaffoldConfigFiles -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true -p:SolutionDir={Quote(project.SolutionDirectory)}"
         );
 
         Assert.True(result.ExitCode == 0, result.Output);
-        Assert.True(File.Exists(project.EditorConfigPath), "Expected build to copy .editorconfig.");
-        Assert.True(File.Exists(project.CSharpierIgnorePath), "Expected build to copy .csharpierignore.");
-        Assert.True(File.Exists(project.GitIgnorePath), "Expected build to copy .gitignore.");
-        Assert.True(File.Exists(project.GitAttributesPath), "Expected build to copy .gitattributes.");
+        Assert.True(File.Exists(project.EditorConfigPath), "Expected the scaffold target to create .editorconfig.");
+        Assert.True(
+            File.Exists(project.CSharpierIgnorePath),
+            "Expected the scaffold target to create .csharpierignore."
+        );
+        Assert.True(File.Exists(project.GitIgnorePath), "Expected the scaffold target to create .gitignore.");
+        Assert.True(File.Exists(project.GitAttributesPath), "Expected the scaffold target to create .gitattributes.");
 
         var csharpierIgnore = await File.ReadAllTextAsync(
             project.CSharpierIgnorePath,
@@ -1076,24 +1090,102 @@ public static class JsonConsumer
     }
 
     [Fact]
-    public async Task should_copy_config_files_to_solution_dir_when_default_config_copy_enabled()
+    public async Task should_not_write_config_files_on_plain_build()
     {
-        // SupportAdditionalFiles.targets copies the bundled config files to the solution directory.
+        // A normal build has no side effects: scaffolding only runs via the explicit target.
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
-            fixture.PackageSourceDirectory,
-            enableDefaultConfigFilesCopy: true
+            fixture.PackageSourceDirectory
         );
 
         var result = await project.RunDotNetAsync(
-            $"build {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true -p:SolutionDir={Quote(project.SolutionDirectory)}"
+            $"build {Quote(project.ProjectFilePath)} --no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true -p:SolutionDir={Quote(project.SolutionDirectory)}"
         );
 
         Assert.True(result.ExitCode == 0, result.Output);
-        Assert.True(File.Exists(project.GitAttributesPath), "Expected SupportAdditionalFiles to copy .gitattributes.");
+        Assert.False(File.Exists(project.EditorConfigPath), "Plain build must not create .editorconfig.");
+        Assert.False(File.Exists(project.CSharpierIgnorePath), "Plain build must not create .csharpierignore.");
+        Assert.False(File.Exists(project.GitIgnorePath), "Plain build must not create .gitignore.");
+        Assert.False(File.Exists(project.GitAttributesPath), "Plain build must not create .gitattributes.");
+    }
+
+    [Fact]
+    public async Task should_scaffold_config_files_when_target_invoked()
+    {
+        // With no selector set, the explicit target scaffolds the full default set.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -t:HeadlessScaffoldConfigFiles --no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true -p:SolutionDir={Quote(project.SolutionDirectory)}"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.True(File.Exists(project.EditorConfigPath), "Expected the scaffold target to create .editorconfig.");
+        Assert.True(
+            File.Exists(project.CSharpierIgnorePath),
+            "Expected the scaffold target to create .csharpierignore."
+        );
+        Assert.True(File.Exists(project.GitIgnorePath), "Expected the scaffold target to create .gitignore.");
+        Assert.True(File.Exists(project.GitAttributesPath), "Expected the scaffold target to create .gitattributes.");
 
         var gitignore = await File.ReadAllTextAsync(project.GitIgnorePath, TestContext.Current.CancellationToken);
-        Assert.False(string.IsNullOrWhiteSpace(gitignore), "Expected a non-empty copied .gitignore.");
+        Assert.False(string.IsNullOrWhiteSpace(gitignore), "Expected a non-empty scaffolded .gitignore.");
+    }
+
+    [Fact]
+    public async Task should_not_overwrite_existing_file_when_scaffolding()
+    {
+        const string Sentinel = "# sentinel-user-owned-gitignore\n";
+
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal) { [".gitignore"] = Sentinel }
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -t:HeadlessScaffoldConfigFiles --no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true -p:SolutionDir={Quote(project.SolutionDirectory)}"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+
+        // The user's existing file must be preserved verbatim.
+        var gitignore = await File.ReadAllTextAsync(project.GitIgnorePath, TestContext.Current.CancellationToken);
+        Assert.Equal(NormalizeLineEndings(Sentinel), NormalizeLineEndings(gitignore));
+        Assert.Contains("Skipped", result.Output, StringComparison.Ordinal);
+        Assert.Contains(".gitignore", result.Output, StringComparison.Ordinal);
+
+        // Files that did not pre-exist are still created.
+        Assert.True(
+            File.Exists(project.EditorConfigPath),
+            "Expected the scaffold target to create the absent .editorconfig."
+        );
+    }
+
+    [Fact]
+    public async Task should_overwrite_existing_file_when_force_enabled()
+    {
+        const string Sentinel = "# sentinel-user-owned-gitignore\n";
+
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal) { [".gitignore"] = Sentinel }
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -t:HeadlessScaffoldConfigFiles --no-incremental -p:HeadlessOverwriteConfigFiles=true -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true -p:SolutionDir={Quote(project.SolutionDirectory)}"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+
+        // The sentinel must be replaced with the bundled template content.
+        var gitignore = await File.ReadAllTextAsync(project.GitIgnorePath, TestContext.Current.CancellationToken);
+        Assert.DoesNotContain("sentinel-user-owned-gitignore", gitignore, StringComparison.Ordinal);
+        Assert.Contains("*.rsuser", gitignore, StringComparison.Ordinal);
     }
 
     private static string NormalizeLineEndings(string value) => value.ReplaceLineEndings("\n");

@@ -260,22 +260,41 @@ Container defaults only activate for `Microsoft.NET.Sdk.Web` projects running on
 
 ### Repository Config Files
 
-The SDK does not overwrite solution-level config files unless explicitly requested.
+The SDK bundles convenience repo files (`.editorconfig`, `.csharpierignore`, `.gitignore`,
+`.gitattributes`) that you can scaffold into your repository on demand. These are version-control
+and formatting conveniences, not build inputs. The SDK no longer copies them during `Build` —
+scaffolding runs only when you explicitly invoke the dedicated target:
+
+```bash
+dotnet build -t:HeadlessScaffoldConfigFiles
+```
+
+Scaffolding is create-if-absent: each file is written only when it does not already exist, so an
+existing file you own is never overwritten. Pass `-p:HeadlessOverwriteConfigFiles=true` to force a
+replacement.
+
+With no `HeadlessCopy*` selector set, invoking the target scaffolds the full default set (all four
+files). Set one or more selectors to scaffold only those files; the master flag selects all four.
 
 | Property | Default | Effect |
 | --- | --- | --- |
-| `HeadlessCopyDefaultConfigFilesToSolutionDir` | `false` | Copies `.editorconfig`, `.csharpierignore`, `.gitignore`, and `.gitattributes` to `$(SolutionDir)`. |
-| `HeadlessCopyEditorConfigToSolutionDir` | `false` | Copies only the bundled `.editorconfig`. |
-| `HeadlessCopyCSharpierIgnoreToSolutionDir` | Follows `HeadlessCopyDefaultConfigFilesToSolutionDir` | Copies the bundled `.csharpierignore`. |
-| `HeadlessCopyGitIgnoreToSolutionDir` | Follows `HeadlessCopyDefaultConfigFilesToSolutionDir` | Copies the bundled `.gitignore`. |
-| `HeadlessCopyGitAttributesToSolutionDir` | Follows `HeadlessCopyDefaultConfigFilesToSolutionDir` | Copies the bundled `.gitattributes`. |
+| `HeadlessOverwriteConfigFiles` | `false` | Forces overwrite of existing destination files when scaffolding. |
+| `HeadlessConfigFilesDir` | unset | Destination directory. Falls back to `$(SolutionDir)`, then the project directory. |
+| `HeadlessCopyDefaultConfigFilesToSolutionDir` | `false` | Selects `.editorconfig`, `.csharpierignore`, `.gitignore`, and `.gitattributes`. |
+| `HeadlessCopyEditorConfigToSolutionDir` | `false` | Selects only the bundled `.editorconfig`. |
+| `HeadlessCopyCSharpierIgnoreToSolutionDir` | Follows `HeadlessCopyDefaultConfigFilesToSolutionDir` | Selects the bundled `.csharpierignore`. |
+| `HeadlessCopyGitIgnoreToSolutionDir` | Follows `HeadlessCopyDefaultConfigFilesToSolutionDir` | Selects the bundled `.gitignore`. |
+| `HeadlessCopyGitAttributesToSolutionDir` | Follows `HeadlessCopyDefaultConfigFilesToSolutionDir` | Selects the bundled `.gitattributes`. |
 
-Example:
+Examples:
 
-```xml
-<PropertyGroup>
-  <HeadlessCopyDefaultConfigFilesToSolutionDir>true</HeadlessCopyDefaultConfigFilesToSolutionDir>
-</PropertyGroup>
+```bash
+# Scaffold every config file that doesn't already exist:
+dotnet build -t:HeadlessScaffoldConfigFiles
+
+# Scaffold only .gitignore, forcing it to overwrite an existing file:
+dotnet build -t:HeadlessScaffoldConfigFiles \
+  -p:HeadlessCopyGitIgnoreToSolutionDir=true -p:HeadlessOverwriteConfigFiles=true
 ```
 
 ### Optional Runtime Defaults
