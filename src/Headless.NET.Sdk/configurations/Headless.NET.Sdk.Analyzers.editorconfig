@@ -429,87 +429,10 @@ dotnet_naming_rule.interface_rule.style = prefix_interface_with_i_style
 dotnet_naming_rule.interface_rule.severity = warning
 
 ##########################################
-# File Extension Settings
-##########################################
-
-# Visual Studio Solution Files
-[*.sln]
-indent_style = tab
-
-# Verify settings
-# https://github.com/VerifyTests/Verify?tab=readme-ov-file#text-file-settings
-[*.{received,verified}.{txt,xml,json}]
-charset = utf-8-bom
-end_of_line = lf
-indent_size = unset
-indent_style = unset
-insert_final_newline = false
-tab_width = unset
-trim_trailing_whitespace = false
-
-# Generated code
-[*{_AssemblyInfo.cs,.notsupported.cs,.generated.cs}]
-generated_code = true
-
-# Razor and cshtml files
-# UTF-8-BOM is set as default, as all official template files use UTF-8-BOM
-# See https://github.com/dotnet/aspnetcore/pull/23502 and https://github.com/dotnet/aspnetcore/issues/22753
-[*.{razor,cshtml}]
-charset = utf-8-bom
-
-# Visual Studio XML Project Files
-[*.{csproj,vbproj,vcxproj.filters,proj,projitems,shproj}]
-indent_size = 2
-
-# XML Configuration Files
-[*.{xml,config,props,targets,nuspec,resx,ruleset,vsixmanifest,vsct}]
-indent_size = 2
-
-# JSON Files
-[*.{json,json5,webmanifest}]
-indent_size = 2
-
-# YAML Files
-[*.{yml,yaml}]
-indent_size = 2
-tab_width = 2
-
-# Markdown Files
-[*.{md,mdx}]
-trim_trailing_whitespace = false
-
-# Web Files
-[*.{htm,html,js,jsm,ts,tsx,cjs,cts,ctsx,mjs,mts,mtsx,css,sass,scss,less,pcss,svg,vue}]
-indent_size = 2
-insert_final_newline = true
-
-# .NET
-[*.{cs,csx,cake,vb,vbx}]
-insert_final_newline = true
-
-# Batch Files
-[*.{cmd,bat}]
-end_of_line = crlf
-
-# Bash Files
-[*.sh]
-end_of_line = lf
-
-# Makefiles
-[Makefile]
-indent_style = tab
-
-# min files don't reformatting
-[*.min.*]
-trim_trailing_whitespace = false
-insert_final_newline = false
-
-##########################################
 # C# Formatting Rules
 # https://docs.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/formatting-rules
 ##########################################
 
-[*.{cs,csx,cake}]
 # Newline options
 csharp_new_line_before_open_brace = all
 csharp_new_line_before_else = true
