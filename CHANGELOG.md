@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.116] - 2026-06-22
+
+### Changed
+
+- Updated the injected test toolchain to `Microsoft.NET.Test.Sdk` 18.6.0 and `GitHubActionsTestLogger` 3.0.4 so consumer test projects receive the newer runner and GitHub Actions logging fixes.
+- Updated CI and publish workflows to `actions/checkout` 7.0.0.
+
 ## [0.0.115] - 2026-06-21
 
 ### Fixed
