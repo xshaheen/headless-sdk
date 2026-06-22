@@ -30,6 +30,6 @@
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.2.3" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HotReload" Version="2.2.3" />
     <PackageVersion Include="Microsoft.Testing.Extensions.Retry" Version="2.2.3" />
-    <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
+    <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.4" />
   </ItemGroup>
 </Project>
