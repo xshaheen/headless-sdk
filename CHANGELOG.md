@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.117] - 2026-06-23
+
+### Fixed
+
+- Kept `GitHubActionsTestLogger` out of Microsoft Testing Platform test projects on GitHub Actions so MTP builds avoid unresolved logger integration references while VSTest projects still receive the GitHub Actions logger.
+
 ## [0.0.116] - 2026-06-22
 
 ### Changed
