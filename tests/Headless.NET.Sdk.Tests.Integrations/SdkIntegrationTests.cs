@@ -647,6 +647,50 @@ public static class JsonConsumer
         Assert.Contains("default.runsettings", coverageArgs, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task should_not_reference_github_actions_logger_when_mtp_is_used_on_github_actions()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
+            includePackageReference: false,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["UseMicrosoftTestingPlatform"] = "true",
+            }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync("-p:GITHUB_ACTIONS=true");
+        var packageReferences = properties["PackageReferences"].Split('|', StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Contains("Microsoft.Testing.Extensions.TrxReport", packageReferences);
+        Assert.DoesNotContain("Microsoft.NET.Test.Sdk", packageReferences);
+        Assert.DoesNotContain("GitHubActionsTestLogger", packageReferences);
+    }
+
+    [Fact]
+    public async Task should_reference_github_actions_logger_for_vstest_on_github_actions()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
+            includePackageReference: false,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["UseMicrosoftTestingPlatform"] = "false",
+            }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync("-p:GITHUB_ACTIONS=true");
+        var packageReferences = properties["PackageReferences"].Split('|', StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Contains("Microsoft.NET.Test.Sdk", packageReferences);
+        Assert.DoesNotContain("Microsoft.Testing.Extensions.TrxReport", packageReferences);
+        Assert.Contains("GitHubActionsTestLogger", packageReferences);
+    }
+
     [Theory]
     [InlineData("Headless.NET.Sdk.Web", "Microsoft.NET.Sdk.Web", "Web", "false", "false")]
     [InlineData("Headless.NET.Sdk.Test", "Microsoft.NET.Sdk", "Test", "true", "true")]
@@ -1674,11 +1718,12 @@ public sealed class Class1;
                 <PropertyGroup>
                   <_HeadlessEvaluatedEditorConfigFiles>@(EditorConfigFiles, '|')</_HeadlessEvaluatedEditorConfigFiles>
                   <_HeadlessEvaluatedNoneItems>@(None->'%(Identity)', '|')</_HeadlessEvaluatedNoneItems>
+                  <_HeadlessEvaluatedPackageReferences>@(PackageReference->'%(Identity)', '|')</_HeadlessEvaluatedPackageReferences>
                   <_HeadlessEvaluatedRuntimeHostOptions>@(RuntimeHostConfigurationOption->'%(Identity)=%(Value)', '|')</_HeadlessEvaluatedRuntimeHostOptions>
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
-                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
                   Overwrite="true"
                 />
               </Target>

@@ -122,13 +122,25 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <!-- GitHub Actions test logger on CI (covers VSTest path; MTP emits its own annotations) -->
+  <!--
+    GitHub Actions test logger on CI.
+
+    The package is only needed for the VSTest path; MTP emits its own annotations. Keep the
+    package off MTP projects because GitHubActionsTestLogger 3.x self-registers an MTP hook but
+    ships no net10.0 compile asset, so Microsoft.Testing.Platform can generate an unresolved
+    GitHubActionsTestLogger.MtpIntegration reference in CI builds.
+  -->
   <Choose>
     <When Condition="'$(GITHUB_ACTIONS)' == 'true'">
       <PropertyGroup>
         <VSTestLogger>$(VSTestLogger);GitHubActions</VSTestLogger>
       </PropertyGroup>
-      <ItemGroup>
+      <ItemGroup
+        Condition="'$(UseMicrosoftTestingPlatform)' != 'true' AND (
+          '$(UseMicrosoftTestingPlatform)' != '' OR (
+            @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) != 'true' AND
+            @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) != 'true'))"
+      >
         <PackageReference Include="GitHubActionsTestLogger" Version="$(_HeadlessGitHubActionsTestLoggerVersion)" IsImplicitlyDefined="true">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
