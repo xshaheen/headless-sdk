@@ -78,7 +78,7 @@
     <Deterministic>true</Deterministic>
     <!-- Generate and enforce package lock files on CI. -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <RestoreLockedMode Condition=" '$(RestoreLockedMode)' == '' ">true</RestoreLockedMode>
+    <RestoreLockedMode>true</RestoreLockedMode>
     <!-- Set CI build to true. -->
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>

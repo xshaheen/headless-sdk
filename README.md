@@ -194,7 +194,7 @@ Many values apply only when the consuming project has not already set the proper
 | --- | --- | --- |
 | `IsContinuousIntegration` | Auto-detected | Detects GitHub Actions, Azure Pipelines, GitLab CI, TeamCity, AppVeyor, Travis, CircleCI, AWS CodeBuild, Jenkins, Google Cloud Build, JetBrains Space, and generic `CI=true`. |
 | `ContinuousIntegrationBuild` | `true` when CI is detected | Enables .NET SDK CI build behavior. |
-| `RestoreLockedMode` | `true` on CI | Uses locked restore on CI. Commit lock files or explicitly set `RestoreLockedMode=false` for restore-only CI jobs that are expected to update dependencies. |
+| `RestoreLockedMode` | `true` on CI for MSBuild SDK consumption | Uses locked restore on CI when the project consumes Headless as an MSBuild SDK (`<Project Sdk="Headless.NET.Sdk/...">`, `global.json` MSBuild SDK, `<Sdk Name="Headless.NET.Sdk" />`, or `#:sdk`). Commit lock files or explicitly set `RestoreLockedMode=false` for restore-only CI jobs that are expected to update dependencies. PackageReference consumers should set restore lock policy in the project or `Directory.Build.props` because NuGet package build assets are not a reliable source for restore-time policy. |
 | `NuGetAudit` | `true` | Enables NuGet vulnerability auditing. |
 | `NuGetAuditMode` | `all` | Audits direct and transitive dependencies. |
 | `NuGetAuditLevel` | `low` | Reports vulnerabilities at low severity and above. |

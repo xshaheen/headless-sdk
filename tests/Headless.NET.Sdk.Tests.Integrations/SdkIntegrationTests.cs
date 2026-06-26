@@ -592,6 +592,46 @@ class Foo { }
     }
 
     [Fact]
+    public async Task should_enforce_locked_restore_when_on_continuous_integration()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            includePackageReference: false,
+            extraPackageReferences: new Dictionary<string, string>(StringComparer.Ordinal) { ["Humanizer"] = "2.14.1" }
+        );
+
+        var seedResult = await project.RunDotNetAsync(
+            $"restore {Quote(project.ProjectFilePath)} -p:CI=true -p:RestorePackagesWithLockFile=true -p:RestoreLockedMode=false -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+        Assert.True(seedResult.ExitCode == 0, seedResult.Output);
+
+        var projectContent = await File.ReadAllTextAsync(
+            project.ProjectFilePath,
+            TestContext.Current.CancellationToken
+        );
+        projectContent = projectContent.Replace(
+            """<PackageReference Include="Humanizer" Version="2.14.1" />""",
+            """<PackageReference Include="Humanizer" Version="2.13.14" />""",
+            StringComparison.Ordinal
+        );
+        await File.WriteAllTextAsync(
+            project.ProjectFilePath,
+            projectContent,
+            Encoding.UTF8,
+            TestContext.Current.CancellationToken
+        );
+
+        var lockedResult = await project.RunDotNetAsync(
+            $"restore {Quote(project.ProjectFilePath)} -p:CI=true -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.NotEqual(0, lockedResult.ExitCode);
+        Assert.Contains("NU1004", lockedResult.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task should_infer_target_framework_when_explicitly_enabled()
     {
         await using var project = await ConsumerProject.CreateAsync(
@@ -1538,6 +1578,7 @@ internal sealed class ConsumerProject : IAsyncDisposable
         string packageReferenceId = "Headless.NET.Sdk",
         bool useCentralPackageManagement = false,
         IReadOnlyDictionary<string, string>? extraProperties = null,
+        IReadOnlyDictionary<string, string>? extraPackageReferences = null,
         IReadOnlyDictionary<string, string>? additionalFiles = null
     )
     {
@@ -1559,7 +1600,8 @@ internal sealed class ConsumerProject : IAsyncDisposable
                 includePackageReference,
                 packageReferenceId,
                 useCentralPackageManagement,
-                extraProperties
+                extraProperties,
+                extraPackageReferences
             ),
             Encoding.UTF8,
             cancellationToken
@@ -1698,7 +1740,8 @@ public sealed class Class1;
         bool includePackageReference,
         string packageReferenceId,
         bool useCentralPackageManagement,
-        IReadOnlyDictionary<string, string>? extraProperties
+        IReadOnlyDictionary<string, string>? extraProperties,
+        IReadOnlyDictionary<string, string>? extraPackageReferences
     )
     {
         var propertyLines = new List<string>();
@@ -1745,15 +1788,33 @@ public sealed class Class1;
                 ? string.Empty
                 : $"{Environment.NewLine}{string.Join(Environment.NewLine, propertyLines)}";
 
-        var versionAttribute = useCentralPackageManagement ? string.Empty : $@" Version=""{PackageVersion}""";
-        var packageReferenceBlock = includePackageReference
-            ? $$"""
+        var packageReferenceLines = new List<string>();
 
-                  <ItemGroup>
-                    <PackageReference Include="{{packageReferenceId}}"{{versionAttribute}} PrivateAssets="all" />
-                  </ItemGroup>
-                """
-            : string.Empty;
+        if (includePackageReference)
+        {
+            var versionAttribute = useCentralPackageManagement ? string.Empty : $@" Version=""{PackageVersion}""";
+            packageReferenceLines.Add(
+                $@"    <PackageReference Include=""{packageReferenceId}""{versionAttribute} PrivateAssets=""all"" />"
+            );
+        }
+
+        if (extraPackageReferences is not null)
+        {
+            foreach (var (name, version) in extraPackageReferences)
+            {
+                packageReferenceLines.Add($@"    <PackageReference Include=""{name}"" Version=""{version}"" />");
+            }
+        }
+
+        var packageReferenceBlock =
+            packageReferenceLines.Count == 0
+                ? string.Empty
+                : $"""
+
+                      <ItemGroup>
+                    {string.Join(Environment.NewLine, packageReferenceLines)}
+                      </ItemGroup>
+                    """;
 
         return $$"""
             <Project Sdk="{{sdk}}">
