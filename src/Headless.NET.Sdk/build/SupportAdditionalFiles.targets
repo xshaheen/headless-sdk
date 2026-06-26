@@ -106,6 +106,23 @@
       <_HeadlessCSharpierIgnoreDest>$(_HeadlessScaffoldDir).csharpierignore</_HeadlessCSharpierIgnoreDest>
       <_HeadlessGitIgnoreDest>$(_HeadlessScaffoldDir).gitignore</_HeadlessGitIgnoreDest>
       <_HeadlessGitAttributesDest>$(_HeadlessScaffoldDir).gitattributes</_HeadlessGitAttributesDest>
+
+      <_HeadlessEditorConfigExistedBeforeScaffold>false</_HeadlessEditorConfigExistedBeforeScaffold>
+      <_HeadlessEditorConfigExistedBeforeScaffold Condition="Exists('$(_HeadlessEditorConfigDest)')"
+        >true</_HeadlessEditorConfigExistedBeforeScaffold
+      >
+      <_HeadlessCSharpierIgnoreExistedBeforeScaffold>false</_HeadlessCSharpierIgnoreExistedBeforeScaffold>
+      <_HeadlessCSharpierIgnoreExistedBeforeScaffold Condition="Exists('$(_HeadlessCSharpierIgnoreDest)')"
+        >true</_HeadlessCSharpierIgnoreExistedBeforeScaffold
+      >
+      <_HeadlessGitIgnoreExistedBeforeScaffold>false</_HeadlessGitIgnoreExistedBeforeScaffold>
+      <_HeadlessGitIgnoreExistedBeforeScaffold Condition="Exists('$(_HeadlessGitIgnoreDest)')"
+        >true</_HeadlessGitIgnoreExistedBeforeScaffold
+      >
+      <_HeadlessGitAttributesExistedBeforeScaffold>false</_HeadlessGitAttributesExistedBeforeScaffold>
+      <_HeadlessGitAttributesExistedBeforeScaffold Condition="Exists('$(_HeadlessGitAttributesDest)')"
+        >true</_HeadlessGitAttributesExistedBeforeScaffold
+      >
     </PropertyGroup>
 
     <!--
@@ -123,13 +140,14 @@
     />
     <Message
       Condition="'$(_HeadlessScaffoldEditorConfig)' == 'true'
-        and (!Exists('$(_HeadlessEditorConfigDest)') or '$(HeadlessOverwriteConfigFiles)' == 'true')"
+        and '$(_HeadlessEditorConfigExistedBeforeScaffold)' != 'true'"
       Importance="high"
       Text="Created $(_HeadlessEditorConfigDest)"
     />
     <Message
       Condition="'$(_HeadlessScaffoldEditorConfig)' == 'true'
-        and Exists('$(_HeadlessEditorConfigDest)') and '$(HeadlessOverwriteConfigFiles)' != 'true'"
+        and '$(_HeadlessEditorConfigExistedBeforeScaffold)' == 'true'
+        and '$(HeadlessOverwriteConfigFiles)' != 'true'"
       Importance="high"
       Text="Skipped $(_HeadlessEditorConfigDest) (already exists; pass -p:HeadlessOverwriteConfigFiles=true to overwrite)"
     />
@@ -144,13 +162,14 @@
     />
     <Message
       Condition="'$(_HeadlessScaffoldCSharpierIgnore)' == 'true'
-        and (!Exists('$(_HeadlessCSharpierIgnoreDest)') or '$(HeadlessOverwriteConfigFiles)' == 'true')"
+        and '$(_HeadlessCSharpierIgnoreExistedBeforeScaffold)' != 'true'"
       Importance="high"
       Text="Created $(_HeadlessCSharpierIgnoreDest)"
     />
     <Message
       Condition="'$(_HeadlessScaffoldCSharpierIgnore)' == 'true'
-        and Exists('$(_HeadlessCSharpierIgnoreDest)') and '$(HeadlessOverwriteConfigFiles)' != 'true'"
+        and '$(_HeadlessCSharpierIgnoreExistedBeforeScaffold)' == 'true'
+        and '$(HeadlessOverwriteConfigFiles)' != 'true'"
       Importance="high"
       Text="Skipped $(_HeadlessCSharpierIgnoreDest) (already exists; pass -p:HeadlessOverwriteConfigFiles=true to overwrite)"
     />
@@ -165,13 +184,14 @@
     />
     <Message
       Condition="'$(_HeadlessScaffoldGitIgnore)' == 'true'
-        and (!Exists('$(_HeadlessGitIgnoreDest)') or '$(HeadlessOverwriteConfigFiles)' == 'true')"
+        and '$(_HeadlessGitIgnoreExistedBeforeScaffold)' != 'true'"
       Importance="high"
       Text="Created $(_HeadlessGitIgnoreDest)"
     />
     <Message
       Condition="'$(_HeadlessScaffoldGitIgnore)' == 'true'
-        and Exists('$(_HeadlessGitIgnoreDest)') and '$(HeadlessOverwriteConfigFiles)' != 'true'"
+        and '$(_HeadlessGitIgnoreExistedBeforeScaffold)' == 'true'
+        and '$(HeadlessOverwriteConfigFiles)' != 'true'"
       Importance="high"
       Text="Skipped $(_HeadlessGitIgnoreDest) (already exists; pass -p:HeadlessOverwriteConfigFiles=true to overwrite)"
     />
@@ -186,13 +206,14 @@
     />
     <Message
       Condition="'$(_HeadlessScaffoldGitAttributes)' == 'true'
-        and (!Exists('$(_HeadlessGitAttributesDest)') or '$(HeadlessOverwriteConfigFiles)' == 'true')"
+        and '$(_HeadlessGitAttributesExistedBeforeScaffold)' != 'true'"
       Importance="high"
       Text="Created $(_HeadlessGitAttributesDest)"
     />
     <Message
       Condition="'$(_HeadlessScaffoldGitAttributes)' == 'true'
-        and Exists('$(_HeadlessGitAttributesDest)') and '$(HeadlessOverwriteConfigFiles)' != 'true'"
+        and '$(_HeadlessGitAttributesExistedBeforeScaffold)' == 'true'
+        and '$(HeadlessOverwriteConfigFiles)' != 'true'"
       Importance="high"
       Text="Skipped $(_HeadlessGitAttributesDest) (already exists; pass -p:HeadlessOverwriteConfigFiles=true to overwrite)"
     />

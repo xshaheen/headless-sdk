@@ -1,5 +1,16 @@
 <Project>
-  <ItemGroup Label="Test compability" Condition=" '$(IsTestableProject)' == 'false' ">
+  <PropertyGroup Label="Conventional Test Friend Assemblies">
+    <HeadlessEmitInternalsVisibleToAttributes Condition=" '$(HeadlessEmitInternalsVisibleToAttributes)' == '' "
+      >true</HeadlessEmitInternalsVisibleToAttributes
+    >
+  </PropertyGroup>
+
+  <ItemGroup
+    Label="Test compability"
+    Condition=" '$(IsTestableProject)' == 'false'
+      and '$(HeadlessEmitInternalsVisibleToAttributes)' == 'true'
+      and '$(SignAssembly)' != 'true' "
+  >
     <InternalsVisibleTo Include="$(MSBuildProjectName).Tests.Architecture" />
     <InternalsVisibleTo Include="$(MSBuildProjectName).Tests.Unit" />
     <InternalsVisibleTo Include="$(MSBuildProjectName).Tests.Integration" />

@@ -168,7 +168,7 @@ Many values apply only when the consuming project has not already set the proper
 | --- | --- | --- |
 | `[assembly: CLSCompliant(false)]` | Emitted | Marks the assembly non-CLS-compliant. Set `HeadlessEmitClsCompliantAttribute=false` to skip it so you can declare your own `[assembly: CLSCompliant(...)]` (e.g. `true`) without a `CS0579` duplicate-attribute error. |
 | `[assembly: AssemblyMetadata("Headless.NET.Sdk.SdkName"/"...ProjectType", ...)]` | Emitted | Records which Headless SDK variant and project type produced the assembly. |
-| `InternalsVisibleTo` for `<Project>.Tests.Architecture`, `.Tests.Unit`, `.Tests.Integration`, `.Tests.Acceptance` | Added for non-test projects | Grants the conventionally named test assemblies access to internals. Harmless if those assemblies don't exist — it only bakes in the naming convention. These four names are not configurable; add your own `InternalsVisibleTo` items for other test assembly names. |
+| `InternalsVisibleTo` for `<Project>.Tests.Architecture`, `.Tests.Unit`, `.Tests.Integration`, `.Tests.Acceptance` | Added for unsigned non-test projects | Grants the conventionally named test assemblies access to internals. Harmless if those assemblies don't exist — it only bakes in the naming convention. Set `HeadlessEmitInternalsVisibleToAttributes=false` to skip these defaults. Signed projects skip them automatically because strong-named friend assemblies require public keys; add your own `InternalsVisibleTo` items when signing. |
 | `[assembly: ExcludeFromCodeCoverage]` | Added for test projects (net5.0+) | Excludes the test assembly itself from coverage. |
 
 ### Analysis And API Hygiene
@@ -194,7 +194,7 @@ Many values apply only when the consuming project has not already set the proper
 | --- | --- | --- |
 | `IsContinuousIntegration` | Auto-detected | Detects GitHub Actions, Azure Pipelines, GitLab CI, TeamCity, AppVeyor, Travis, CircleCI, AWS CodeBuild, Jenkins, Google Cloud Build, JetBrains Space, and generic `CI=true`. |
 | `ContinuousIntegrationBuild` | `true` when CI is detected | Enables .NET SDK CI build behavior. |
-| `RestoreLockedMode` | `true` on CI | Uses locked restore on CI. |
+| `RestoreLockedMode` | `true` on CI | Uses locked restore on CI. Commit lock files or explicitly set `RestoreLockedMode=false` for restore-only CI jobs that are expected to update dependencies. |
 | `NuGetAudit` | `true` | Enables NuGet vulnerability auditing. |
 | `NuGetAuditMode` | `all` | Audits direct and transitive dependencies. |
 | `NuGetAuditLevel` | `low` | Reports vulnerabilities at low severity and above. |

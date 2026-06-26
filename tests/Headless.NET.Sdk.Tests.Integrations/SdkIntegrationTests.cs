@@ -524,6 +524,42 @@ class Foo { }
         Assert.Equal("Headless.NET.Sdk", properties["HeadlessSdkName"]);
         Assert.Equal("Default", properties["HeadlessSdkProjectType"]);
         Assert.Equal("true", properties["IsPackable"]);
+        Assert.Equal("true", properties["HeadlessEmitInternalsVisibleToAttributes"]);
+        Assert.Contains("ConsumerProject.Tests.Unit", properties["InternalsVisibleTo"], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_skip_conventional_internals_visible_to_for_signed_projects()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal) { ["SignAssembly"] = "true" }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("true", properties["HeadlessEmitInternalsVisibleToAttributes"]);
+        Assert.DoesNotContain("ConsumerProject.Tests.Unit", properties["InternalsVisibleTo"], StringComparison.Ordinal);
+        Assert.Empty(properties["InternalsVisibleTo"]);
+    }
+
+    [Fact]
+    public async Task should_allow_disabling_conventional_internals_visible_to_attributes()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["HeadlessEmitInternalsVisibleToAttributes"] = "false",
+            }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("false", properties["HeadlessEmitInternalsVisibleToAttributes"]);
+        Assert.Empty(properties["InternalsVisibleTo"]);
     }
 
     [Fact]
@@ -552,6 +588,7 @@ class Foo { }
         var properties = await project.EvaluateHeadlessPropertiesAsync("-p:CI=true");
 
         Assert.Equal("true", properties["MSBuildTreatWarningsAsErrors"]);
+        Assert.Equal("true", properties["RestoreLockedMode"]);
     }
 
     [Fact]
@@ -1174,6 +1211,14 @@ public static class JsonConsumer
         );
         Assert.True(File.Exists(project.GitIgnorePath), "Expected the scaffold target to create .gitignore.");
         Assert.True(File.Exists(project.GitAttributesPath), "Expected the scaffold target to create .gitattributes.");
+        Assert.Contains($"Created {project.EditorConfigPath}", result.Output, StringComparison.Ordinal);
+        Assert.Contains($"Created {project.CSharpierIgnorePath}", result.Output, StringComparison.Ordinal);
+        Assert.Contains($"Created {project.GitIgnorePath}", result.Output, StringComparison.Ordinal);
+        Assert.Contains($"Created {project.GitAttributesPath}", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain($"Skipped {project.EditorConfigPath}", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain($"Skipped {project.CSharpierIgnorePath}", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain($"Skipped {project.GitIgnorePath}", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain($"Skipped {project.GitAttributesPath}", result.Output, StringComparison.Ordinal);
 
         var gitignore = await File.ReadAllTextAsync(project.GitIgnorePath, TestContext.Current.CancellationToken);
         Assert.False(string.IsNullOrWhiteSpace(gitignore), "Expected a non-empty scaffolded .gitignore.");
@@ -1199,14 +1244,16 @@ public static class JsonConsumer
         // The user's existing file must be preserved verbatim.
         var gitignore = await File.ReadAllTextAsync(project.GitIgnorePath, TestContext.Current.CancellationToken);
         Assert.Equal(NormalizeLineEndings(Sentinel), NormalizeLineEndings(gitignore));
-        Assert.Contains("Skipped", result.Output, StringComparison.Ordinal);
-        Assert.Contains(".gitignore", result.Output, StringComparison.Ordinal);
+        Assert.Contains($"Skipped {project.GitIgnorePath}", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain($"Created {project.GitIgnorePath}", result.Output, StringComparison.Ordinal);
 
         // Files that did not pre-exist are still created.
         Assert.True(
             File.Exists(project.EditorConfigPath),
             "Expected the scaffold target to create the absent .editorconfig."
         );
+        Assert.Contains($"Created {project.EditorConfigPath}", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain($"Skipped {project.EditorConfigPath}", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1720,10 +1767,11 @@ public sealed class Class1;
                   <_HeadlessEvaluatedNoneItems>@(None->'%(Identity)', '|')</_HeadlessEvaluatedNoneItems>
                   <_HeadlessEvaluatedPackageReferences>@(PackageReference->'%(Identity)', '|')</_HeadlessEvaluatedPackageReferences>
                   <_HeadlessEvaluatedRuntimeHostOptions>@(RuntimeHostConfigurationOption->'%(Identity)=%(Value)', '|')</_HeadlessEvaluatedRuntimeHostOptions>
+                  <_HeadlessEvaluatedInternalsVisibleTo>@(InternalsVisibleTo, '|')</_HeadlessEvaluatedInternalsVisibleTo>
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
-                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
                   Overwrite="true"
                 />
               </Target>
