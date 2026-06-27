@@ -104,6 +104,10 @@ dotnet_diagnostic.ERP022.severity = suggestion
 # Generated primitive types and tests don't need named alternates
 dotnet_diagnostic.CA2225.severity = suggestion
 
+# CA2227: Collection properties should be read only
+# Test fixtures and serializers may intentionally keep extension-data setters
+dotnet_diagnostic.CA2227.severity = suggestion
+
 # AsyncFixer03/VSTHRD100: Async void method
 # Tests may have intentional async void methods for testing reflection
 dotnet_diagnostic.AsyncFixer03.severity = suggestion

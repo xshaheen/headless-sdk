@@ -168,7 +168,7 @@ Many values apply only when the consuming project has not already set the proper
 | --- | --- | --- |
 | `[assembly: CLSCompliant(false)]` | Emitted | Marks the assembly non-CLS-compliant. Set `HeadlessEmitClsCompliantAttribute=false` to skip it so you can declare your own `[assembly: CLSCompliant(...)]` (e.g. `true`) without a `CS0579` duplicate-attribute error. |
 | `[assembly: AssemblyMetadata("Headless.NET.Sdk.SdkName"/"...ProjectType", ...)]` | Emitted | Records which Headless SDK variant and project type produced the assembly. |
-| `InternalsVisibleTo` for `<Project>.Tests.Architecture`, `.Tests.Unit`, `.Tests.Integration`, `.Tests.Acceptance` | Added for non-test projects | Grants the conventionally named test assemblies access to internals. Harmless if those assemblies don't exist — it only bakes in the naming convention. These four names are not configurable; add your own `InternalsVisibleTo` items for other test assembly names. |
+| `InternalsVisibleTo` for `<Project>.Tests.Architecture`, `.Tests.Unit`, `.Tests.Integration`, `.Tests.Acceptance` | Added for unsigned non-test projects | Grants the conventionally named test assemblies access to internals. Harmless if those assemblies don't exist — it only bakes in the naming convention. Set `HeadlessEmitInternalsVisibleToAttributes=false` to skip these defaults. Signed projects skip them automatically because strong-named friend assemblies require public keys; add your own `InternalsVisibleTo` items when signing. |
 | `[assembly: ExcludeFromCodeCoverage]` | Added for test projects (net5.0+) | Excludes the test assembly itself from coverage. |
 
 ### Analysis And API Hygiene
@@ -194,7 +194,7 @@ Many values apply only when the consuming project has not already set the proper
 | --- | --- | --- |
 | `IsContinuousIntegration` | Auto-detected | Detects GitHub Actions, Azure Pipelines, GitLab CI, TeamCity, AppVeyor, Travis, CircleCI, AWS CodeBuild, Jenkins, Google Cloud Build, JetBrains Space, and generic `CI=true`. |
 | `ContinuousIntegrationBuild` | `true` when CI is detected | Enables .NET SDK CI build behavior. |
-| `RestoreLockedMode` | `true` on CI | Uses locked restore on CI. |
+| `RestoreLockedMode` | `true` on CI for MSBuild SDK consumption | Uses locked restore on CI when the project consumes Headless as an MSBuild SDK (`<Project Sdk="Headless.NET.Sdk/...">`, `global.json` MSBuild SDK, `<Sdk Name="Headless.NET.Sdk" />`, or `#:sdk`). Commit lock files or explicitly set `RestoreLockedMode=false` for restore-only CI jobs that are expected to update dependencies. PackageReference consumers should set restore lock policy in the project or `Directory.Build.props` because NuGet package build assets are not a reliable source for restore-time policy. |
 | `NuGetAudit` | `true` | Enables NuGet vulnerability auditing. |
 | `NuGetAuditMode` | `all` | Audits direct and transitive dependencies. |
 | `NuGetAuditLevel` | `low` | Reports vulnerabilities at low severity and above. |
@@ -216,7 +216,7 @@ Name-based inference (`MyApp.Tests`, `.UnitTests`, etc.) is intentionally not su
 | `IsTestProject` | `false` (set to `true` for testable projects via `Headless.NET.Sdk.Test`) | Marks the project for test tooling. |
 | `IsPublishable` | `false` for test projects | Prevents publishing test projects. |
 | `IsPackable` | `false` for test projects | Prevents packing test projects and suppresses the non-packable pack warning so solution-level `dotnet pack` remains CI-safe. |
-| `NoWarn` | Adds test-noise suppressions, including `CA1849`, `MA0042`, and `MA0166` | Allows controlled blocking calls and direct time-based APIs in tests without per-file pragmas. |
+| `NoWarn` | Adds test-noise suppressions, including `CA1849`, `MA0042`, `MA0166`, `CA1861`, `CA1859`, and `CA1720` | Allows controlled blocking calls, direct time-based APIs, test-only array arguments, concrete-type suggestions, and type-name identifiers without per-file pragmas. |
 | `EnableCodeCoverage` | `true` on CI | Enables coverage collection and applies the SDK runsettings exclusions for test assemblies, generated sources, and EF migrations. |
 | `OptimizeVsTestRun` | `true` | Disables analyzers during `dotnet test`. Set `false` to keep analyzers enabled. |
 | `UseMicrosoftTestingPlatform` | Auto | Uses MTP when `xunit.v3.mtp-v2` or `TUnit` is referenced. Force with `true` or `false`. |

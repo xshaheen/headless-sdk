@@ -74,11 +74,12 @@
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(IsContinuousIntegration)' == 'true' ">
-    <!-- 👇 Ensures consistent, reproducible builds -->
+    <!-- Ensures consistent, reproducible builds. -->
     <Deterministic>true</Deterministic>
-    <!-- 👇 Enable deterministic restore -->
+    <!-- Generate and enforce package lock files on CI. -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <!-- 👇 Set CI Build to true -->
+    <RestoreLockedMode>true</RestoreLockedMode>
+    <!-- Set CI build to true. -->
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 </Project>

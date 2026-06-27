@@ -141,9 +141,12 @@
       CA1849: Call async methods when in an async method
       MA0042: Do not use blocking calls when the calling method is async
       MA0166: Forward the TimeProvider to methods that take one
+      CA1861: Avoid constant arrays as arguments
+      CA1859: Use concrete types when possible for improved performance
+      CA1720: Identifiers should not contain type names
     -->
     <NoWarn Condition="'$(IsTestableProject)' == 'true'"
-      >$(NoWarn);CA1707;IDE1006;IDE0022;CS8604;S4144;CA5394;CA1848;MA0076;MA0003;RCS1046;CA2254;IDE0039;CA1849;MA0042;MA0166</NoWarn
+      >$(NoWarn);CA1707;IDE1006;IDE0022;CS8604;S4144;CA5394;CA1848;MA0076;MA0003;RCS1046;CA2254;IDE0039;CA1849;MA0042;MA0166;CA1861;CA1859;CA1720</NoWarn
     >
     <!--
       CA1707: Identifiers should not contain underscores

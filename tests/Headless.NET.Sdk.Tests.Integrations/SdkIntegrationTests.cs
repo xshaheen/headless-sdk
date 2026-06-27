@@ -178,7 +178,7 @@ indent_size = 2
     }
 
     [Fact]
-    public void should_suppress_blocking_async_warnings_when_project_is_a_test_project()
+    public void should_suppress_test_noise_warnings_when_project_is_a_test_project()
     {
         using var package = ZipFile.OpenRead(fixture.PackagePath);
         var content = ReadPackageEntry(package, "build/SupportGeneral.props");
@@ -197,6 +197,10 @@ indent_size = 2
 
         Assert.Contains("CA1849", testNoWarn, StringComparison.Ordinal);
         Assert.Contains("MA0042", testNoWarn, StringComparison.Ordinal);
+        Assert.Contains("MA0166", testNoWarn, StringComparison.Ordinal);
+        Assert.Contains("CA1861", testNoWarn, StringComparison.Ordinal);
+        Assert.Contains("CA1859", testNoWarn, StringComparison.Ordinal);
+        Assert.Contains("CA1720", testNoWarn, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -232,6 +236,18 @@ indent_size = 2
         var analyzerEditorConfigs = ReadPackageEntry(package, "build/SupportAnalyzerEditorConfigs.props");
         Assert.Contains("Headless.NET.Sdk.Analyzers.editorconfig", analyzerEditorConfigs, StringComparison.Ordinal);
         Assert.NotNull(package.GetEntry("configurations/Headless.NET.Sdk.Analyzers.editorconfig"));
+        Assert.Contains("Headless.NET.Sdk.Tests.editorconfig", analyzerEditorConfigs, StringComparison.Ordinal);
+        Assert.NotNull(package.GetEntry("configurations/Headless.NET.Sdk.Tests.editorconfig"));
+
+        var regularAnalyzerConfig = ReadPackageEntry(package, "configurations/Headless.NET.Sdk.Analyzers.editorconfig");
+        var testAnalyzerConfig = ReadPackageEntry(package, "configurations/Headless.NET.Sdk.Tests.editorconfig");
+
+        Assert.Contains(
+            "dotnet_diagnostic.CA2227.severity = suggestion",
+            regularAnalyzerConfig,
+            StringComparison.Ordinal
+        );
+        Assert.Contains("dotnet_diagnostic.CA2227.severity = suggestion", testAnalyzerConfig, StringComparison.Ordinal);
 
         var testTargets = ReadPackageEntry(package, "build/SupportTestProjects.targets");
         Assert.Contains("configurations/default.runsettings", testTargets, StringComparison.Ordinal);
@@ -524,6 +540,42 @@ class Foo { }
         Assert.Equal("Headless.NET.Sdk", properties["HeadlessSdkName"]);
         Assert.Equal("Default", properties["HeadlessSdkProjectType"]);
         Assert.Equal("true", properties["IsPackable"]);
+        Assert.Equal("true", properties["HeadlessEmitInternalsVisibleToAttributes"]);
+        Assert.Contains("ConsumerProject.Tests.Unit", properties["InternalsVisibleTo"], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_skip_conventional_internals_visible_to_for_signed_projects()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal) { ["SignAssembly"] = "true" }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("true", properties["HeadlessEmitInternalsVisibleToAttributes"]);
+        Assert.DoesNotContain("ConsumerProject.Tests.Unit", properties["InternalsVisibleTo"], StringComparison.Ordinal);
+        Assert.Empty(properties["InternalsVisibleTo"]);
+    }
+
+    [Fact]
+    public async Task should_allow_disabling_conventional_internals_visible_to_attributes()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["HeadlessEmitInternalsVisibleToAttributes"] = "false",
+            }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("false", properties["HeadlessEmitInternalsVisibleToAttributes"]);
+        Assert.Empty(properties["InternalsVisibleTo"]);
     }
 
     [Fact]
@@ -552,6 +604,47 @@ class Foo { }
         var properties = await project.EvaluateHeadlessPropertiesAsync("-p:CI=true");
 
         Assert.Equal("true", properties["MSBuildTreatWarningsAsErrors"]);
+        Assert.Equal("true", properties["RestoreLockedMode"]);
+    }
+
+    [Fact]
+    public async Task should_enforce_locked_restore_when_on_continuous_integration()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            includePackageReference: false,
+            extraPackageReferences: new Dictionary<string, string>(StringComparer.Ordinal) { ["Humanizer"] = "2.14.1" }
+        );
+
+        var seedResult = await project.RunDotNetAsync(
+            $"restore {Quote(project.ProjectFilePath)} -p:CI=true -p:RestorePackagesWithLockFile=true -p:RestoreLockedMode=false -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+        Assert.True(seedResult.ExitCode == 0, seedResult.Output);
+
+        var projectContent = await File.ReadAllTextAsync(
+            project.ProjectFilePath,
+            TestContext.Current.CancellationToken
+        );
+        projectContent = projectContent.Replace(
+            """<PackageReference Include="Humanizer" Version="2.14.1" />""",
+            """<PackageReference Include="Humanizer" Version="2.13.14" />""",
+            StringComparison.Ordinal
+        );
+        await File.WriteAllTextAsync(
+            project.ProjectFilePath,
+            projectContent,
+            Encoding.UTF8,
+            TestContext.Current.CancellationToken
+        );
+
+        var lockedResult = await project.RunDotNetAsync(
+            $"restore {Quote(project.ProjectFilePath)} -p:CI=true -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.NotEqual(0, lockedResult.ExitCode);
+        Assert.Contains("NU1004", lockedResult.Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -614,6 +707,15 @@ public static class JsonConsumer
         Assert.Equal("true", properties["IsTestableProject"]);
         Assert.Equal("true", properties["IsTestProject"]);
         Assert.Equal("false", properties["IsPackable"]);
+
+        var noWarn = properties["NoWarn"].Split('|', StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Contains("CA1849", noWarn);
+        Assert.Contains("MA0042", noWarn);
+        Assert.Contains("MA0166", noWarn);
+        Assert.Contains("CA1861", noWarn);
+        Assert.Contains("CA1859", noWarn);
+        Assert.Contains("CA1720", noWarn);
     }
 
     [Fact]
@@ -911,6 +1013,30 @@ public static class JsonConsumer
     }
 
     [Fact]
+    public async Task should_include_test_analyzer_editorconfig_when_using_test_project_type_sdk()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
+            includePackageReference: false
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Contains(
+            "Headless.NET.Sdk.Analyzers.editorconfig",
+            properties["EditorConfigFiles"],
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "Headless.NET.Sdk.Tests.editorconfig",
+            properties["EditorConfigFiles"],
+            StringComparison.Ordinal
+        );
+    }
+
+    [Fact]
     public async Task should_disable_bundled_analyzer_editorconfig_when_explicitly_disabled()
     {
         await using var project = await ConsumerProject.CreateAsync(
@@ -1174,6 +1300,14 @@ public static class JsonConsumer
         );
         Assert.True(File.Exists(project.GitIgnorePath), "Expected the scaffold target to create .gitignore.");
         Assert.True(File.Exists(project.GitAttributesPath), "Expected the scaffold target to create .gitattributes.");
+        Assert.Contains($"Created {project.EditorConfigPath}", result.Output, StringComparison.Ordinal);
+        Assert.Contains($"Created {project.CSharpierIgnorePath}", result.Output, StringComparison.Ordinal);
+        Assert.Contains($"Created {project.GitIgnorePath}", result.Output, StringComparison.Ordinal);
+        Assert.Contains($"Created {project.GitAttributesPath}", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain($"Skipped {project.EditorConfigPath}", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain($"Skipped {project.CSharpierIgnorePath}", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain($"Skipped {project.GitIgnorePath}", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain($"Skipped {project.GitAttributesPath}", result.Output, StringComparison.Ordinal);
 
         var gitignore = await File.ReadAllTextAsync(project.GitIgnorePath, TestContext.Current.CancellationToken);
         Assert.False(string.IsNullOrWhiteSpace(gitignore), "Expected a non-empty scaffolded .gitignore.");
@@ -1199,14 +1333,16 @@ public static class JsonConsumer
         // The user's existing file must be preserved verbatim.
         var gitignore = await File.ReadAllTextAsync(project.GitIgnorePath, TestContext.Current.CancellationToken);
         Assert.Equal(NormalizeLineEndings(Sentinel), NormalizeLineEndings(gitignore));
-        Assert.Contains("Skipped", result.Output, StringComparison.Ordinal);
-        Assert.Contains(".gitignore", result.Output, StringComparison.Ordinal);
+        Assert.Contains($"Skipped {project.GitIgnorePath}", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain($"Created {project.GitIgnorePath}", result.Output, StringComparison.Ordinal);
 
         // Files that did not pre-exist are still created.
         Assert.True(
             File.Exists(project.EditorConfigPath),
             "Expected the scaffold target to create the absent .editorconfig."
         );
+        Assert.Contains($"Created {project.EditorConfigPath}", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain($"Skipped {project.EditorConfigPath}", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1491,6 +1627,7 @@ internal sealed class ConsumerProject : IAsyncDisposable
         string packageReferenceId = "Headless.NET.Sdk",
         bool useCentralPackageManagement = false,
         IReadOnlyDictionary<string, string>? extraProperties = null,
+        IReadOnlyDictionary<string, string>? extraPackageReferences = null,
         IReadOnlyDictionary<string, string>? additionalFiles = null
     )
     {
@@ -1512,7 +1649,8 @@ internal sealed class ConsumerProject : IAsyncDisposable
                 includePackageReference,
                 packageReferenceId,
                 useCentralPackageManagement,
-                extraProperties
+                extraProperties,
+                extraPackageReferences
             ),
             Encoding.UTF8,
             cancellationToken
@@ -1651,7 +1789,8 @@ public sealed class Class1;
         bool includePackageReference,
         string packageReferenceId,
         bool useCentralPackageManagement,
-        IReadOnlyDictionary<string, string>? extraProperties
+        IReadOnlyDictionary<string, string>? extraProperties,
+        IReadOnlyDictionary<string, string>? extraPackageReferences
     )
     {
         var propertyLines = new List<string>();
@@ -1698,15 +1837,33 @@ public sealed class Class1;
                 ? string.Empty
                 : $"{Environment.NewLine}{string.Join(Environment.NewLine, propertyLines)}";
 
-        var versionAttribute = useCentralPackageManagement ? string.Empty : $@" Version=""{PackageVersion}""";
-        var packageReferenceBlock = includePackageReference
-            ? $$"""
+        var packageReferenceLines = new List<string>();
 
-                  <ItemGroup>
-                    <PackageReference Include="{{packageReferenceId}}"{{versionAttribute}} PrivateAssets="all" />
-                  </ItemGroup>
-                """
-            : string.Empty;
+        if (includePackageReference)
+        {
+            var versionAttribute = useCentralPackageManagement ? string.Empty : $@" Version=""{PackageVersion}""";
+            packageReferenceLines.Add(
+                $@"    <PackageReference Include=""{packageReferenceId}""{versionAttribute} PrivateAssets=""all"" />"
+            );
+        }
+
+        if (extraPackageReferences is not null)
+        {
+            foreach (var (name, version) in extraPackageReferences)
+            {
+                packageReferenceLines.Add($@"    <PackageReference Include=""{name}"" Version=""{version}"" />");
+            }
+        }
+
+        var packageReferenceBlock =
+            packageReferenceLines.Count == 0
+                ? string.Empty
+                : $"""
+
+                      <ItemGroup>
+                    {string.Join(Environment.NewLine, packageReferenceLines)}
+                      </ItemGroup>
+                    """;
 
         return $$"""
             <Project Sdk="{{sdk}}">
@@ -1720,10 +1877,17 @@ public sealed class Class1;
                   <_HeadlessEvaluatedNoneItems>@(None->'%(Identity)', '|')</_HeadlessEvaluatedNoneItems>
                   <_HeadlessEvaluatedPackageReferences>@(PackageReference->'%(Identity)', '|')</_HeadlessEvaluatedPackageReferences>
                   <_HeadlessEvaluatedRuntimeHostOptions>@(RuntimeHostConfigurationOption->'%(Identity)=%(Value)', '|')</_HeadlessEvaluatedRuntimeHostOptions>
+                  <_HeadlessEvaluatedInternalsVisibleTo>@(InternalsVisibleTo, '|')</_HeadlessEvaluatedInternalsVisibleTo>
+                </PropertyGroup>
+                <ItemGroup>
+                  <_HeadlessEvaluatedNoWarnItems Include="$(NoWarn)" />
+                </ItemGroup>
+                <PropertyGroup>
+                  <_HeadlessEvaluatedNoWarn>@(_HeadlessEvaluatedNoWarnItems, '|')</_HeadlessEvaluatedNoWarn>
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
-                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);NoWarn=$(_HeadlessEvaluatedNoWarn);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
                   Overwrite="true"
                 />
               </Target>
