@@ -236,6 +236,18 @@ indent_size = 2
         var analyzerEditorConfigs = ReadPackageEntry(package, "build/SupportAnalyzerEditorConfigs.props");
         Assert.Contains("Headless.NET.Sdk.Analyzers.editorconfig", analyzerEditorConfigs, StringComparison.Ordinal);
         Assert.NotNull(package.GetEntry("configurations/Headless.NET.Sdk.Analyzers.editorconfig"));
+        Assert.Contains("Headless.NET.Sdk.Tests.editorconfig", analyzerEditorConfigs, StringComparison.Ordinal);
+        Assert.NotNull(package.GetEntry("configurations/Headless.NET.Sdk.Tests.editorconfig"));
+
+        var regularAnalyzerConfig = ReadPackageEntry(package, "configurations/Headless.NET.Sdk.Analyzers.editorconfig");
+        var testAnalyzerConfig = ReadPackageEntry(package, "configurations/Headless.NET.Sdk.Tests.editorconfig");
+
+        Assert.Contains(
+            "dotnet_diagnostic.CA2227.severity = suggestion",
+            regularAnalyzerConfig,
+            StringComparison.Ordinal
+        );
+        Assert.Contains("dotnet_diagnostic.CA2227.severity = suggestion", testAnalyzerConfig, StringComparison.Ordinal);
 
         var testTargets = ReadPackageEntry(package, "build/SupportTestProjects.targets");
         Assert.Contains("configurations/default.runsettings", testTargets, StringComparison.Ordinal);
@@ -995,6 +1007,30 @@ public static class JsonConsumer
 
         Assert.Contains(
             "Headless.NET.Sdk.Analyzers.editorconfig",
+            properties["EditorConfigFiles"],
+            StringComparison.Ordinal
+        );
+    }
+
+    [Fact]
+    public async Task should_include_test_analyzer_editorconfig_when_using_test_project_type_sdk()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
+            includePackageReference: false
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Contains(
+            "Headless.NET.Sdk.Analyzers.editorconfig",
+            properties["EditorConfigFiles"],
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "Headless.NET.Sdk.Tests.editorconfig",
             properties["EditorConfigFiles"],
             StringComparison.Ordinal
         );
