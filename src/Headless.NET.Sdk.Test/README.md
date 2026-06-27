@@ -23,7 +23,7 @@ Or as a package reference alongside the Microsoft SDK:
 
 ## What it adds over the core SDK
 
-Sets `HeadlessSdkProjectType=Test` and forces `IsTestableProject=true` and `IsTestProject=true`, so the project receives the full test toolchain without name-based guessing. (Name inference like `MyApp.Tests` is intentionally not supported — too many false positives for a public SDK. If you don't want the Test SDK, set `<IsTestableProject>true</IsTestableProject>` yourself.) Test projects force `IsPackable=false` and `IsPublishable=false`, add crash/hang dumps, TRX output and loggers, enable code coverage on CI, switch to Microsoft Testing Platform when `xunit.v3.mtp-v2` or `TUnit` is referenced, disable analyzers during `dotnet test`, and relax a few test-noise warnings (`CA1849`, `MA0042`, `MA0166`).
+Sets `HeadlessSdkProjectType=Test` and forces `IsTestableProject=true` and `IsTestProject=true`, so the project receives the full test toolchain without name-based guessing. (Name inference like `MyApp.Tests` is intentionally not supported — too many false positives for a public SDK. If you don't want the Test SDK, set `<IsTestableProject>true</IsTestableProject>` yourself.) Test projects force `IsPackable=false` and `IsPublishable=false`, add crash/hang dumps, TRX output and loggers, enable code coverage on CI, switch to Microsoft Testing Platform when `xunit.v3.mtp-v2` or `TUnit` is referenced, disable analyzers during `dotnet test`, and relax a few test-noise warnings (`CA1849`, `MA0042`, `MA0166`, `CA1861`, `CA1859`, `CA1720`).
 
 ## Opinionated defaults (overridable)
 

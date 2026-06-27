@@ -7,9 +7,10 @@
       Test-project allowances. This project consumes the plain Microsoft.NET.Sdk (so the Headless
       SDK's IsTestableProject NoWarn set does not apply): the repo test convention
       should_{action}_{expected}_when_{condition} uses underscores (CA1707), and the integration
-      harness deliberately runs blocking/process I/O (CA1849, MA0042, MA0166).
+      harness deliberately accepts test-only analyzer noise (CA1849, MA0042, MA0166, CA1861,
+      CA1859, CA1720).
     -->
-    <NoWarn>$(NoWarn);CA1707;CA1849;MA0042;MA0166</NoWarn>
+    <NoWarn>$(NoWarn);CA1707;CA1849;MA0042;MA0166;CA1861;CA1859;CA1720</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
