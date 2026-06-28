@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.121] - 2026-06-28
+
+### Changed
+
+- Lowered `MA0025` in the SDK-injected analyzer baseline to suggestion, keeping intentional `NotImplementedException` test coverage from surfacing as a warning.
+- Trimmed scaffolded `.editorconfig` ReSharper/Rider hints for rules that should not be enforced by the generated template.
+
 ## [0.0.120] - 2026-06-28
 
 ### Fixed

@@ -108,6 +108,9 @@ dotnet_diagnostic.RCS1021.severity = suggestion
 dotnet_diagnostic.VSTHRD002.severity = none
 # MA0045: Do not use blocking call (make method async)
 dotnet_diagnostic.MA0045.severity = suggestion
+# MA0025: Implement the functionality (or raise NotSupportedException)
+# Tests intentionally throw NotImplementedException to exercise exception-handler mapping
+dotnet_diagnostic.MA0025.severity = suggestion
 # MA0026: TO-DO comment
 dotnet_diagnostic.MA0026.severity = suggestion
 # MA0079: Forward the CancellationToken using .WithCancellation()
@@ -125,7 +128,6 @@ dotnet_diagnostic.MA0015.severity = warning
 dotnet_diagnostic.MA0021.severity = warning
 dotnet_diagnostic.MA0022.severity = warning
 dotnet_diagnostic.MA0024.severity = warning
-dotnet_diagnostic.MA0025.severity = warning
 dotnet_diagnostic.MA0037.severity = error
 dotnet_diagnostic.MA0039.severity = error
 dotnet_diagnostic.MA0047.severity = warning
