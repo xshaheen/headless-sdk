@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.122] - 2026-06-28
+
+### Changed
+
+- Added ReSharper/Rider disposal-inspection relaxations to the scaffolded `.editorconfig` so test projects avoid by-design lifetime noise in IDE tooling.
+- Relaxed `CA1001` in the injected test analyzer configuration for disposable-field test fixtures.
+
 ## [0.0.121] - 2026-06-28
 
 ### Changed

@@ -221,3 +221,17 @@ resharper_suggest_var_or_type_simple_types_highlighting = hint
 resharper_unused_auto_property_accessor_global_highlighting = suggestion
 resharper_unused_auto_property_accessor_local_highlighting = suggestion
 resharper_unused_type_parameter_highlighting = suggestion
+
+##########################################
+# Test projects — disposal inspections are by-design noise
+# Test-lifetime objects don't need deterministic disposal: xUnit owns the fixture lifecycle and the
+# test host is short-lived. This mirrors the SDK's injected Headless.NET.Sdk.Tests.editorconfig (which
+# the compiler honors but ReSharper/Rider/inspectcode cannot see). The resharper_* keys affect IDE
+# tooling only; the dotnet_diagnostic keys also relax the test build, which is the intended behavior.
+##########################################
+[tests/**/*.cs]
+# ReSharper - DisposeOnUsingVariable
+# Test objects often managed by test framework or intentionally not disposed
+resharper_dispose_on_using_variable_highlighting = none
+resharper_not_disposed_resource_highlighting = none
+resharper_using_statement_resource_initialization_highlighting = none
