@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.118] - 2026-06-27
+
+### Added
+
+- Added `HeadlessEmitInternalsVisibleToAttributes` so consumers can opt out of conventional test friend assemblies while unsigned projects keep the SDK default.
+
+### Changed
+
+- Relaxed test-project analyzer noise for `CA1861`, `CA1859`, and `CA1720`, and kept `CA2227` as a suggestion in both regular and test analyzer configs.
+
+### Fixed
+
+- Signed projects no longer receive conventional `InternalsVisibleTo` attributes that would be invalid without public keys.
+- CI restores for MSBuild SDK consumers now enforce locked mode by default, matching the documented restore contract.
+- Scaffold output now reports `Created` only for newly copied config files and `Skipped` only for files that already existed.
+
 ## [0.0.117] - 2026-06-23
 
 ### Fixed
