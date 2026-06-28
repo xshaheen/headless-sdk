@@ -63,6 +63,25 @@
     <NoWarn Condition="'$(HeadlessEnforceConfigureAwait)' != 'true'">$(NoWarn);CA2007</NoWarn>
   </PropertyGroup>
 
+  <PropertyGroup Label="Test And Aspire NoWarn">
+    <!--
+      Test-project noise suppressions and the Aspire-host CA1707 relaxation. Evaluated here (not in
+      SupportGeneral.props) so that IsTestableProject / IsAspireHost set by the consumer in
+      Directory.Build.props or the csproj are visible: under MSBuild SDK consumption,
+      build/Headless.NET.Sdk.props loads BEFORE Directory.Build.props, so a .props-phase condition
+      would miss a consumer-set value (the Headless.NET.Sdk.Test SDK sets IsTestableProject early, so
+      that path always worked; this fixes the documented base-SDK + IsTestableProject path). NoWarn is
+      consumed at compile time, well after this point.
+      CA1707/IDE1006/IDE0022/CS8604/S4144/CA5394/CA1848/MA0076/MA0003/RCS1046/CA2254/IDE0039/CA1849/
+      MA0042/MA0166/CA1861/CA1859/CA1720: too noisy for test code.
+      CA1707 (underscores): Aspire hosts generate members with underscores.
+    -->
+    <NoWarn Condition="'$(IsTestableProject)' == 'true'"
+      >$(NoWarn);CA1707;IDE1006;IDE0022;CS8604;S4144;CA5394;CA1848;MA0076;MA0003;RCS1046;CA2254;IDE0039;CA1849;MA0042;MA0166;CA1861;CA1859;CA1720</NoWarn
+    >
+    <NoWarn Condition="'$(IsAspireHost)' == 'true'">$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+
   <!--
     Allow apps to run on a newer major .NET runtime if their pinned major isn't installed.
     Applied to every non-test project: it is what executables (Exe and WinExe) need, and an inert

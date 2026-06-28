@@ -169,19 +169,32 @@ indent_size = 2
         using var reader = new StreamReader(entry.Open());
         var content = reader.ReadToEnd();
 
-        Assert.Contains("$(WarningsAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904", content, StringComparison.Ordinal);
-        Assert.DoesNotContain(
-            "<WarningsAsErrors>(WarningsAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>",
-            content,
+        var warningsAsErrors = XDocument
+            .Parse(content)
+            .Root!.Elements("PropertyGroup")
+            .Elements("WarningsAsErrors")
+            .Single()
+            .Value;
+
+        // Vulnerability severities (NU1901-NU1904) are escalated to errors on CI/Release, prefixed by
+        // the existing $(WarningsAsErrors) so consumer values are preserved.
+        Assert.Contains(
+            "$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904",
+            warningsAsErrors,
             StringComparison.Ordinal
         );
+        // NU1900 (audit source unreachable) must NOT be escalated: a connectivity blip should not fail the build.
+        Assert.DoesNotContain("NU1900", warningsAsErrors, StringComparison.Ordinal);
     }
 
     [Fact]
     public void should_suppress_test_noise_warnings_when_project_is_a_test_project()
     {
         using var package = ZipFile.OpenRead(fixture.PackagePath);
-        var content = ReadPackageEntry(package, "build/SupportGeneral.props");
+        // The IsTestableProject-conditioned NoWarn lives in SupportGeneral.targets (not .props) so a
+        // consumer-set IsTestableProject (Directory.Build.props/csproj) is visible under MSBuild SDK
+        // consumption, where build props load before Directory.Build.props.
+        var content = ReadPackageEntry(package, "build/SupportGeneral.targets");
         var document = XDocument.Parse(content);
         var testNoWarn = document
             .Root!.Elements("PropertyGroup")

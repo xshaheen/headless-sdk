@@ -37,6 +37,15 @@
     <None Include="sdk/Sdk.props;sdk/Sdk.targets" Pack="true" PackagePath="sdk/%(Filename)%(Extension)" />
     <None Include="build\$(PackageId).props" Pack="true" PackagePath="build\$(PackageId).props" />
     <None Include="build\$(PackageId).targets" Pack="true" PackagePath="build\$(PackageId).targets" />
+    <!--
+      Packs the base SDK's entire build/ tree (Support* modules + the generated
+      SupportTestProjects.Versions.props) into this satellite package. NOTE: that versions file is
+      produced by the GenerateHeadlessTestToolVersions target on the BASE project only, so the base
+      must build before a satellite is packed or the satellite ships a stale copy. The full-solution
+      build (`dotnet build headless-sdk.slnx`) and CI both build the base first, so this holds in
+      practice; avoid packing a satellite in isolation without first building Headless.NET.Sdk.
+      VersionConsistencyTests guards the committed file's freshness.
+    -->
     <None
       Include="..\Headless.NET.Sdk\build\**\*.*"
       Pack="true"

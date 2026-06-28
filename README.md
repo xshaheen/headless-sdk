@@ -198,7 +198,7 @@ Many values apply only when the consuming project has not already set the proper
 | `NuGetAudit` | `true` | Enables NuGet vulnerability auditing. |
 | `NuGetAuditMode` | `all` | Audits direct and transitive dependencies. |
 | `NuGetAuditLevel` | `low` | Reports vulnerabilities at low severity and above. |
-| `WarningsAsErrors` | Adds `NU1900`-`NU1904` on CI or Release | Promotes NuGet audit warnings to errors. |
+| `WarningsAsErrors` | Adds `NU1901`-`NU1904` on CI or Release | Promotes NuGet audit vulnerability warnings to errors. `NU1900` (audit source unreachable) is left as a warning so a connectivity blip does not fail the build. |
 | `GenerateSBOM` | `true` on CI | Generates a software bill of materials. |
 
 ### Test Projects
