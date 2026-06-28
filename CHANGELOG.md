@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.120] - 2026-06-28
+
+### Fixed
+
+- Scaffolded `.editorconfig` files now carry the ReSharper/Rider severity alignment that `jb inspectcode` reads, while the SDK-injected analyzer configuration stays limited to compiler-consumed Roslyn settings.
+
 ## [0.0.119] - 2026-06-28
 
 ### Fixed
