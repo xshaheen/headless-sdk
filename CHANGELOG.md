@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.119] - 2026-06-28
+
+### Fixed
+
+- Test-project analyzer suppressions (`CA1849`, `MA0042`, `MA0166`, `CA1861`, `CA1859`, `CA1720`, and the rest of the test `NoWarn` set) now apply when `IsTestableProject` is set in `Directory.Build.props` or the project file under MSBuild SDK consumption. The suppressions moved from `SupportGeneral.props` to `SupportGeneral.targets` so a consumer-set value is visible; the `Headless.NET.Sdk.Test` SDK was already unaffected.
+- NuGet audit no longer escalates `NU1900` (audit source unreachable) to a build error on CI or Release, so a registry outage or offline restore no longer fails the build. The vulnerability codes `NU1901`-`NU1904` remain errors.
+- Normalized the base package's `buildTransitive` and `buildMultiTargeting` re-import paths so they match the project-type SDK variants.
+
 ## [0.0.118] - 2026-06-27
 
 ### Added
