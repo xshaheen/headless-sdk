@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.123] - 2026-06-30
+
+### Changed
+
+- Relaxed the SDK-injected analyzer baseline: `CA1716` (identifiers should not match keywords) is now `none`, and `CA1045` (do not pass types by reference) ships as a suggestion.
+- Test-project analyzer config now fully suppresses `CA2201` (reserved exception types), `CA1028` (Int32 enum storage), and `CA2227` (read-only collection properties), so intentional test patterns no longer surface as analyzer or IDE noise.
+
 ## [0.0.122] - 2026-06-28
 
 ### Changed
