@@ -178,11 +178,7 @@ indent_size = 2
 
         // Vulnerability severities (NU1901-NU1904) are escalated to errors on CI/Release, prefixed by
         // the existing $(WarningsAsErrors) so consumer values are preserved.
-        Assert.Contains(
-            "$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904",
-            warningsAsErrors,
-            StringComparison.Ordinal
-        );
+        Assert.Contains("$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904", warningsAsErrors, StringComparison.Ordinal);
         // NU1900 (audit source unreachable) must NOT be escalated: a connectivity blip should not fail the build.
         Assert.DoesNotContain("NU1900", warningsAsErrors, StringComparison.Ordinal);
     }
@@ -260,7 +256,15 @@ indent_size = 2
             regularAnalyzerConfig,
             StringComparison.Ordinal
         );
-        Assert.Contains("dotnet_diagnostic.CA2227.severity = suggestion", testAnalyzerConfig, StringComparison.Ordinal);
+        Assert.Contains("dotnet_diagnostic.CA1716.severity = none", regularAnalyzerConfig, StringComparison.Ordinal);
+        Assert.Contains(
+            "dotnet_diagnostic.CA1045.severity = suggestion",
+            regularAnalyzerConfig,
+            StringComparison.Ordinal
+        );
+        Assert.Contains("dotnet_diagnostic.CA1028.severity = none", testAnalyzerConfig, StringComparison.Ordinal);
+        Assert.Contains("dotnet_diagnostic.CA2201.severity = none", testAnalyzerConfig, StringComparison.Ordinal);
+        Assert.Contains("dotnet_diagnostic.CA2227.severity = none", testAnalyzerConfig, StringComparison.Ordinal);
 
         var testTargets = ReadPackageEntry(package, "build/SupportTestProjects.targets");
         Assert.Contains("configurations/default.runsettings", testTargets, StringComparison.Ordinal);
