@@ -10,116 +10,154 @@ global_level = 0
 # Code-style options keep their value:severity suffix; only warning/error severities are enforced on build.
 
 ##########################################
-# Severities (analyzer diagnostics)
+# Analyzer Diagnostic Severities
+#
+# Roslyn analyzer-rule severities, grouped by intent. Families: CA* (NetAnalyzers),
+# RCS* (Roslynator), MA* (Meziantou), VSTHRD*/AsyncFixer*/Asyncify* (async & threading),
+# FAA* (AwesomeAssertions), CS* (compiler). The default below leaves every other rule at
+# its analyzer default; the per-rule lines tune the ones we care about.
 ##########################################
 
-# Default Severity for all .NET Code Style rules
+# Default severity for all .NET code-analysis rules
 dotnet_analyzer_diagnostic.severity = default
 
-# CA1848: Use the LoggerMessage delegates
-dotnet_diagnostic.CA1848.severity = silent
-# CA1863: Cache a 'CompositeFormat' for repeated use in this formatting operation
-dotnet_diagnostic.CA1863.severity = suggestion
-# CA5394: Do not use insecure randomness
-dotnet_diagnostic.CA5394.severity = suggestion
-# CA1861: Avoid constant arrays as arguments
-dotnet_diagnostic.CA1861.severity = suggestion
-# CA1716: Identifiers should not match keywords
-dotnet_diagnostic.CA1716.severity = none
-# CA1000: Do not declare static members on generic types
-dotnet_diagnostic.CA1000.severity = suggestion
-# CA1859: Use concrete types when possible for improved performance
-dotnet_diagnostic.CA1859.severity = suggestion
-# CA1024: Use properties where appropriate
-dotnet_diagnostic.CA1024.severity = suggestion
-# CA1310: Specify StringComparison for correctness
-dotnet_diagnostic.CA1310.severity = suggestion
-# CA1307: Specify StringComparison for clarity
-dotnet_diagnostic.CA1307.severity = suggestion
-# CA1305: Specify IFormatProvider
-dotnet_diagnostic.CA1305.severity = suggestion
-# CA1304: Specify CultureInfo
-dotnet_diagnostic.CA1304.severity = suggestion
+# --- Globalization & culture ---
+
 # CA1303: Do not pass literals as localized parameters
 dotnet_diagnostic.CA1303.severity = suggestion
+# CA1304: Specify CultureInfo
+dotnet_diagnostic.CA1304.severity = suggestion
+# CA1305: Specify IFormatProvider
+dotnet_diagnostic.CA1305.severity = suggestion
+# CA1307: Specify StringComparison for clarity
+dotnet_diagnostic.CA1307.severity = suggestion
 # CA1309: Use ordinal StringComparison
 dotnet_diagnostic.CA1309.severity = suggestion
-# CA1805: Do not initialize unnecessarily.
-dotnet_diagnostic.CA1805.severity = suggestion
+# CA1310: Specify StringComparison for correctness
+dotnet_diagnostic.CA1310.severity = suggestion
+# MA0006: Use String.Equals instead of equality operator
+dotnet_diagnostic.MA0006.severity = suggestion
+
+# --- Naming ---
+
 # CA1707: Identifiers should not contain underscores
 dotnet_diagnostic.CA1707.severity = warning
 # CA1708: Identifiers should differ by more than case
 dotnet_diagnostic.CA1708.severity = warning
-# CA1715: Identifiers should have correct prefix
-dotnet_diagnostic.CA1715.severity = warning
 # CA1712: Do not prefix enum values with type name
 dotnet_diagnostic.CA1712.severity = warning
+# CA1715: Identifiers should have correct prefix
+dotnet_diagnostic.CA1715.severity = warning
+# CA1716: Identifiers should not match keywords
+dotnet_diagnostic.CA1716.severity = none
 # CA1720: Identifiers should not contain type names
 dotnet_diagnostic.CA1720.severity = suggestion
 # CA1725: Parameter names should match base declaration
 dotnet_diagnostic.CA1725.severity = suggestion
-# CA2009: Do not call ToImmutableCollection on an ImmutableCollection value
-dotnet_diagnostic.CA2009.severity = warning
-# CA1851: Possible multiple enumerations of 'IEnumerable' collection
-dotnet_diagnostic.CA1851.severity = suggestion
+
+# --- Design & API surface ---
+
+# CA1000: Do not declare static members on generic types
+dotnet_diagnostic.CA1000.severity = suggestion
 # CA1008: Enums should have zero value
 dotnet_diagnostic.CA1008.severity = suggestion
-# CA2249: Consider using 'string.Contains' instead of 'string.IndexOf'
-dotnet_diagnostic.CA2249.severity = warning
 # CA1018: Mark attributes with AttributeUsageAttribute
 dotnet_diagnostic.CA1018.severity = warning
+# CA1019: Define accessors for attribute arguments
+dotnet_diagnostic.CA1019.severity = suggestion
+# CA1024: Use properties where appropriate
+dotnet_diagnostic.CA1024.severity = suggestion
+# CA1027: Mark enums with FlagsAttribute
+dotnet_diagnostic.CA1027.severity = none
+# CA1028: Enum Storage should be Int32
+dotnet_diagnostic.CA1028.severity = suggestion
+# CA1036: A class that implements IComparable<T> or IComparable should override comparison operators
+dotnet_diagnostic.CA1036.severity = suggestion
 # CA1045: Do not pass types by reference
 dotnet_diagnostic.CA1045.severity = suggestion
 # CA1047: Do not declare protected member in sealed type
 dotnet_diagnostic.CA1047.severity = warning
+# CA2227: Collection properties should be read only
+dotnet_diagnostic.CA2227.severity = suggestion
+
+# --- Performance & allocations ---
+
+# CA1805: Do not initialize unnecessarily.
+dotnet_diagnostic.CA1805.severity = suggestion
+# CA1823: Avoid unused private fields
+dotnet_diagnostic.CA1823.severity = suggestion
 # CA1825: Avoid zero-length array allocations
 dotnet_diagnostic.CA1825.severity = warning
-# CA1827: Do not use Count() or LongCount() when Any() can be used
-dotnet_diagnostic.CA1827.severity = warning
 # CA1826: Do not use Enumerable methods on indexable collections. Instead use the collection directly
 dotnet_diagnostic.CA1826.severity = warning
+# CA1827: Do not use Count() or LongCount() when Any() can be used
+dotnet_diagnostic.CA1827.severity = warning
 # CA1829: Use Length/Count property instead of Count() when available
 dotnet_diagnostic.CA1829.severity = warning
 # CA1831|CA1832|CA1833: Use AsSpan or AsMemory instead of Range-based indexers when appropriate
 dotnet_diagnostic.CA1831.severity = warning
 dotnet_diagnostic.CA1832.severity = warning
 dotnet_diagnostic.CA1833.severity = warning
-# CA1837: Use 'Environment.ProcessId'
-dotnet_diagnostic.CA1837.severity = warning
 # CA1836: Prefer IsEmpty over Count
 dotnet_diagnostic.CA1836.severity = warning
-# CA1036: A class that implements IComparable<T> or IComparable should override comparison operators
-dotnet_diagnostic.CA1036.severity = suggestion
-# CA1019: Define accessors for attribute arguments
-dotnet_diagnostic.CA1019.severity = suggestion
-# CA2227: Collection properties should be read only
-dotnet_diagnostic.CA2227.severity = suggestion
-# CA1028: Enum Storage should be Int32
-dotnet_diagnostic.CA1028.severity = suggestion
-# CA1027: Mark enums with FlagsAttribute
-dotnet_diagnostic.CA1027.severity = none
-# CA1823: Avoid unused private fields
-dotnet_diagnostic.CA1823.severity = suggestion
+# CA1837: Use 'Environment.ProcessId'
+dotnet_diagnostic.CA1837.severity = warning
+# CA1848: Use the LoggerMessage delegates
+dotnet_diagnostic.CA1848.severity = silent
+# CA1851: Possible multiple enumerations of 'IEnumerable' collection
+dotnet_diagnostic.CA1851.severity = suggestion
+# CA1859: Use concrete types when possible for improved performance
+dotnet_diagnostic.CA1859.severity = suggestion
+# CA1861: Avoid constant arrays as arguments
+dotnet_diagnostic.CA1861.severity = suggestion
+# CA1863: Cache a 'CompositeFormat' for repeated use in this formatting operation
+dotnet_diagnostic.CA1863.severity = suggestion
 
-# FAA0002: Use AwesomeAssertions equivalent
-dotnet_diagnostic.FAA0002.severity = warning
+# --- Async & threading ---
 
-# RCS1021: Convert lambda expression body to expression-body
-dotnet_diagnostic.RCS1021.severity = suggestion
-# VSTHRD002: Avoid problematic synchronous waits
-dotnet_diagnostic.VSTHRD002.severity = none
+dotnet_diagnostic.CA2011.severity = warning
+dotnet_diagnostic.CA2012.severity = warning
 # MA0045: Do not use blocking call (make method async)
 dotnet_diagnostic.MA0045.severity = suggestion
-# MA0025: Implement the functionality (or raise NotSupportedException)
-# Tests intentionally throw NotImplementedException to exercise exception-handler mapping
-dotnet_diagnostic.MA0025.severity = suggestion
-# MA0026: TO-DO comment
-dotnet_diagnostic.MA0026.severity = suggestion
 # MA0079: Forward the CancellationToken using .WithCancellation()
 dotnet_diagnostic.MA0079.severity = warning
-# MA0006: Use String.Equals instead of equality operator
-dotnet_diagnostic.MA0006.severity = suggestion
+dotnet_diagnostic.MA0080.severity = warning
+dotnet_diagnostic.AsyncFixer02.severity = warning
+dotnet_diagnostic.AsyncFixer03.severity = warning
+dotnet_diagnostic.AsyncFixer04.severity = warning
+dotnet_diagnostic.AsyncFixer05.severity = warning
+dotnet_diagnostic.AsyncifyInvocation.severity = warning
+dotnet_diagnostic.AsyncifyVariable.severity = warning
+# VSTHRD002: Avoid problematic synchronous waits
+dotnet_diagnostic.VSTHRD002.severity = none
+dotnet_diagnostic.VSTHRD100.severity = warning
+dotnet_diagnostic.VSTHRD101.severity = warning
+dotnet_diagnostic.VSTHRD103.severity = warning
+dotnet_diagnostic.VSTHRD107.severity = warning
+dotnet_diagnostic.VSTHRD110.severity = warning
+dotnet_diagnostic.VSTHRD114.severity = warning
 
+# --- Security ---
+
+dotnet_diagnostic.CA5350.severity = warning
+dotnet_diagnostic.CA5351.severity = warning
+dotnet_diagnostic.CA5359.severity = warning
+dotnet_diagnostic.CA5360.severity = warning
+dotnet_diagnostic.CA5364.severity = warning
+dotnet_diagnostic.CA5379.severity = warning
+dotnet_diagnostic.CA5384.severity = warning
+dotnet_diagnostic.CA5385.severity = warning
+# CA5394: Do not use insecure randomness
+dotnet_diagnostic.CA5394.severity = suggestion
+
+# --- Correctness & reliability ---
+
+# CA2009: Do not call ToImmutableCollection on an ImmutableCollection value
+dotnet_diagnostic.CA2009.severity = warning
+dotnet_diagnostic.CA2016.severity = warning
+# CA2249: Consider using 'string.Contains' instead of 'string.IndexOf'
+dotnet_diagnostic.CA2249.severity = warning
+dotnet_diagnostic.CS0184.severity = warning
 # Earlier always-on promotions (correctness/reliability) kept regardless of consumer .editorconfig.
 dotnet_diagnostic.MA0001.severity = warning
 dotnet_diagnostic.MA0002.severity = warning
@@ -134,36 +172,17 @@ dotnet_diagnostic.MA0037.severity = error
 dotnet_diagnostic.MA0039.severity = error
 dotnet_diagnostic.MA0047.severity = warning
 
-# Async/threading safety
-dotnet_diagnostic.AsyncFixer02.severity = warning
-dotnet_diagnostic.AsyncFixer03.severity = warning
-dotnet_diagnostic.AsyncFixer04.severity = warning
-dotnet_diagnostic.AsyncFixer05.severity = warning
-dotnet_diagnostic.VSTHRD100.severity = warning
-dotnet_diagnostic.VSTHRD101.severity = warning
-dotnet_diagnostic.VSTHRD103.severity = warning
-dotnet_diagnostic.VSTHRD107.severity = warning
-dotnet_diagnostic.VSTHRD110.severity = warning
-dotnet_diagnostic.VSTHRD114.severity = warning
-dotnet_diagnostic.AsyncifyInvocation.severity = warning
-dotnet_diagnostic.AsyncifyVariable.severity = warning
-dotnet_diagnostic.MA0080.severity = warning
-dotnet_diagnostic.CA2011.severity = warning
-dotnet_diagnostic.CA2012.severity = warning
+# --- Style & maintainability ---
 
-# Security
-dotnet_diagnostic.CA5350.severity = warning
-dotnet_diagnostic.CA5351.severity = warning
-dotnet_diagnostic.CA5359.severity = warning
-dotnet_diagnostic.CA5360.severity = warning
-dotnet_diagnostic.CA5364.severity = warning
-dotnet_diagnostic.CA5379.severity = warning
-dotnet_diagnostic.CA5384.severity = warning
-dotnet_diagnostic.CA5385.severity = warning
-
-# Correctness
-dotnet_diagnostic.CA2016.severity = warning
-dotnet_diagnostic.CS0184.severity = warning
+# RCS1021: Convert lambda expression body to expression-body
+dotnet_diagnostic.RCS1021.severity = suggestion
+# MA0025: Implement the functionality (or raise NotSupportedException)
+# Tests intentionally throw NotImplementedException to exercise exception-handler mapping
+dotnet_diagnostic.MA0025.severity = suggestion
+# MA0026: TO-DO comment
+dotnet_diagnostic.MA0026.severity = suggestion
+# FAA0002: Use AwesomeAssertions equivalent
+dotnet_diagnostic.FAA0002.severity = warning
 
 ##########################################
 # Code Style
