@@ -1474,19 +1474,16 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
                 );
             }
 
-            var packagePath = Directory
-                .EnumerateFiles(PackageSourceDirectory, $"{packageId}.*.nupkg", SearchOption.TopDirectoryOnly)
-                .Where(path => !path.EndsWith(".snupkg", StringComparison.Ordinal))
-                .Where(path => HasVersionSuffix(Path.GetFileName(path), packageId))
-                .OrderByDescending(File.GetCreationTimeUtc)
-                .FirstOrDefault();
-
-            if (packagePath is null)
-            {
-                throw new InvalidOperationException(
+            var packagePath =
+                Directory
+                    .EnumerateFiles(PackageSourceDirectory, $"{packageId}.*.nupkg", SearchOption.TopDirectoryOnly)
+                    .Where(path => !path.EndsWith(".snupkg", StringComparison.Ordinal))
+                    .Where(path => HasVersionSuffix(Path.GetFileName(path), packageId))
+                    .OrderByDescending(File.GetCreationTimeUtc)
+                    .FirstOrDefault()
+                ?? throw new InvalidOperationException(
                     $"Failed to locate packed {packageId} nupkg for integration tests."
                 );
-            }
 
             packagePaths[packageId] = packagePath;
         }
@@ -1963,7 +1960,7 @@ internal sealed record BuildDiagnosticsResult(int ExitCode, string Output, byte[
         using var stream = new MemoryStream(BinLogContent);
         var build = StructuredLoggerSerialization.ReadBinLog(stream);
 
-        return build.SourceFiles.Select(file => file.FullPath).ToArray();
+        return [.. build.SourceFiles.Select(file => file.FullPath)];
     }
 }
 
