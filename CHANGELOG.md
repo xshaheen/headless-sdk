@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.124] - 2026-07-01
+
+### Changed
+
+- The optional `editorconfig.txt` eject now carries the complete analyzer diagnostic severity set plus the `[tests/**/*.cs]` relaxations, restoring full coverage for consumers whose projects do not receive the MSBuild-injected baseline (e.g. plain `Microsoft.NET.Sdk` test projects).
+- Reorganized the injected analyzer severities (`Headless.NET.Sdk.Analyzers.editorconfig` and `Headless.NET.Sdk.Tests.editorconfig`) and the `editorconfig.txt` eject into intent-based groups (globalization, naming, design, performance, async, security, correctness, style). Behavior-preserving: every rule and severity is unchanged.
+
 ## [0.0.123] - 2026-06-30
 
 ### Changed
