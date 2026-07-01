@@ -252,7 +252,7 @@ indent_size = 2
         var testAnalyzerConfig = ReadPackageEntry(package, "configurations/Headless.NET.Sdk.Tests.editorconfig");
 
         Assert.Contains(
-            "dotnet_diagnostic.CA2227.severity = suggestion",
+            "dotnet_diagnostic.CA2227.severity = silent",
             regularAnalyzerConfig,
             StringComparison.Ordinal
         );
