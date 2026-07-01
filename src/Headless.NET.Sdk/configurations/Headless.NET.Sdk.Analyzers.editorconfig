@@ -78,7 +78,7 @@ dotnet_diagnostic.CA1045.severity = suggestion
 # CA1047: Do not declare protected member in sealed type
 dotnet_diagnostic.CA1047.severity = warning
 # CA2227: Collection properties should be read only
-dotnet_diagnostic.CA2227.severity = suggestion
+dotnet_diagnostic.CA2227.severity = silent
 
 # --- Performance & allocations ---
 
@@ -181,6 +181,11 @@ dotnet_diagnostic.RCS1021.severity = silent
 dotnet_diagnostic.MA0025.severity = suggestion
 # MA0026: TO-DO comment
 dotnet_diagnostic.MA0026.severity = suggestion
+# MA0182: Internal type apparently never used — suppressed globally.
+# Systematic false-positive in this framework: internal types are frequently
+# registered via DI across InternalsVisibleTo seams (e.g. Headless.Api.Core types
+# registered in Headless.Api.ServiceDefaults), which the analyzer can't see.
+dotnet_diagnostic.MA0182.severity = none
 # FAA0002: Use AwesomeAssertions equivalent
 dotnet_diagnostic.FAA0002.severity = warning
 
