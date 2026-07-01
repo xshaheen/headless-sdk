@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.125] - 2026-07-02
+
+### Changed
+
+- Suppressed `MA0182` (internal type apparently never used) in the injected analyzer baseline and the `editorconfig.txt` eject. It systematically false-positives in this framework, where internal types are registered via DI across `InternalsVisibleTo` seams the analyzer cannot see.
+- Lowered `CA2227` (collection properties should be read only) from suggestion to `silent` in both the injected analyzer baseline and the `editorconfig.txt` eject.
+- Suppressed `MA0176` (optimize `Guid` creation) in the injected test analyzer configuration and the `editorconfig.txt` eject, since the micro-optimization is irrelevant in test fixtures.
+- Extended the `editorconfig.txt` eject with ReSharper closure-inspection relaxations (`access_to_disposed_closure`, `access_to_modified_closure`) and a `[{demo,benchmarks,tests}/**/*.cs]` relaxation for `CA5394` (insecure randomness), matching the repo's own dogfooded configuration.
+
 ## [0.0.124] - 2026-07-01
 
 ### Changed
