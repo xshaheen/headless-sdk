@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Xunit;
+using static Headless.NET.Sdk.Tests.Integrations.DotNetCommand;
 using StructuredLoggerSerialization = Microsoft.Build.Logging.StructuredLogger.Serialization;
 
 #nullable enable
@@ -251,11 +252,7 @@ indent_size = 2
         var regularAnalyzerConfig = ReadPackageEntry(package, "configurations/Headless.NET.Sdk.Analyzers.editorconfig");
         var testAnalyzerConfig = ReadPackageEntry(package, "configurations/Headless.NET.Sdk.Tests.editorconfig");
 
-        Assert.Contains(
-            "dotnet_diagnostic.CA2227.severity = silent",
-            regularAnalyzerConfig,
-            StringComparison.Ordinal
-        );
+        Assert.Contains("dotnet_diagnostic.CA2227.severity = silent", regularAnalyzerConfig, StringComparison.Ordinal);
         Assert.Contains("dotnet_diagnostic.CA1716.severity = none", regularAnalyzerConfig, StringComparison.Ordinal);
         Assert.Contains(
             "dotnet_diagnostic.CA1045.severity = suggestion",
@@ -1387,8 +1384,6 @@ public static class JsonConsumer
 
     private static string NormalizeLineEndings(string value) => value.ReplaceLineEndings("\n");
 
-    private static string Quote(string value) => $"\"{value}\"";
-
     private static void AssertImplicitAnalyzerReference(
         IReadOnlyDictionary<string, XElement> packageReferences,
         string packageId
@@ -1444,8 +1439,8 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
         Directory.CreateDirectory(PackageSourceDirectory);
 
         var cancellationToken = TestContext.Current.CancellationToken;
-        var repositoryRoot = FindRepositoryRoot();
-        var env = CreateDotNetEnvironment(PackageRootDirectory);
+        var repositoryRoot = TestRepository.FindRoot("integration tests");
+        var env = DotNetCommandEnvironment.CreateIsolatedEnvironment(PackageRootDirectory);
         var packageIds = new[]
         {
             "Headless.NET.Sdk",
@@ -1523,47 +1518,6 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
 
         return ValueTask.CompletedTask;
     }
-
-    private static Dictionary<string, string> CreateDotNetEnvironment(string tempRoot)
-    {
-        var env = new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1",
-            ["DOTNET_CLI_HOME"] = Path.Combine(tempRoot, "dotnet-cli-home"),
-            ["DOTNET_NOLOGO"] = "1",
-            ["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1",
-            ["NUGET_PACKAGES"] = Path.Combine(tempRoot, ".nuget-packages"),
-            ["NUGET_HTTP_CACHE_PATH"] = Path.Combine(tempRoot, ".nuget-http-cache"),
-        };
-
-        foreach (var value in env.Values)
-        {
-            Directory.CreateDirectory(value);
-        }
-
-        DotNetCommandEnvironment.AddNeutralBuildEnvironment(env);
-
-        return env;
-    }
-
-    private static string FindRepositoryRoot()
-    {
-        var current = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (current is not null)
-        {
-            if (File.Exists(Path.Combine(current.FullName, "headless-sdk.slnx")))
-            {
-                return current.FullName;
-            }
-
-            current = current.Parent;
-        }
-
-        throw new InvalidOperationException("Could not locate repository root for integration tests.");
-    }
-
-    private static string Quote(string value) => $"\"{value}\"";
 }
 
 internal sealed class ConsumerProject : IAsyncDisposable
@@ -1583,22 +1537,7 @@ internal sealed class ConsumerProject : IAsyncDisposable
         SolutionDirectory = $"{Path.TrimEndingDirectorySeparator(rootDirectory)}{Path.DirectorySeparatorChar}";
         PackageVersion = packageVersion;
         this.packageSourceDirectory = packageSourceDirectory;
-        environment = new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1",
-            ["DOTNET_CLI_HOME"] = Path.Combine(rootDirectory, "dotnet-cli-home"),
-            ["DOTNET_NOLOGO"] = "1",
-            ["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1",
-            ["NUGET_PACKAGES"] = Path.Combine(rootDirectory, ".nuget-packages"),
-            ["NUGET_HTTP_CACHE_PATH"] = Path.Combine(rootDirectory, ".nuget-http-cache"),
-        };
-
-        foreach (var value in environment.Values)
-        {
-            Directory.CreateDirectory(value);
-        }
-
-        DotNetCommandEnvironment.AddNeutralBuildEnvironment(environment);
+        environment = DotNetCommandEnvironment.CreateIsolatedEnvironment(rootDirectory);
     }
 
     public string EditorConfigPath { get; }
@@ -1720,8 +1659,6 @@ public sealed class Class1;
 
     public async Task<BuildDiagnosticsResult> BuildAndCollectDiagnosticsAsync(string additionalArguments = "")
     {
-        var cancellationToken = TestContext.Current.CancellationToken;
-
         if (File.Exists(BinLogPath))
         {
             File.Delete(BinLogPath);
@@ -1736,10 +1673,10 @@ public sealed class Class1;
         var result = await RunDotNetAsync(
             $"build {Quote(ProjectFilePath)}{argumentsSuffix} -p:ErrorLog={Quote($"{BuildOutputSarifPath},version=2.1")} /bl:{Quote(BinLogPath)}"
         );
-        var binLogContent = File.Exists(BinLogPath) ? await File.ReadAllBytesAsync(BinLogPath, cancellationToken) : [];
+        var binLogFiles = File.Exists(BinLogPath) ? ReadBinLogFiles(BinLogPath) : [];
         var sarif = await SarifFile.LoadAsync(BuildOutputSarifPath);
 
-        return new BuildDiagnosticsResult(result.ExitCode, result.Output, binLogContent, sarif);
+        return new BuildDiagnosticsResult(result.ExitCode, result.Output, binLogFiles, sarif);
     }
 
     public async Task<Dictionary<string, string>> EvaluateHeadlessPropertiesAsync(string additionalArguments = "")
@@ -1909,11 +1846,59 @@ public sealed class Class1;
             """;
     }
 
-    private static string Quote(string value) => $"\"{value}\"";
+    private static IReadOnlyCollection<string> ReadBinLogFiles(string path)
+    {
+        using var stream = File.OpenRead(path);
+        var build = StructuredLoggerSerialization.ReadBinLog(stream);
+
+        return [.. build.SourceFiles.Select(file => file.FullPath)];
+    }
+}
+
+internal static class TestRepository
+{
+    public static string FindRoot(string purpose)
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (current is not null)
+        {
+            if (File.Exists(Path.Combine(current.FullName, "headless-sdk.slnx")))
+            {
+                return current.FullName;
+            }
+
+            current = current.Parent;
+        }
+
+        throw new InvalidOperationException($"Could not locate repository root for {purpose}.");
+    }
 }
 
 internal static class DotNetCommandEnvironment
 {
+    public static Dictionary<string, string> CreateIsolatedEnvironment(string tempRoot)
+    {
+        var environment = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1",
+            ["DOTNET_CLI_HOME"] = Path.Combine(tempRoot, "dotnet-cli-home"),
+            ["DOTNET_NOLOGO"] = "1",
+            ["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1",
+            ["NUGET_PACKAGES"] = Path.Combine(tempRoot, ".nuget-packages"),
+            ["NUGET_HTTP_CACHE_PATH"] = Path.Combine(tempRoot, ".nuget-http-cache"),
+        };
+
+        foreach (var value in environment.Values)
+        {
+            Directory.CreateDirectory(value);
+        }
+
+        AddNeutralBuildEnvironment(environment);
+
+        return environment;
+    }
+
     public static void AddNeutralBuildEnvironment(IDictionary<string, string> environment)
     {
         // Workflow-level environment variables should not change default consumer-project behavior.
@@ -1937,7 +1922,12 @@ internal static class DotNetCommandEnvironment
     }
 }
 
-internal sealed record BuildDiagnosticsResult(int ExitCode, string Output, byte[] BinLogContent, SarifFile Sarif)
+internal sealed record BuildDiagnosticsResult(
+    int ExitCode,
+    string Output,
+    IReadOnlyCollection<string> BinLogFiles,
+    SarifFile Sarif
+)
 {
     public string SarifSummary =>
         string.Join(Environment.NewLine, Sarif.AllResults().Select(result => result.ToString()));
@@ -1950,18 +1940,7 @@ internal sealed record BuildDiagnosticsResult(int ExitCode, string Output, byte[
                 && string.Equals(result.RuleId, ruleId, StringComparison.OrdinalIgnoreCase)
             );
 
-    public IReadOnlyCollection<string> GetBinLogFiles()
-    {
-        if (BinLogContent.Length == 0)
-        {
-            return [];
-        }
-
-        using var stream = new MemoryStream(BinLogContent);
-        var build = StructuredLoggerSerialization.ReadBinLog(stream);
-
-        return [.. build.SourceFiles.Select(file => file.FullPath)];
-    }
+    public IReadOnlyCollection<string> GetBinLogFiles() => BinLogFiles;
 }
 
 internal sealed class SarifFile
@@ -2041,18 +2020,6 @@ internal static class DotNetCommand
             WorkingDirectory = workingDirectory,
         };
 
-        foreach (string key in Environment.GetEnvironmentVariables().Keys)
-        {
-            var value = Environment.GetEnvironmentVariable(key);
-
-            if (value is null)
-            {
-                continue;
-            }
-
-            startInfo.Environment[key] = value;
-        }
-
         foreach (var (key, value) in environment)
         {
             startInfo.Environment[key] = value;
@@ -2110,6 +2077,8 @@ internal static class DotNetCommand
             ? $"{arguments} --disable-build-servers"
             : $"{arguments[..separatorIndex]} --disable-build-servers{arguments[separatorIndex..]}";
     }
+
+    public static string Quote(string value) => $"\"{value}\"";
 }
 
 internal sealed record DotNetCommandResult(int ExitCode, string Output);

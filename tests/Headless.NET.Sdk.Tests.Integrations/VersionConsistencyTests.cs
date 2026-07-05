@@ -35,7 +35,7 @@ public sealed class VersionConsistencyTests
     [Fact]
     public void generated_test_tool_versions_should_match_central_package_versions()
     {
-        var repositoryRoot = FindRepositoryRoot();
+        var repositoryRoot = TestRepository.FindRoot("version consistency tests");
         var central = ReadCentralPackageVersions(Path.Combine(repositoryRoot, "Directory.Packages.props"));
         var generated = ReadPropertyValues(
             Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "build", "SupportTestProjects.Versions.props")
@@ -62,7 +62,7 @@ public sealed class VersionConsistencyTests
     [Fact]
     public void injected_test_tool_references_should_use_generated_version_properties()
     {
-        var repositoryRoot = FindRepositoryRoot();
+        var repositoryRoot = TestRepository.FindRoot("version consistency tests");
         var targets = File.ReadAllText(
             Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "build", "SupportTestProjects.targets")
         );
@@ -93,21 +93,4 @@ public sealed class VersionConsistencyTests
             .Descendants("PropertyGroup")
             .Elements()
             .ToDictionary(element => element.Name.LocalName, element => element.Value, StringComparer.Ordinal);
-
-    private static string FindRepositoryRoot()
-    {
-        var current = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (current is not null)
-        {
-            if (File.Exists(Path.Combine(current.FullName, "headless-sdk.slnx")))
-            {
-                return current.FullName;
-            }
-
-            current = current.Parent;
-        }
-
-        throw new InvalidOperationException("Could not locate repository root for version consistency tests.");
-    }
 }

@@ -2,7 +2,7 @@
 <!-- Single source of truth: Directory.Packages.props. Do not edit by hand. -->
 <Project>
 <PropertyGroup>
-<_HeadlessMicrosoftNetTestSdkVersion>18.6.0</_HeadlessMicrosoftNetTestSdkVersion>
+<_HeadlessMicrosoftNetTestSdkVersion>18.7.0</_HeadlessMicrosoftNetTestSdkVersion>
 <_HeadlessMtpCrashDumpVersion>2.2.3</_HeadlessMtpCrashDumpVersion>
 <_HeadlessMtpHangDumpVersion>2.2.3</_HeadlessMtpHangDumpVersion>
 <_HeadlessMtpHotReloadVersion>2.2.3</_HeadlessMtpHotReloadVersion>

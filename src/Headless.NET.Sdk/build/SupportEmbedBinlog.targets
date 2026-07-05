@@ -12,7 +12,9 @@
     <ItemGroup>
       <EmbedInBinlog
         Include="@(AdditionalFiles)"
-        Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Filename)%(Extension)', '^BannedSymbols(\..+)?\.txt$'))"
+        Condition="'%(Extension)' == '.txt'
+          and ('%(Filename)' == 'BannedSymbols'
+            or $([System.String]::Copy('%(Filename)').StartsWith('BannedSymbols.')))"
       />
     </ItemGroup>
   </Target>
