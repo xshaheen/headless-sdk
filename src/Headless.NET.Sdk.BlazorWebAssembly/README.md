@@ -23,7 +23,7 @@ Or as a package reference alongside the Microsoft Blazor WebAssembly SDK:
 
 ## What it adds over the core SDK
 
-Sets `HeadlessSdkProjectType=BlazorWebAssembly` and wraps `Microsoft.NET.Sdk.BlazorWebAssembly` so the WASM client app compiles and publishes correctly, while applying the full Headless baseline. `IsPackable` defaults to `false`, since Blazor WebAssembly apps are published, not packed.
+Sets `HeadlessSdkProjectType=BlazorWebAssembly` and wraps `Microsoft.NET.Sdk.BlazorWebAssembly` so the WASM client app compiles and publishes correctly, while applying the full Headless baseline. `IsPackable` defaults to `false`, since Blazor WebAssembly apps are published, not packed. `HeadlessSymbolFormat` defaults to `none` instead of `embedded`: WASM apps ship their assemblies to the browser, and an embedded PDB would leak into the published `_framework` payload.
 
 ## Opinionated defaults (overridable)
 

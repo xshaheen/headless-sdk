@@ -252,11 +252,37 @@ Container defaults only activate for `Microsoft.NET.Sdk.Web` projects running on
 | `PublishRepositoryUrl` | `true` | Publishes repository metadata. |
 | `RepositoryType` | `git` | Marks the repository type. |
 | `EmbedUntrackedSources` | `true` | Embeds untracked sources in PDBs. |
-| `IncludeSymbols` | `true` | Produces symbol packages. |
-| `SymbolPackageFormat` | `snupkg` | Uses modern symbol packages. |
+| `HeadlessSymbolFormat` | `embedded` (`none` for Blazor WASM) | Selects the debug-symbols policy. See [Symbols](#symbols). |
 | `SearchReadmeFileAbove` | `false` | Searches parent directories for README files when enabled. |
 | `DisableReadme` | unset | Set `true` to skip README package metadata and packing. |
 | `DisablePackageLogo` | unset | Set `true` to skip package icon metadata and packing. |
+
+### Symbols
+
+`HeadlessSymbolFormat` owns the debug-symbols policy for non-test projects:
+
+| Value | Effect |
+| --- | --- |
+| `embedded` (default) | `DebugType=embedded`, `IncludeSymbols=false`. The PDB ships inside the assembly, so symbols resolve on every feed — including GitHub Packages, which has no symbol server to serve a `.snupkg` from. No symbol package is produced. |
+| `snupkg` | `IncludeSymbols=true`, `SymbolPackageFormat=snupkg` — the previous SDK default (portable PDB + `.snupkg` pair). `DebugType` is left untouched. |
+| `none` | `IncludeSymbols=false`, `DebugType` left untouched. No symbols ship anywhere. |
+
+A consumer-set `DebugType`, `IncludeSymbols`, or `SymbolPackageFormat` always wins over the policy.
+
+Caveats:
+
+- `dotnet pack --include-symbols` passes `IncludeSymbols=true` as a **global** MSBuild property,
+  which overrides project-level properties (including this policy). Drop that flag when relying
+  on the `embedded` default — otherwise you get a legacy `.symbols.nupkg` on top of the embedded
+  PDB.
+- `Microsoft.NET.Sdk` defaults `DebugType=portable` before project evaluation, so an explicit
+  consumer `DebugType=portable` is indistinguishable from "unset" and the `embedded` mode rewrites
+  it. To keep portable PDBs, set `HeadlessSymbolFormat=none` (or `snupkg`) instead.
+- **Blazor WebAssembly exception:** WASM apps ship their assemblies to the browser, and an
+  embedded PDB survives into the published `_framework` payload — leaking debug info and inflating
+  the download. Portable PDBs are excluded from that payload, so projects on
+  `Microsoft.NET.Sdk.BlazorWebAssembly` (or the `Headless.NET.Sdk.BlazorWebAssembly` wrapper)
+  default to `none`.
 
 ### Repository Config Files
 

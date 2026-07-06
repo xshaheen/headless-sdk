@@ -38,7 +38,7 @@ Console.WriteLine("Hello!");
 
 ## What it adds
 
-This is the package that carries all the build assets the rest of the family re-packs. Sets `HeadlessSdkProjectType=Default`. The defaults reflect a strict house style: `Newtonsoft.Json` banned, `AnalysisLevel=latest-all`, MSBuild warnings as errors on CI, `RollForward=LatestMajor` for executables, nullable + implicit usings + latest C#, NuGet audit, SBOM on CI, Source Link, symbol packages, and a stack of implicit analyzers (Meziantou, AsyncFixer, Roslynator, and more).
+This is the package that carries all the build assets the rest of the family re-packs. Sets `HeadlessSdkProjectType=Default`. The defaults reflect a strict house style: `Newtonsoft.Json` banned, `AnalysisLevel=latest-all`, MSBuild warnings as errors on CI, `RollForward=LatestMajor` for executables, nullable + implicit usings + latest C#, NuGet audit, SBOM on CI, Source Link, embedded PDB symbols (`HeadlessSymbolFormat`), and a stack of implicit analyzers (Meziantou, AsyncFixer, Roslynator, and more).
 
 ## Opinionated defaults (overridable)
 
