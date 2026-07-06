@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Symbols policy is now owned by the SDK via the new `HeadlessSymbolFormat` property.** Non-test projects default to `embedded` (`DebugType=embedded`, `IncludeSymbols=false`): the PDB ships inside the assembly, so symbols resolve on feeds without a symbol server (e.g. GitHub Packages) and no `.snupkg` is produced. Set `HeadlessSymbolFormat=snupkg` for the previous portable-PDB + `.snupkg` behavior, or `none` to ship no symbols. Consumer-set `DebugType`, `IncludeSymbols`, or `SymbolPackageFormat` always win. Blazor WebAssembly projects default to `none` because an embedded PDB leaks into the published `_framework` browser payload. Note: `dotnet pack --include-symbols` passes `IncludeSymbols=true` as a global property and overrides this policy — drop that flag when relying on the embedded default.
+- `GitHubActionsTestLogger` is now referenced unconditionally for VSTest test projects instead of only when `GITHUB_ACTIONS=true`, so the restore graph — and consumer `packages.lock.json` files — no longer depend on CI environment variables (CI-committed lock files were rewritten by every local restore). The package stays dev-time only (`PrivateAssets=all`), remains excluded from Microsoft Testing Platform projects, and the logger still activates only on GitHub Actions.
+
 ## [0.0.125] - 2026-07-02
 
 ### Changed
