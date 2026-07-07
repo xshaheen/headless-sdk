@@ -805,6 +805,74 @@ public static class JsonConsumer
         Assert.Contains("Microsoft.NET.Test.Sdk", packageReferences);
         Assert.DoesNotContain("Microsoft.Testing.Extensions.TrxReport", packageReferences);
         Assert.Contains("GitHubActionsTestLogger", packageReferences);
+        Assert.Contains("GitHubActions", properties["VSTestLogger"], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_reference_github_actions_logger_for_vstest_without_github_actions()
+    {
+        // The PackageReference is unconditional with respect to GITHUB_ACTIONS so the restore
+        // graph (and consumer lock files) never depend on CI environment variables. Only the
+        // VSTestLogger activation is CI-gated.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
+            includePackageReference: false,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["UseMicrosoftTestingPlatform"] = "false",
+            }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+        var packageReferences = properties["PackageReferences"].Split('|', StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Contains("GitHubActionsTestLogger", packageReferences);
+        Assert.DoesNotContain("GitHubActions", properties["VSTestLogger"], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_produce_identical_lock_files_when_restoring_with_and_without_github_actions()
+    {
+        // Regression guard for CI-dependent restore graphs: GitHubActionsTestLogger used to be
+        // referenced only when GITHUB_ACTIONS=true, so lock files committed from CI restores were
+        // rewritten by every local restore (recurring dirty packages.lock.json noise).
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
+            includePackageReference: false,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["UseMicrosoftTestingPlatform"] = "false",
+                // SupportSbom.targets auto-adds Microsoft.Sbom.Targets on CI (a deliberate,
+                // pre-existing CI gate outside this test's scope); pin it off so the comparison
+                // isolates the GitHubActionsTestLogger restore-graph behavior.
+                ["GenerateSBOM"] = "false",
+            }
+        );
+
+        var lockFilePath = Path.Combine(project.RootDirectory, "packages.lock.json");
+        const string RestoreArguments = "-p:RestorePackagesWithLockFile=true -p:RestoreLockedMode=false";
+
+        var ciResult = await project.RunDotNetAsync(
+            $"restore {Quote(project.ProjectFilePath)} -p:GITHUB_ACTIONS=true {RestoreArguments} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+        Assert.True(ciResult.ExitCode == 0, ciResult.Output);
+        var ciLockFile = await File.ReadAllTextAsync(lockFilePath, TestContext.Current.CancellationToken);
+
+        // --force so the second restore re-evaluates the graph instead of no-opping on the
+        // cached assets, which would leave a stale lock file behind and make the test vacuous.
+        var localResult = await project.RunDotNetAsync(
+            $"restore {Quote(project.ProjectFilePath)} --force {RestoreArguments} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+        Assert.True(localResult.ExitCode == 0, localResult.Output);
+        var localLockFile = await File.ReadAllTextAsync(lockFilePath, TestContext.Current.CancellationToken);
+
+        Assert.Contains("GitHubActionsTestLogger", ciLockFile, StringComparison.Ordinal);
+        Assert.Contains("GitHubActionsTestLogger", localLockFile, StringComparison.Ordinal);
+        Assert.Equal(ciLockFile, localLockFile);
     }
 
     [Theory]
@@ -1115,7 +1183,9 @@ public static class JsonConsumer
     [Fact]
     public async Task should_set_package_information_defaults_when_not_a_test_project()
     {
-        // SupportPackageInformation.props defaults publish/symbol metadata for packable projects.
+        // SupportPackageInformation defaults publish/symbol metadata for packable projects. The
+        // symbols policy defaults to embedded PDBs (works on feeds without a symbol server, such
+        // as GitHub Packages) with no symbol package.
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
             fixture.PackageSourceDirectory
@@ -1125,8 +1195,227 @@ public static class JsonConsumer
 
         Assert.Equal("true", properties["PublishRepositoryUrl"]);
         Assert.Equal("git", properties["RepositoryType"]);
+        Assert.Equal("embedded", properties["HeadlessSymbolFormat"]);
+        Assert.Equal("embedded", properties["DebugType"]);
+        Assert.Equal("false", properties["IncludeSymbols"]);
+    }
+
+    [Fact]
+    public async Task should_use_snupkg_symbol_packages_when_symbol_format_is_snupkg()
+    {
+        // HeadlessSymbolFormat=snupkg restores the previous SDK behavior: portable PDB shipped
+        // as a .snupkg symbol package; DebugType is left at the base SDK default.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["HeadlessSymbolFormat"] = "snupkg",
+            }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("snupkg", properties["HeadlessSymbolFormat"]);
+        Assert.Equal("portable", properties["DebugType"]);
         Assert.Equal("true", properties["IncludeSymbols"]);
         Assert.Equal("snupkg", properties["SymbolPackageFormat"]);
+    }
+
+    [Fact]
+    public async Task should_leave_debug_type_untouched_when_symbol_format_is_none()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["HeadlessSymbolFormat"] = "none",
+            }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("none", properties["HeadlessSymbolFormat"]);
+        Assert.Equal("portable", properties["DebugType"]);
+        Assert.Equal("false", properties["IncludeSymbols"]);
+    }
+
+    [Fact]
+    public async Task should_respect_consumer_debug_type_when_symbol_format_is_embedded()
+    {
+        // A consumer-set DebugType always wins over the embedded default.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal) { ["DebugType"] = "full" }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("embedded", properties["HeadlessSymbolFormat"]);
+        Assert.Equal("full", properties["DebugType"]);
+        Assert.Equal("false", properties["IncludeSymbols"]);
+    }
+
+    [Fact]
+    public async Task should_respect_consumer_include_symbols_when_symbol_format_is_embedded()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal) { ["IncludeSymbols"] = "true" }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("embedded", properties["DebugType"]);
+        Assert.Equal("true", properties["IncludeSymbols"]);
+    }
+
+    [Fact]
+    public async Task should_respect_consumer_symbol_package_format_when_symbol_format_is_snupkg()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["HeadlessSymbolFormat"] = "snupkg",
+                ["SymbolPackageFormat"] = "symbols.nupkg",
+            }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("true", properties["IncludeSymbols"]);
+        Assert.Equal("symbols.nupkg", properties["SymbolPackageFormat"]);
+    }
+
+    [Fact]
+    public async Task should_not_fight_analyzer_packaging_pattern_when_using_default_symbol_format()
+    {
+        // Analyzer/source-generator packages set IncludeBuildOutput=false + IncludeSymbols=false;
+        // the symbols policy must not overwrite either.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["IncludeBuildOutput"] = "false",
+                ["IncludeSymbols"] = "false",
+            }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("embedded", properties["HeadlessSymbolFormat"]);
+        Assert.Equal("false", properties["IncludeSymbols"]);
+    }
+
+    [Theory]
+    [InlineData("Headless.NET.Sdk.BlazorWebAssembly/{version}", false)]
+    [InlineData("Microsoft.NET.Sdk.BlazorWebAssembly", true)]
+    public async Task should_default_symbol_format_to_none_when_project_is_blazor_web_assembly(
+        string sdkTemplate,
+        bool includePackageReference
+    )
+    {
+        // Blazor WASM ships its assemblies to the browser and an embedded PDB survives into the
+        // published _framework payload, so the symbols policy defaults those projects to 'none'
+        // (portable PDBs are excluded from the payload). Detection uses the base SDK's
+        // UsingMicrosoftNETSdkBlazorWebAssembly, so both consumption modes get the exception.
+        var sdk = sdkTemplate.Replace("{version}", fixture.PackageVersion, StringComparison.Ordinal);
+
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: sdk,
+            includePackageReference: includePackageReference
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("none", properties["HeadlessSymbolFormat"]);
+        Assert.Equal("portable", properties["DebugType"]);
+        Assert.Equal("false", properties["IncludeSymbols"]);
+    }
+
+    [Fact]
+    public async Task should_not_apply_symbol_policy_when_project_is_a_test_project()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
+            includePackageReference: false
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal(string.Empty, properties["HeadlessSymbolFormat"]);
+        Assert.Equal("portable", properties["DebugType"]);
+        Assert.Equal(string.Empty, properties["IncludeSymbols"]);
+    }
+
+    [Fact]
+    public async Task should_pack_embedded_pdb_without_symbol_packages_when_using_defaults()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"pack {Quote(project.ProjectFilePath)} -c Release -o {Quote(project.PackagesDirectory)} -p:PackageVersion=1.2.3 -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.Empty(Directory.EnumerateFiles(project.PackagesDirectory, "*.snupkg", SearchOption.TopDirectoryOnly));
+
+        using var package = ZipFile.OpenRead(Path.Combine(project.PackagesDirectory, "ConsumerProject.1.2.3.nupkg"));
+        Assert.DoesNotContain(
+            package.Entries,
+            entry => entry.FullName.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)
+        );
+
+        var assembly = ReadPackageEntryBytes(package, "lib/net8.0/ConsumerProject.dll");
+        Assert.True(
+            HasEmbeddedPortablePdb(assembly),
+            "Expected the packed assembly to contain an embedded (MPDB) portable PDB."
+        );
+    }
+
+    [Fact]
+    public async Task should_pack_symbol_package_pair_when_symbol_format_is_snupkg()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["HeadlessSymbolFormat"] = "snupkg",
+            }
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"pack {Quote(project.ProjectFilePath)} -c Release -o {Quote(project.PackagesDirectory)} -p:PackageVersion=1.2.3 -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+
+        var symbolPackagePath = Path.Combine(project.PackagesDirectory, "ConsumerProject.1.2.3.snupkg");
+        Assert.True(File.Exists(symbolPackagePath), "Expected a .snupkg symbol package next to the nupkg.");
+
+        using var package = ZipFile.OpenRead(Path.Combine(project.PackagesDirectory, "ConsumerProject.1.2.3.nupkg"));
+        var assembly = ReadPackageEntryBytes(package, "lib/net8.0/ConsumerProject.dll");
+        Assert.False(HasEmbeddedPortablePdb(assembly), "snupkg mode must keep the PDB out of the assembly.");
+
+        using var symbolPackage = ZipFile.OpenRead(symbolPackagePath);
+        Assert.Contains(
+            symbolPackage.Entries,
+            entry => entry.FullName.EndsWith("ConsumerProject.pdb", StringComparison.OrdinalIgnoreCase)
+        );
     }
 
     [Fact]
@@ -1419,6 +1708,21 @@ public static class JsonConsumer
         using var reader = new StreamReader(entry.Open());
         return reader.ReadToEnd();
     }
+
+    private static byte[] ReadPackageEntryBytes(ZipArchive package, string entryName)
+    {
+        var entry = package.GetEntry(entryName);
+        Assert.NotNull(entry);
+
+        using var stream = entry.Open();
+        using var buffer = new MemoryStream();
+        stream.CopyTo(buffer);
+        return buffer.ToArray();
+    }
+
+    // "MPDB" is the magic header of the embedded portable PDB debug-directory blob (ECMA-335
+    // Portable PDB spec); its presence in the image is what "DebugType=embedded" produces.
+    private static bool HasEmbeddedPortablePdb(byte[] assembly) => assembly.AsSpan().IndexOf("MPDB"u8) >= 0;
 }
 
 public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
@@ -1829,6 +2133,7 @@ public sealed class Class1;
                   <_HeadlessEvaluatedPackageReferences>@(PackageReference->'%(Identity)', '|')</_HeadlessEvaluatedPackageReferences>
                   <_HeadlessEvaluatedRuntimeHostOptions>@(RuntimeHostConfigurationOption->'%(Identity)=%(Value)', '|')</_HeadlessEvaluatedRuntimeHostOptions>
                   <_HeadlessEvaluatedInternalsVisibleTo>@(InternalsVisibleTo, '|')</_HeadlessEvaluatedInternalsVisibleTo>
+                  <_HeadlessEvaluatedVSTestLogger>$(VSTestLogger.Replace(';', '|'))</_HeadlessEvaluatedVSTestLogger>
                 </PropertyGroup>
                 <ItemGroup>
                   <_HeadlessEvaluatedNoWarnItems Include="$(NoWarn)" />
@@ -1838,7 +2143,7 @@ public sealed class Class1;
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
-                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);NoWarn=$(_HeadlessEvaluatedNoWarn);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);NoWarn=$(_HeadlessEvaluatedNoWarn);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);DebugType=$(DebugType);HeadlessSymbolFormat=$(HeadlessSymbolFormat);VSTestLogger=$(_HeadlessEvaluatedVSTestLogger);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
                   Overwrite="true"
                 />
               </Target>

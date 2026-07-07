@@ -18,7 +18,7 @@
       NU1901 - Found a package with a vulnerability with level 'unknown' in the project.
       NU1902 - Found a package with a vulnerability with level 'low' in the project.
       NU1903 - Found a package with a vulnerability with level 'medium' in the project.
-      NU1904 - Found a package with a vulnerabilitywith level 'high' in the project.
+      NU1904 - Found a package with a vulnerability with level 'high' in the project.
       see: https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1901-nu1904
 
       NU1900 is intentionally NOT escalated: it means the audit source could not be reached (offline,

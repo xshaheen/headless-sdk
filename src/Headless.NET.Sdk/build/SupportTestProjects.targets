@@ -123,29 +123,32 @@
   </ItemGroup>
 
   <!--
-    GitHub Actions test logger on CI.
+    GitHub Actions test logger.
+
+    The PackageReference is unconditional with respect to GITHUB_ACTIONS so the restore graph -
+    and therefore consumer packages.lock.json files - never depend on CI environment variables.
+    Gating it on GITHUB_ACTIONS made lock files committed from CI restores differ from local
+    restores, producing recurring dirty-lock-file churn. The package is dev-time only
+    (PrivateAssets=all) and the logger activates only on GitHub Actions via the VSTestLogger
+    property below.
 
     The package is only needed for the VSTest path; MTP emits its own annotations. Keep the
     package off MTP projects because GitHubActionsTestLogger 3.x self-registers an MTP hook but
     ships no net10.0 compile asset, so Microsoft.Testing.Platform can generate an unresolved
     GitHubActionsTestLogger.MtpIntegration reference in CI builds.
   -->
-  <Choose>
-    <When Condition="'$(GITHUB_ACTIONS)' == 'true'">
-      <PropertyGroup>
-        <VSTestLogger>$(VSTestLogger);GitHubActions</VSTestLogger>
-      </PropertyGroup>
-      <ItemGroup
-        Condition="'$(UseMicrosoftTestingPlatform)' != 'true' AND (
-          '$(UseMicrosoftTestingPlatform)' != '' OR (
-            @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) != 'true' AND
-            @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) != 'true'))"
-      >
-        <PackageReference Include="GitHubActionsTestLogger" Version="$(_HeadlessGitHubActionsTestLoggerVersion)" IsImplicitlyDefined="true">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-        </PackageReference>
-      </ItemGroup>
-    </When>
-  </Choose>
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <VSTestLogger>$(VSTestLogger);GitHubActions</VSTestLogger>
+  </PropertyGroup>
+  <ItemGroup
+    Condition="'$(UseMicrosoftTestingPlatform)' != 'true' AND (
+      '$(UseMicrosoftTestingPlatform)' != '' OR (
+        @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) != 'true' AND
+        @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) != 'true'))"
+  >
+    <PackageReference Include="GitHubActionsTestLogger" Version="$(_HeadlessGitHubActionsTestLoggerVersion)" IsImplicitlyDefined="true">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 </Project>

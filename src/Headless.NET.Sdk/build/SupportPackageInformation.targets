@@ -15,10 +15,6 @@
     <RepositoryType Condition=" '$(RepositoryType)' == '' ">git</RepositoryType>
     <!-- Optional (set by default in .NET SDK 8+): Embed source files that are not tracked by the source control manager in the PDB -->
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <!--  Ensures that debugging symbols `.pdb` are generated -->
-    <IncludeSymbols Condition=" '$(IncludeSymbols)' == '' ">true</IncludeSymbols>
-    <!-- Specifies that the symbol package should be generated in the `.snupkg` format instead of the legacy `.nupkg` -->
-    <SymbolPackageFormat Condition=" '$(SymbolPackageFormat)' == '' ">snupkg</SymbolPackageFormat>
     <!-- Readme -->
     <_PackageReadmeFilePath
       Condition="'$(_PackageReadmeFilePath)' == '' and Exists('$(MSBuildProjectDirectory)/README.md')"
@@ -64,6 +60,58 @@
         and (Exists('$(ProjectDir)logo.png') or Exists('$(SolutionDir)logo.png'))"
       >logo.png</PackageIcon
     >
+  </PropertyGroup>
+
+  <!--
+    Symbols policy. HeadlessSymbolFormat selects how debug symbols ship for non-test projects:
+
+      embedded (default) - DebugType=embedded + IncludeSymbols=false. The PDB travels inside the
+                           assembly, so symbols resolve on every feed - including GitHub Packages,
+                           which has no symbol server to serve a .snupkg from.
+      snupkg             - IncludeSymbols=true + SymbolPackageFormat=snupkg (the previous SDK
+                           default). DebugType is left untouched.
+      none               - IncludeSymbols=false. DebugType is left untouched.
+
+    Consumer-set DebugType, IncludeSymbols, or SymbolPackageFormat always win via the empty-check
+    guards below. Caveat: Microsoft.NET.Sdk.props defaults DebugType=portable during the props
+    phase, so by the time this file evaluates, an explicit consumer 'portable' is
+    indistinguishable from "not set" and the embedded mode rewrites it; to keep portable PDBs,
+    set HeadlessSymbolFormat=none (or snupkg) instead of DebugType=portable.
+
+    BlazorWebAssembly exception: WASM apps ship their assemblies to the browser, and an embedded
+    PDB survives into the published _framework payload (the MPDB blob is preserved through webcil
+    conversion in a Release publish), leaking debug info and inflating the download. Portable
+    PDBs are excluded from the payload, so Blazor WASM projects default to 'none'.
+  -->
+  <PropertyGroup Label="Symbols Policy" Condition=" '$(IsTestableProject)' != 'true' ">
+    <HeadlessSymbolFormat
+      Condition=" '$(HeadlessSymbolFormat)' == '' and '$(UsingMicrosoftNETSdkBlazorWebAssembly)' == 'true' "
+      >none</HeadlessSymbolFormat
+    >
+    <HeadlessSymbolFormat Condition=" '$(HeadlessSymbolFormat)' == '' ">embedded</HeadlessSymbolFormat>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(IsTestableProject)' != 'true' and '$(HeadlessSymbolFormat)' == 'embedded' ">
+    <DebugType Condition=" '$(DebugType)' == '' or '$(DebugType)' == 'portable' ">embedded</DebugType>
+    <IncludeSymbols Condition=" '$(IncludeSymbols)' == '' ">false</IncludeSymbols>
+    <!--
+      Re-derive the loose-PDB bookkeeping. Microsoft.Common.CurrentVersion.targets computes
+      _DebugSymbolsProduced from DebugType BEFORE NuGet-imported targets evaluate (DebugType is
+      still 'portable' at that point), so build/pack would expect a .pdb an embedded compile
+      never writes and `dotnet pack` fails with NU5026. Items evaluate after all properties, so
+      correcting the property here is honored by the _DebugSymbolsOutputPath item that feeds
+      DebugSymbolsProjectOutputGroup.
+    -->
+    <_DebugSymbolsProduced Condition=" '$(DebugType)' == 'embedded' ">false</_DebugSymbolsProduced>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(IsTestableProject)' != 'true' and '$(HeadlessSymbolFormat)' == 'snupkg' ">
+    <IncludeSymbols Condition=" '$(IncludeSymbols)' == '' ">true</IncludeSymbols>
+    <SymbolPackageFormat Condition=" '$(SymbolPackageFormat)' == '' ">snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(IsTestableProject)' != 'true' and '$(HeadlessSymbolFormat)' == 'none' ">
+    <IncludeSymbols Condition=" '$(IncludeSymbols)' == '' ">false</IncludeSymbols>
   </PropertyGroup>
 
   <ItemGroup Label="Package Files" Condition=" '$(IsTestableProject)' != 'true' ">
