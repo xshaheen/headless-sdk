@@ -8,7 +8,7 @@ The intent is simple: every project starts with the same strict baseline, then o
 
 - Build defaults: nullable reference types, implicit usings, latest C#, strict compiler features, deterministic output, static graph restore, and package validation.
 - Quality gates: `AnalysisLevel=latest-all`, .NET analyzers, Meziantou, AsyncFixer, Asyncify, Microsoft.VisualStudio.Threading, SmartAnalyzers multithreading, Roslynator, ReflectionAnalyzers, ErrorProne.NET, banned API rules, NuGet audit, and code style enforcement.
-- Test projects: explicit classification via `Headless.NET.Sdk.Test`, `IsTestableProject=true`, or `IsTestHarnessProject=true`; MTP or VSTest defaults, dumps on crash or hang, CI coverage, GitHub Actions logging, and faster `dotnet test` runs.
+- Test projects: explicit classification via `Headless.NET.Sdk.Test`, `IsTestProject=true`, or `IsTestHarnessProject=true`; MTP or VSTest defaults, dumps on crash or hang, CI coverage, GitHub Actions logging, and faster `dotnet test` runs.
 - CI behavior: provider detection, `ContinuousIntegrationBuild`, locked restore behavior, SBOM generation, and stricter warning handling.
 - Packaging: default authors/company metadata, README/LICENSE/logo packing, Source Link, symbol packages, and repository metadata.
 - App support: web container tagging on GitHub Actions, file-based app relaxations, optional target framework inference, and optional strict System.Text.Json runtime switches.
@@ -20,7 +20,7 @@ The intent is simple: every project starts with the same strict baseline, then o
 | --- | --- | --- |
 | [`Headless.NET.Sdk`](https://www.nuget.org/packages/Headless.NET.Sdk) | `Microsoft.NET.Sdk` | Libraries and console apps — the base SDK every other variant builds on. |
 | [`Headless.NET.Sdk.Web`](https://www.nuget.org/packages/Headless.NET.Sdk.Web) | `Microsoft.NET.Sdk.Web` | ASP.NET Core / Web APIs, with GitHub Actions container support. |
-| [`Headless.NET.Sdk.Test`](https://www.nuget.org/packages/Headless.NET.Sdk.Test) | `Microsoft.NET.Sdk` | Test projects — forces `IsTestableProject` and `IsTestProject`. |
+| [`Headless.NET.Sdk.Test`](https://www.nuget.org/packages/Headless.NET.Sdk.Test) | `Microsoft.NET.Sdk` | Test projects — forces `IsTestProject`. |
 | [`Headless.NET.Sdk.Razor`](https://www.nuget.org/packages/Headless.NET.Sdk.Razor) | `Microsoft.NET.Sdk.Razor` | Razor class libraries. |
 | [`Headless.NET.Sdk.BlazorWebAssembly`](https://www.nuget.org/packages/Headless.NET.Sdk.BlazorWebAssembly) | `Microsoft.NET.Sdk.BlazorWebAssembly` | Blazor WebAssembly client apps. |
 | [`Headless.NET.Sdk.WindowsDesktop`](https://www.nuget.org/packages/Headless.NET.Sdk.WindowsDesktop) | `Microsoft.NET.Sdk.WindowsDesktop` | WPF and Windows Forms apps. |
@@ -80,7 +80,7 @@ Project-type SDK packages wrap the matching Microsoft SDK while applying the sam
 | --- | --- | --- |
 | `Headless.NET.Sdk` | `Microsoft.NET.Sdk` | Default library/console SDK. |
 | `Headless.NET.Sdk.Web` | `Microsoft.NET.Sdk.Web` | Web SDK with Headless defaults and web container support. |
-| `Headless.NET.Sdk.Test` | `Microsoft.NET.Sdk` | Forces `IsTestableProject` and `IsTestProject`. |
+| `Headless.NET.Sdk.Test` | `Microsoft.NET.Sdk` | Forces `IsTestProject`. |
 | `Headless.NET.Sdk.Razor` | `Microsoft.NET.Sdk.Razor` | Razor SDK with Headless defaults. |
 | `Headless.NET.Sdk.BlazorWebAssembly` | `Microsoft.NET.Sdk.BlazorWebAssembly` | Blazor WebAssembly SDK with Headless defaults. |
 | `Headless.NET.Sdk.WindowsDesktop` | `Microsoft.NET.Sdk.WindowsDesktop` | Windows Desktop SDK with Headless defaults. |
@@ -205,17 +205,16 @@ Many values apply only when the consuming project has not already set the proper
 
 Test classification is explicit. A project receives test defaults via either:
 
-1. `<Project Sdk="Headless.NET.Sdk.Test">` — the Test SDK forces `IsTestableProject=true` and `IsTestProject=true`.
-2. `<IsTestableProject>true</IsTestableProject>` in the consumer's csproj or `Directory.Build.props`.
+1. `<Project Sdk="Headless.NET.Sdk.Test">` — the Test SDK forces `IsTestProject=true`.
+2. `<IsTestProject>true</IsTestProject>` in the consumer's csproj or `Directory.Build.props`.
 3. `<IsTestHarnessProject>true</IsTestHarnessProject>` for shared test harness projects that should receive test defaults but must not execute as test hosts.
 
 Name-based inference (`MyApp.Tests`, `.UnitTests`, etc.) is intentionally not supported — too many false positives and false negatives for a public SDK.
 
 | Property | Default | Effect |
 | --- | --- | --- |
-| `IsTestableProject` | `false` (set to `true` by `Headless.NET.Sdk.Test` or by the consumer) | Marks projects that should receive test defaults. |
-| `IsTestHarnessProject` | `false` | Marks a shared test harness project. The SDK promotes `IsTestableProject=true` so test defaults still apply, then forces `IsTestProject=false`, `IsTestingPlatformApplication=false`, and `GenerateRuntimeConfigurationFiles=true` so the harness does not execute as a test host. |
-| `IsTestProject` | `false` (set to `true` for normal testable projects) | Marks the project for test host discovery and execution. Harness projects force it back to `false`. |
+| `IsTestHarnessProject` | `false` | Marks a shared test harness project. The SDK applies the same test defaults as `IsTestProject`, then forces `IsTestProject=false`, `IsTestingPlatformApplication=false`, and `GenerateRuntimeConfigurationFiles=true` so the harness does not execute as a test host. |
+| `IsTestProject` | `false` (set to `true` for runnable test projects) | Marks the project for test host discovery and execution. Harness projects force it back to `false`. |
 | `IsPublishable` | `false` for test projects | Prevents publishing test projects. |
 | `IsPackable` | `false` for test projects | Prevents packing test projects and suppresses the non-packable pack warning so solution-level `dotnet pack` remains CI-safe. |
 | `NoWarn` | Adds test-noise suppressions, including `CA1849`, `MA0042`, `MA0166`, `CA1861`, `CA1859`, and `CA1720` | Allows controlled blocking calls, direct time-based APIs, test-only array arguments, concrete-type suggestions, and type-name identifiers without per-file pragmas. |

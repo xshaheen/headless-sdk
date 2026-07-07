@@ -1,8 +1,4 @@
 <Project>
-  <PropertyGroup Label="Test Harness Project Categorisation" Condition=" '$(IsTestHarnessProject)' == 'true' ">
-    <IsTestableProject>true</IsTestableProject>
-  </PropertyGroup>
-
   <PropertyGroup Label="Conventional Test Friend Assemblies">
     <HeadlessEmitInternalsVisibleToAttributes Condition=" '$(HeadlessEmitInternalsVisibleToAttributes)' == '' "
       >true</HeadlessEmitInternalsVisibleToAttributes
@@ -11,7 +7,8 @@
 
   <ItemGroup
     Label="Test compability"
-    Condition=" '$(IsTestableProject)' == 'false'
+    Condition=" '$(IsTestProject)' != 'true'
+      and '$(IsTestHarnessProject)' != 'true'
       and '$(HeadlessEmitInternalsVisibleToAttributes)' == 'true'
       and '$(SignAssembly)' != 'true' "
   >
@@ -21,7 +18,7 @@
     <InternalsVisibleTo Include="$(MSBuildProjectName).Tests.Acceptance" />
   </ItemGroup>
 
-  <PropertyGroup Condition=" '$(IsTestableProject)' == 'false' ">
+  <PropertyGroup Condition=" '$(IsTestProject)' != 'true' and '$(IsTestHarnessProject)' != 'true' ">
     <_HeadlessSdkDefaultIsPackable Condition=" '$(_HeadlessSdkDefaultIsPackable)' == '' "
       >true</_HeadlessSdkDefaultIsPackable
     >
@@ -32,7 +29,7 @@
   <PropertyGroup Label="Properties correction">
     <!--
       No name-based auto-classification. See SupportGeneral.props "Project Categorisation" for
-      rationale: test projects use Headless.NET.Sdk.Test or set IsTestableProject explicitly.
+      rationale: test projects use Headless.NET.Sdk.Test or set IsTestProject explicitly.
     -->
     <IsTestProject Condition=" '$(IsTestProject)' == '' ">false</IsTestProject>
     <IsPackable Condition=" '$(IsPackable)' != 'true' or '$(IsTestProject)' == 'true' ">false</IsPackable>
@@ -70,17 +67,15 @@
   <PropertyGroup Label="Test And Aspire NoWarn">
     <!--
       Test-project noise suppressions and the Aspire-host CA1707 relaxation. Evaluated here (not in
-      SupportGeneral.props) so that IsTestableProject / IsAspireHost set by the consumer in
-      Directory.Build.props or the csproj are visible: under MSBuild SDK consumption,
+      SupportGeneral.props) so that IsTestProject / IsTestHarnessProject / IsAspireHost set by the
+      consumer in Directory.Build.props or the csproj are visible: under MSBuild SDK consumption,
       build/Headless.NET.Sdk.props loads BEFORE Directory.Build.props, so a .props-phase condition
-      would miss a consumer-set value (the Headless.NET.Sdk.Test SDK sets IsTestableProject early, so
-      that path always worked; this fixes the documented base-SDK + IsTestableProject path). NoWarn is
-      consumed at compile time, well after this point.
+      would miss a consumer-set value. NoWarn is consumed at compile time, well after this point.
       CA1707/IDE1006/IDE0022/CS8604/S4144/CA5394/CA1848/MA0076/MA0003/RCS1046/CA2254/IDE0039/CA1849/
       MA0042/MA0166/CA1861/CA1859/CA1720: too noisy for test code.
       CA1707 (underscores): Aspire hosts generate members with underscores.
     -->
-    <NoWarn Condition="'$(IsTestableProject)' == 'true'"
+    <NoWarn Condition="'$(IsTestProject)' == 'true' or '$(IsTestHarnessProject)' == 'true'"
       >$(NoWarn);CA1707;IDE1006;IDE0022;CS8604;S4144;CA5394;CA1848;MA0076;MA0003;RCS1046;CA2254;IDE0039;CA1849;MA0042;MA0166;CA1861;CA1859;CA1720</NoWarn
     >
     <NoWarn Condition="'$(IsAspireHost)' == 'true'">$(NoWarn);CA1707</NoWarn>
@@ -88,7 +83,7 @@
 
   <ItemGroup
     Label="Test Analyzer EditorConfigs"
-    Condition="'$(IsTestableProject)' == 'true' and '$(DisableSupportAnalyzerEditorConfigs)' != 'true'"
+    Condition="('$(IsTestProject)' == 'true' or '$(IsTestHarnessProject)' == 'true') and '$(DisableSupportAnalyzerEditorConfigs)' != 'true'"
   >
     <EditorConfigFiles Include="$(MSBuildThisFileDirectory)..\configurations\Headless.NET.Sdk.Tests.editorconfig" />
   </ItemGroup>
@@ -102,7 +97,7 @@
   -->
   <PropertyGroup
     Label="RollForward"
-    Condition=" '$(RollForward)' == '' and '$(IsTestProject)' != 'true' and '$(IsTestableProject)' != 'true' "
+    Condition=" '$(RollForward)' == '' and '$(IsTestProject)' != 'true' and '$(IsTestHarnessProject)' != 'true' "
   >
     <RollForward>LatestMajor</RollForward>
   </PropertyGroup>
@@ -112,7 +107,7 @@
       Condition=" '$(PackAsTool)' == ''
         and '$(OutputType)' == 'Exe'
         and '$(IsTestProject)' != 'true'
-        and '$(IsTestableProject)' != 'true'
+        and '$(IsTestHarnessProject)' != 'true'
         and '$(UsingMicrosoftNETSdkWeb)' != 'true'
         and '$(IsAspireHost)' != 'true' "
       >true</PackAsTool

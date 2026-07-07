@@ -58,7 +58,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Test-project analyzer suppressions (`CA1849`, `MA0042`, `MA0166`, `CA1861`, `CA1859`, `CA1720`, and the rest of the test `NoWarn` set) now apply when `IsTestableProject` is set in `Directory.Build.props` or the project file under MSBuild SDK consumption. The suppressions moved from `SupportGeneral.props` to `SupportGeneral.targets` so a consumer-set value is visible; the `Headless.NET.Sdk.Test` SDK was already unaffected.
+- Test-project analyzer suppressions (`CA1849`, `MA0042`, `MA0166`, `CA1861`, `CA1859`, `CA1720`, and the rest of the test `NoWarn` set) now apply when `IsTestProject` is set in `Directory.Build.props` or the project file under MSBuild SDK consumption. The suppressions moved from `SupportGeneral.props` to `SupportGeneral.targets` so a consumer-set value is visible; the `Headless.NET.Sdk.Test` SDK was already unaffected.
 - NuGet audit no longer escalates `NU1900` (audit source unreachable) to a build error on CI or Release, so a registry outage or offline restore no longer fails the build. The vulnerability codes `NU1901`-`NU1904` remain errors.
 - Normalized the base package's `buildTransitive` and `buildMultiTargeting` re-import paths so they match the project-type SDK variants.
 
@@ -102,7 +102,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Added `HeadlessEnforceConfigureAwait`, an opt-in SDK property that injects a bundled analyzer config to enforce `CA2007` for projects that want strict `ConfigureAwait` usage.
-- Added a test-project analyzer configuration that is injected when `IsTestableProject` is true, relaxing common test-only analyzer false positives without weakening production defaults.
+- Added a test-project analyzer configuration that is injected for projects that opt into test defaults, relaxing common test-only analyzer false positives without weakening production defaults.
 - Added on-demand scaffolding for repo config files (`.editorconfig`, `.csharpierignore`, `.gitignore`, and `.gitattributes`) while preserving existing files unless `HeadlessOverwriteConfigFiles` is set.
 
 ### Changed

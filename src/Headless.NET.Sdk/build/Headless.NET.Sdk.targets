@@ -43,7 +43,7 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
   />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportTestProjects.targets"
-    Condition=" '$(IsTestableProject)' == 'true' "
+    Condition=" '$(IsTestProject)' == 'true' or '$(IsTestHarnessProject)' == 'true' "
   />
   <Import Project="$(MSBuildThisFileDirectory)SupportAdditionalFiles.targets" />
   <Import Project="$(MSBuildThisFileDirectory)SupportSystemRuntimeExperimental.targets" />

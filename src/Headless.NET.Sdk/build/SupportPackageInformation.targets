@@ -1,5 +1,9 @@
 <Project TreatAsLocalProperty="_LicensePath;_PackageReadmeFilePath;_PackageThirdPartyNoticesPath;_SolutionLicense;_ProjectReadme;_SolutionReadme">
-  <PropertyGroup Label="Package Information" Condition=" '$(IsTestableProject)' != 'true' ">
+  <PropertyGroup
+    Label="Package Information"
+    Condition=" '$(IsTestProject)' != 'true' and '$(IsTestHarnessProject)' != 'true' "
+  >
+    <PackageTags>xshaheen;$(PackageTags)</PackageTags>
     <PackageId Condition=" '$(PackageId)' == '' ">$(MSBuildProjectName)</PackageId>
     <Title Condition=" '$(Title)' == '' ">$(MSBuildProjectName)</Title>
 
@@ -83,7 +87,10 @@
     conversion in a Release publish), leaking debug info and inflating the download. Portable
     PDBs are excluded from the payload, so Blazor WASM projects default to 'none'.
   -->
-  <PropertyGroup Label="Symbols Policy" Condition=" '$(IsTestableProject)' != 'true' ">
+  <PropertyGroup
+    Label="Symbols Policy"
+    Condition=" '$(IsTestProject)' != 'true' and '$(IsTestHarnessProject)' != 'true' "
+  >
     <HeadlessSymbolFormat
       Condition=" '$(HeadlessSymbolFormat)' == '' and '$(UsingMicrosoftNETSdkBlazorWebAssembly)' == 'true' "
       >none</HeadlessSymbolFormat
@@ -91,7 +98,9 @@
     <HeadlessSymbolFormat Condition=" '$(HeadlessSymbolFormat)' == '' ">embedded</HeadlessSymbolFormat>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(IsTestableProject)' != 'true' and '$(HeadlessSymbolFormat)' == 'embedded' ">
+  <PropertyGroup
+    Condition=" '$(IsTestProject)' != 'true' and '$(IsTestHarnessProject)' != 'true' and '$(HeadlessSymbolFormat)' == 'embedded' "
+  >
     <DebugType Condition=" '$(DebugType)' == '' or '$(DebugType)' == 'portable' ">embedded</DebugType>
     <IncludeSymbols Condition=" '$(IncludeSymbols)' == '' ">false</IncludeSymbols>
     <!--
@@ -105,16 +114,20 @@
     <_DebugSymbolsProduced Condition=" '$(DebugType)' == 'embedded' ">false</_DebugSymbolsProduced>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(IsTestableProject)' != 'true' and '$(HeadlessSymbolFormat)' == 'snupkg' ">
+  <PropertyGroup
+    Condition=" '$(IsTestProject)' != 'true' and '$(IsTestHarnessProject)' != 'true' and '$(HeadlessSymbolFormat)' == 'snupkg' "
+  >
     <IncludeSymbols Condition=" '$(IncludeSymbols)' == '' ">true</IncludeSymbols>
     <SymbolPackageFormat Condition=" '$(SymbolPackageFormat)' == '' ">snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(IsTestableProject)' != 'true' and '$(HeadlessSymbolFormat)' == 'none' ">
+  <PropertyGroup
+    Condition=" '$(IsTestProject)' != 'true' and '$(IsTestHarnessProject)' != 'true' and '$(HeadlessSymbolFormat)' == 'none' "
+  >
     <IncludeSymbols Condition=" '$(IncludeSymbols)' == '' ">false</IncludeSymbols>
   </PropertyGroup>
 
-  <ItemGroup Label="Package Files" Condition=" '$(IsTestableProject)' != 'true' ">
+  <ItemGroup Label="Package Files" Condition=" '$(IsTestProject)' != 'true' and '$(IsTestHarnessProject)' != 'true' ">
     <!-- License -->
     <_SolutionLicense Include="LICENSE" Condition="Exists('LICENSE')" />
     <_SolutionLicense Include="LICENSE.txt" Condition="@(_SolutionLicense) == '' and Exists('LICENSE.txt')" />
@@ -147,7 +160,8 @@
   <Target
     Name="HeadlessSetPackageLicenseFile"
     BeforeTargets="GenerateNuspec"
-    Condition=" '$(IsTestableProject)' != 'true'
+    Condition=" '$(IsTestProject)' != 'true'
+      and '$(IsTestHarnessProject)' != 'true'
       and '$(PackageLicenseExpression)' == ''
       and '$(PackageLicenseFile)' == '' "
   >
@@ -161,7 +175,10 @@
     </PropertyGroup>
   </Target>
 
-  <ItemGroup Label="Package Additional Files" Condition=" '$(IsTestableProject)' != 'true' ">
+  <ItemGroup
+    Label="Package Additional Files"
+    Condition=" '$(IsTestProject)' != 'true' and '$(IsTestHarnessProject)' != 'true' "
+  >
     <!-- Readme -->
     <None
       Include="$(_PackageReadmeFilePath)"

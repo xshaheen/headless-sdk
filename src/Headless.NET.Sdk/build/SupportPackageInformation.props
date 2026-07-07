@@ -1,5 +1,6 @@
 <Project>
-  <PropertyGroup Label="NuGet Package Headless.NET.Sdk" Condition=" '$(IsTestableProject)' != 'true' ">
-    <PackageTags>xshaheen;$(PackageTags)</PackageTags>
-  </PropertyGroup>
+  <!--
+    PackageTags depends on project-body IsTestProject / IsTestHarnessProject values, so the
+    default is applied in SupportPackageInformation.targets after the consumer project evaluates.
+  -->
 </Project>

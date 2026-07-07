@@ -31,7 +31,7 @@
 
     <AssemblyAttribute
       Include="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute"
-      Condition="'$(IsTestableProject)' == 'true' and $([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0')) == 'true'"
+      Condition="('$(IsTestProject)' == 'true' or '$(IsTestHarnessProject)' == 'true') and $([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0')) == 'true'"
     />
   </ItemGroup>
 </Project>
