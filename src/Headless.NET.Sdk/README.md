@@ -40,6 +40,8 @@ Console.WriteLine("Hello!");
 
 This is the package that carries all the build assets the rest of the family re-packs. Sets `HeadlessSdkProjectType=Default`. The defaults reflect a strict house style: `Newtonsoft.Json` banned, `AnalysisLevel=latest-all`, MSBuild warnings as errors on CI, `RollForward=LatestMajor` for executables, nullable + implicit usings + latest C#, NuGet audit, SBOM on CI, Source Link, embedded PDB symbols (`HeadlessSymbolFormat`), and a stack of implicit analyzers (Meziantou, AsyncFixer, Roslynator, and more).
 
+Set `<IsTestHarnessProject>true</IsTestHarnessProject>` on shared test harness projects that should receive test defaults without being discovered or executed as test hosts.
+
 ## Opinionated defaults (overridable)
 
 The intent is simple: every project starts with the same strict baseline, then opts out only where the local project has a clear reason. Every default is overridable via the `Disable*` and `Headless*` properties. See the full [Configuration Reference in the main repo README](https://github.com/xshaheen/headless-sdk#configuration-reference) for the complete list.

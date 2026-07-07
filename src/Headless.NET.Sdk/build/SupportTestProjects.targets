@@ -3,7 +3,12 @@
   <Import Project="$(MSBuildThisFileDirectory)SupportTestProjects.Versions.props" />
 
   <PropertyGroup>
-    <IsTestProject>true</IsTestProject>
+    <IsTestProject Condition="'$(IsTestHarnessProject)' != 'true'">true</IsTestProject>
+    <IsTestProject Condition="'$(IsTestHarnessProject)' == 'true'">false</IsTestProject>
+    <IsTestingPlatformApplication Condition="'$(IsTestHarnessProject)' == 'true'">false</IsTestingPlatformApplication>
+    <GenerateRuntimeConfigurationFiles Condition="'$(IsTestHarnessProject)' == 'true'"
+      >true</GenerateRuntimeConfigurationFiles
+    >
     <IsPublishable>false</IsPublishable>
     <IsPackable>false</IsPackable>
 

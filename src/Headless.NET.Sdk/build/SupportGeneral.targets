@@ -1,4 +1,8 @@
 <Project>
+  <PropertyGroup Label="Test Harness Project Categorisation" Condition=" '$(IsTestHarnessProject)' == 'true' ">
+    <IsTestableProject>true</IsTestableProject>
+  </PropertyGroup>
+
   <PropertyGroup Label="Conventional Test Friend Assemblies">
     <HeadlessEmitInternalsVisibleToAttributes Condition=" '$(HeadlessEmitInternalsVisibleToAttributes)' == '' "
       >true</HeadlessEmitInternalsVisibleToAttributes
@@ -81,6 +85,13 @@
     >
     <NoWarn Condition="'$(IsAspireHost)' == 'true'">$(NoWarn);CA1707</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup
+    Label="Test Analyzer EditorConfigs"
+    Condition="'$(IsTestableProject)' == 'true' and '$(DisableSupportAnalyzerEditorConfigs)' != 'true'"
+  >
+    <EditorConfigFiles Include="$(MSBuildThisFileDirectory)..\configurations\Headless.NET.Sdk.Tests.editorconfig" />
+  </ItemGroup>
 
   <!--
     Allow apps to run on a newer major .NET runtime if their pinned major isn't installed.

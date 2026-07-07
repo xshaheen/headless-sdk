@@ -8,7 +8,7 @@ The intent is simple: every project starts with the same strict baseline, then o
 
 - Build defaults: nullable reference types, implicit usings, latest C#, strict compiler features, deterministic output, static graph restore, and package validation.
 - Quality gates: `AnalysisLevel=latest-all`, .NET analyzers, Meziantou, AsyncFixer, Asyncify, Microsoft.VisualStudio.Threading, SmartAnalyzers multithreading, Roslynator, ReflectionAnalyzers, ErrorProne.NET, banned API rules, NuGet audit, and code style enforcement.
-- Test projects: explicit classification via `Headless.NET.Sdk.Test` or `IsTestableProject=true`, MTP or VSTest defaults, dumps on crash or hang, CI coverage, GitHub Actions logging, and faster `dotnet test` runs.
+- Test projects: explicit classification via `Headless.NET.Sdk.Test`, `IsTestableProject=true`, or `IsTestHarnessProject=true`; MTP or VSTest defaults, dumps on crash or hang, CI coverage, GitHub Actions logging, and faster `dotnet test` runs.
 - CI behavior: provider detection, `ContinuousIntegrationBuild`, locked restore behavior, SBOM generation, and stricter warning handling.
 - Packaging: default authors/company metadata, README/LICENSE/logo packing, Source Link, symbol packages, and repository metadata.
 - App support: web container tagging on GitHub Actions, file-based app relaxations, optional target framework inference, and optional strict System.Text.Json runtime switches.
@@ -203,17 +203,19 @@ Many values apply only when the consuming project has not already set the proper
 
 ### Test Projects
 
-Test classification is explicit. A project becomes a test project via either:
+Test classification is explicit. A project receives test defaults via either:
 
 1. `<Project Sdk="Headless.NET.Sdk.Test">` — the Test SDK forces `IsTestableProject=true` and `IsTestProject=true`.
 2. `<IsTestableProject>true</IsTestableProject>` in the consumer's csproj or `Directory.Build.props`.
+3. `<IsTestHarnessProject>true</IsTestHarnessProject>` for shared test harness projects that should receive test defaults but must not execute as test hosts.
 
 Name-based inference (`MyApp.Tests`, `.UnitTests`, etc.) is intentionally not supported — too many false positives and false negatives for a public SDK.
 
 | Property | Default | Effect |
 | --- | --- | --- |
 | `IsTestableProject` | `false` (set to `true` by `Headless.NET.Sdk.Test` or by the consumer) | Marks projects that should receive test defaults. |
-| `IsTestProject` | `false` (set to `true` for testable projects via `Headless.NET.Sdk.Test`) | Marks the project for test tooling. |
+| `IsTestHarnessProject` | `false` | Marks a shared test harness project. The SDK promotes `IsTestableProject=true` so test defaults still apply, then forces `IsTestProject=false`, `IsTestingPlatformApplication=false`, and `GenerateRuntimeConfigurationFiles=true` so the harness does not execute as a test host. |
+| `IsTestProject` | `false` (set to `true` for normal testable projects) | Marks the project for test host discovery and execution. Harness projects force it back to `false`. |
 | `IsPublishable` | `false` for test projects | Prevents publishing test projects. |
 | `IsPackable` | `false` for test projects | Prevents packing test projects and suppresses the non-packable pack warning so solution-level `dotnet pack` remains CI-safe. |
 | `NoWarn` | Adds test-noise suppressions, including `CA1849`, `MA0042`, `MA0166`, `CA1861`, `CA1859`, and `CA1720` | Allows controlled blocking calls, direct time-based APIs, test-only array arguments, concrete-type suggestions, and type-name identifiers without per-file pragmas. |

@@ -8,13 +8,16 @@
     <HeadlessEnforceConfigureAwait Condition="'$(HeadlessEnforceConfigureAwait)' == ''">false</HeadlessEnforceConfigureAwait>
   </PropertyGroup>
 
-  <PropertyGroup Label="Project Categorisation" Condition=" '$(IsTestableProject)' == '' ">
+  <PropertyGroup Label="Project Categorisation">
     <!--
       Test classification is explicit. Consumers signal a test project via either:
         (1) <Project Sdk="Headless.NET.Sdk.Test"> sets IsTestableProject=true automatically.
         (2) <IsTestableProject>true</IsTestableProject> in the csproj or Directory.Build.props.
+        (3) <IsTestHarnessProject>true</IsTestHarnessProject> for shared harness libraries that
+            should get test defaults without executing as test hosts.
     -->
-    <IsTestableProject>false</IsTestableProject>
+    <IsTestHarnessProject Condition=" '$(IsTestHarnessProject)' == '' ">false</IsTestHarnessProject>
+    <IsTestableProject Condition=" '$(IsTestableProject)' == '' ">false</IsTestableProject>
   </PropertyGroup>
 
   <PropertyGroup Label="General Configurations">

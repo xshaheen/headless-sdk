@@ -8,9 +8,5 @@
       Include="$(MSBuildThisFileDirectory)..\configurations\Headless.NET.Sdk.EnforceConfigureAwait.editorconfig"
       Condition="'$(HeadlessEnforceConfigureAwait)' == 'true' and '$(DisableSupportAnalyzerEditorConfigs)' != 'true'"
     />
-    <EditorConfigFiles
-      Include="$(MSBuildThisFileDirectory)..\configurations\Headless.NET.Sdk.Tests.editorconfig"
-      Condition="'$(IsTestableProject)' == 'true' and '$(DisableSupportAnalyzerEditorConfigs)' != 'true'"
-    />
   </ItemGroup>
 </Project>

@@ -246,7 +246,6 @@ indent_size = 2
         var analyzerEditorConfigs = ReadPackageEntry(package, "build/SupportAnalyzerEditorConfigs.props");
         Assert.Contains("Headless.NET.Sdk.Analyzers.editorconfig", analyzerEditorConfigs, StringComparison.Ordinal);
         Assert.NotNull(package.GetEntry("configurations/Headless.NET.Sdk.Analyzers.editorconfig"));
-        Assert.Contains("Headless.NET.Sdk.Tests.editorconfig", analyzerEditorConfigs, StringComparison.Ordinal);
         Assert.NotNull(package.GetEntry("configurations/Headless.NET.Sdk.Tests.editorconfig"));
 
         var regularAnalyzerConfig = ReadPackageEntry(package, "configurations/Headless.NET.Sdk.Analyzers.editorconfig");
@@ -281,6 +280,7 @@ indent_size = 2
         var generalTargets = ReadPackageEntry(package, "build/SupportGeneral.targets");
         Assert.Contains("DisableDocumentationWarnings", generalTargets, StringComparison.Ordinal);
         Assert.Contains("CS1573;CS1591", generalTargets, StringComparison.Ordinal);
+        Assert.Contains("Headless.NET.Sdk.Tests.editorconfig", generalTargets, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -730,6 +730,49 @@ public static class JsonConsumer
         Assert.Contains("CA1861", noWarn);
         Assert.Contains("CA1859", noWarn);
         Assert.Contains("CA1720", noWarn);
+    }
+
+    [Fact]
+    public async Task should_set_test_harness_project_properties_when_enabled()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            includePackageReference: false,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["IsTestHarnessProject"] = "true",
+                ["UseMicrosoftTestingPlatform"] = "true",
+            }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("true", properties["IsTestHarnessProject"]);
+        Assert.Equal("true", properties["IsTestableProject"]);
+        Assert.Equal("false", properties["IsTestProject"]);
+        Assert.Equal("false", properties["IsTestingPlatformApplication"]);
+        Assert.Equal("true", properties["GenerateRuntimeConfigurationFiles"]);
+        Assert.Equal("false", properties["IsPackable"]);
+        Assert.Contains(
+            "Headless.NET.Sdk.Tests.editorconfig",
+            properties["EditorConfigFiles"],
+            StringComparison.Ordinal
+        );
+
+        var noWarn = properties["NoWarn"].Split('|', StringSplitOptions.RemoveEmptyEntries);
+        Assert.Contains("CA1849", noWarn);
+        Assert.Contains("MA0042", noWarn);
+        Assert.Contains("MA0166", noWarn);
+        Assert.Contains("CA1861", noWarn);
+        Assert.Contains("CA1859", noWarn);
+        Assert.Contains("CA1720", noWarn);
+
+        var packageReferences = properties["PackageReferences"].Split('|', StringSplitOptions.RemoveEmptyEntries);
+        Assert.Contains("Microsoft.Testing.Extensions.TrxReport", packageReferences);
+        Assert.DoesNotContain("Microsoft.NET.Test.Sdk", packageReferences);
+        Assert.Contains("--report-trx", properties["TestingPlatformCommandLineArguments"], StringComparison.Ordinal);
     }
 
     [Fact]
@@ -2143,7 +2186,7 @@ public sealed class Class1;
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
-                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsPackable=$(IsPackable);NoWarn=$(_HeadlessEvaluatedNoWarn);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);DebugType=$(DebugType);HeadlessSymbolFormat=$(HeadlessSymbolFormat);VSTestLogger=$(_HeadlessEvaluatedVSTestLogger);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestHarnessProject=$(IsTestHarnessProject);IsTestableProject=$(IsTestableProject);IsTestProject=$(IsTestProject);IsTestingPlatformApplication=$(IsTestingPlatformApplication);GenerateRuntimeConfigurationFiles=$(GenerateRuntimeConfigurationFiles);IsPackable=$(IsPackable);NoWarn=$(_HeadlessEvaluatedNoWarn);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);DebugType=$(DebugType);HeadlessSymbolFormat=$(HeadlessSymbolFormat);VSTestLogger=$(_HeadlessEvaluatedVSTestLogger);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
                   Overwrite="true"
                 />
               </Target>
