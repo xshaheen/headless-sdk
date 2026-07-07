@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.127] - 2026-07-07
+
+### Added
+
+- `IsTestHarnessProject=true` now lets shared harness projects receive SDK test defaults without being discovered or executed as test hosts. Harnesses force `IsTestProject=false`, `IsTestingPlatformApplication=false`, and `GenerateRuntimeConfigurationFiles=true` while retaining the test `NoWarn` set, `Headless.NET.Sdk.Tests.editorconfig`, coverage/test assembly exclusions, and Microsoft Testing Platform tooling.
+- Plain `Headless.NET.Sdk` projects can opt into runnable test-project defaults directly with `IsTestProject=true`; `Headless.NET.Sdk.Test` still sets that automatically.
+
+### Removed
+
+- Removed the unreleased `IsTestableProject` classification property. Use `IsTestProject=true` for runnable test projects or `IsTestHarnessProject=true` for non-runnable shared harness projects.
+
 ## [0.0.126] - 2026-07-07
 
 ### Changed
