@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.126] - 2026-07-07
+
 ### Changed
 
 - **Symbols policy is now owned by the SDK via the new `HeadlessSymbolFormat` property.** Non-test projects default to `embedded` (`DebugType=embedded`, `IncludeSymbols=false`): the PDB ships inside the assembly, so symbols resolve on feeds without a symbol server (e.g. GitHub Packages) and no `.snupkg` is produced. Set `HeadlessSymbolFormat=snupkg` for the previous portable-PDB + `.snupkg` behavior, or `none` to ship no symbols. Consumer-set `DebugType`, `IncludeSymbols`, or `SymbolPackageFormat` always win. Blazor WebAssembly projects default to `none` because an embedded PDB leaks into the published `_framework` browser payload. Note: `dotnet pack --include-symbols` passes `IncludeSymbols=true` as a global property and overrides this policy — drop that flag when relying on the embedded default.
