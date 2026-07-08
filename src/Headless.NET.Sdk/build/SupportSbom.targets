@@ -1,14 +1,10 @@
 <Project>
   <!--
     Software Bill of Materials (SBOM) generation via Microsoft.Sbom.Targets.
-    Auto-enabled on CI; explicit GenerateSBOM wins. Disable via DisableSupportSbom=true
-    or set GenerateSBOM=false on the consuming project.
+    Opt in with GenerateSBOM=true. Disable the support import with DisableSupportSbom=true.
   -->
   <PropertyGroup>
-    <GenerateSBOM
-      Condition="'$(GenerateSBOM)' == '' AND ('$(IsContinuousIntegration)' == 'true' OR '$(ContinuousIntegrationBuild)' == 'true')"
-      >true</GenerateSBOM
-    >
+    <GenerateSBOM Condition="'$(GenerateSBOM)' == ''">false</GenerateSBOM>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(GenerateSBOM)' == 'true'">

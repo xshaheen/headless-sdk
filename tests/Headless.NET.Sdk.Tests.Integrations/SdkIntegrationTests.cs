@@ -931,10 +931,6 @@ public static class JsonConsumer
             extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["UseMicrosoftTestingPlatform"] = "false",
-                // SupportSbom.targets auto-adds Microsoft.Sbom.Targets on CI (a deliberate,
-                // pre-existing CI gate outside this test's scope); pin it off so the comparison
-                // isolates the GitHubActionsTestLogger restore-graph behavior.
-                ["GenerateSBOM"] = "false",
             }
         );
 
@@ -1608,12 +1604,27 @@ public static class JsonConsumer
     }
 
     [Fact]
+    public async Task should_not_enable_sbom_generation_on_continuous_integration_by_default()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync("-p:CI=true");
+        var packageReferences = properties["PackageReferences"].Split('|', StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Equal("false", properties["GenerateSBOM"]);
+        Assert.DoesNotContain("Microsoft.Sbom.Targets", packageReferences);
+    }
+
+    [Fact]
     public void should_reference_sbom_targets_only_when_sbom_generation_enabled()
     {
         // SupportSbom.targets gates a Microsoft.Sbom.Targets PackageReference on GenerateSBOM=true
-        // (auto-enabled on CI). The reference is implicitly defined so it is not governed by the
-        // consumer's CPM; verify the shipped asset contract directly rather than via a network
-        // restore of the SBOM package.
+        // and leaves SBOM generation opt-in. The reference is implicitly defined so it is not
+        // governed by the consumer's CPM; verify the shipped asset contract directly rather than
+        // via a network restore of the SBOM package.
         using var package = ZipFile.OpenRead(fixture.PackagePath);
         var content = ReadPackageEntry(package, "build/SupportSbom.targets");
         var document = XDocument.Parse(content);
@@ -1635,6 +1646,8 @@ public static class JsonConsumer
 
         Assert.Equal("true", reference.Attribute("IsImplicitlyDefined")?.Value);
         Assert.Contains("GenerateSBOM", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("IsContinuousIntegration", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("ContinuousIntegrationBuild", content, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -2218,7 +2231,7 @@ public sealed class Class1;
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
-                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestHarnessProject=$(IsTestHarnessProject);IsTestProject=$(IsTestProject);IsTestingPlatformApplication=$(IsTestingPlatformApplication);GenerateRuntimeConfigurationFiles=$(GenerateRuntimeConfigurationFiles);IsPackable=$(IsPackable);NoWarn=$(_HeadlessEvaluatedNoWarn);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);DebugType=$(DebugType);HeadlessSymbolFormat=$(HeadlessSymbolFormat);VSTestLogger=$(_HeadlessEvaluatedVSTestLogger);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestHarnessProject=$(IsTestHarnessProject);IsTestProject=$(IsTestProject);IsTestingPlatformApplication=$(IsTestingPlatformApplication);GenerateRuntimeConfigurationFiles=$(GenerateRuntimeConfigurationFiles);GenerateSBOM=$(GenerateSBOM);IsPackable=$(IsPackable);NoWarn=$(_HeadlessEvaluatedNoWarn);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);DebugType=$(DebugType);HeadlessSymbolFormat=$(HeadlessSymbolFormat);VSTestLogger=$(_HeadlessEvaluatedVSTestLogger);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
                   Overwrite="true"
                 />
               </Target>

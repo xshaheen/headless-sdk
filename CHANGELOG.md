@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- `GenerateSBOM` is now opt-in instead of auto-enabled on CI. Set `GenerateSBOM=true` to add `Microsoft.Sbom.Targets`; CI detection no longer changes the restore graph by default.
+
 ## [0.0.127] - 2026-07-07
 
 ### Added

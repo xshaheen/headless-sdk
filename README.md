@@ -9,7 +9,7 @@ The intent is simple: every project starts with the same strict baseline, then o
 - Build defaults: nullable reference types, implicit usings, latest C#, strict compiler features, deterministic output, static graph restore, and package validation.
 - Quality gates: `AnalysisLevel=latest-all`, .NET analyzers, Meziantou, AsyncFixer, Asyncify, Microsoft.VisualStudio.Threading, SmartAnalyzers multithreading, Roslynator, ReflectionAnalyzers, ErrorProne.NET, banned API rules, NuGet audit, and code style enforcement.
 - Test projects: explicit classification via `Headless.NET.Sdk.Test`, `IsTestProject=true`, or `IsTestHarnessProject=true`; MTP or VSTest defaults, dumps on crash or hang, CI coverage, GitHub Actions logging, and faster `dotnet test` runs.
-- CI behavior: provider detection, `ContinuousIntegrationBuild`, locked restore behavior, SBOM generation, and stricter warning handling.
+- CI behavior: provider detection, `ContinuousIntegrationBuild`, locked restore behavior, and stricter warning handling.
 - Packaging: default authors/company metadata, README/LICENSE/logo packing, Source Link, symbol packages, and repository metadata.
 - App support: web container tagging on GitHub Actions, file-based app relaxations, optional target framework inference, and optional strict System.Text.Json runtime switches.
 - Diagnostics: embeds editorconfig, banned-symbol files, and GitHub Actions environment details into binlogs.
@@ -199,7 +199,7 @@ Many values apply only when the consuming project has not already set the proper
 | `NuGetAuditMode` | `all` | Audits direct and transitive dependencies. |
 | `NuGetAuditLevel` | `low` | Reports vulnerabilities at low severity and above. |
 | `WarningsAsErrors` | Adds `NU1901`-`NU1904` on CI or Release | Promotes NuGet audit vulnerability warnings to errors. `NU1900` (audit source unreachable) is left as a warning so a connectivity blip does not fail the build. |
-| `GenerateSBOM` | `true` on CI | Generates a software bill of materials. |
+| `GenerateSBOM` | `false` | Opts into software bill of materials generation through `Microsoft.Sbom.Targets`. |
 
 ### Test Projects
 
@@ -346,7 +346,7 @@ Use these when a consumer needs to remove a whole feature area.
 | `DisableSupportAnalyzerHygiene` | Skips analyzer cleanup such as SponsorLink removal. |
 | `DisableSupportSingleFileApp` | Skips file-based app analyzer relaxations. |
 | `DisableSupportTargetFrameworkInference` | Skips target framework inference support. |
-| `DisableSupportSbom` | Skips SBOM generation support. |
+| `DisableSupportSbom` | Skips the opt-in SBOM generation support import. |
 | `DisableSupportEmbedBinlog` | Skips binlog enrichment. |
 | `DisableSupportCopyright` | Skips copyright target imports. |
 | `DisableSupportNuGetAudit` | Skips NuGet audit target imports. |

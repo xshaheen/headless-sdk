@@ -38,7 +38,7 @@ Console.WriteLine("Hello!");
 
 ## What it adds
 
-This is the package that carries all the build assets the rest of the family re-packs. Sets `HeadlessSdkProjectType=Default`. The defaults reflect a strict house style: `Newtonsoft.Json` banned, `AnalysisLevel=latest-all`, MSBuild warnings as errors on CI, `RollForward=LatestMajor` for executables, nullable + implicit usings + latest C#, NuGet audit, SBOM on CI, Source Link, embedded PDB symbols (`HeadlessSymbolFormat`), and a stack of implicit analyzers (Meziantou, AsyncFixer, Roslynator, and more).
+This is the package that carries all the build assets the rest of the family re-packs. Sets `HeadlessSdkProjectType=Default`. The defaults reflect a strict house style: `Newtonsoft.Json` banned, `AnalysisLevel=latest-all`, MSBuild warnings as errors on CI, `RollForward=LatestMajor` for executables, nullable + implicit usings + latest C#, NuGet audit, opt-in SBOM generation, Source Link, embedded PDB symbols (`HeadlessSymbolFormat`), and a stack of implicit analyzers (Meziantou, AsyncFixer, Roslynator, and more).
 
 Set `<IsTestHarnessProject>true</IsTestHarnessProject>` on shared test harness projects that should receive test defaults without being discovered or executed as test hosts.
 
