@@ -24,12 +24,12 @@
       build/SupportTestProjects.Versions.props on build, and VersionConsistencyTests guards the
       result. Bump only here (Dependabot does too) and the value flows into the package.
     -->
-    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.2.3" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.8.0" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="2.2.3" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.2.3" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.HotReload" Version="2.2.3" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.Retry" Version="2.2.3" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.3.1" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.9.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="2.3.1" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.3.1" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HotReload" Version="2.3.1" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.Retry" Version="2.3.1" />
     <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.4" />
   </ItemGroup>
 </Project>
