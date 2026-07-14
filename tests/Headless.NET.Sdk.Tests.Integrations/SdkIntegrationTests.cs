@@ -359,7 +359,9 @@ indent_size = 2
 
         foreach (var (packageId, baseSdk) in expectedPackages)
         {
+#pragma warning disable CA2000 // Dispose objects before losing scope
             using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
+#pragma warning restore CA2000
 
             Assert.NotNull(package.GetEntry("sdk/Sdk.props"));
             Assert.NotNull(package.GetEntry("sdk/Sdk.targets"));
