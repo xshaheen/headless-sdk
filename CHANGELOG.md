@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.129] - 2026-07-14
+
+### Changed
+
+- Updated the injected Microsoft Testing Platform tooling to CrashDump 2.3.1, HangDump 2.3.1, HotReload 2.3.1, Retry 2.3.1, TrxReport 2.3.1, and CodeCoverage 18.9.0.
+
 ## [0.0.128] - 2026-07-08
 
 ### Changed
