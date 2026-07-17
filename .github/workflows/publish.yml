@@ -4,14 +4,10 @@ on:
   push:
     tags:
       - "*.*.*"
-  release:
-    types:
-      - published
   workflow_dispatch:
 
 permissions:
   contents: read
-  packages: read
 
 concurrency:
   group: publish-${{ github.ref }}
@@ -33,54 +29,89 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5.4.0
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           global-json-file: ./global.json
 
       - name: Cache NuGet packages
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ env.NUGET_PACKAGES }}
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', 'global.json', 'nuget.config') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Authenticate GitHub Packages
-        run: dotnet nuget update source github.com --username xshaheen --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --configfile nuget.config
-
       - name: Restore
-        run: dotnet restore headless-sdk.slnx -p:RestorePackagesWithLockFile=false -p:RestoreLockedMode=false
-
-      # Refresh the injected test-tool versions from Directory.Packages.props before build/pack so a
-      # Dependabot bump of the central pins flows into the shipped assets without a manual edit.
-      - name: Sync injected test-tool versions
-        run: dotnet msbuild src/Headless.NET.Sdk/Headless.NET.Sdk.csproj -t:GenerateHeadlessTestToolVersions -nologo
+        run: dotnet restore headless-sdk.slnx
 
       - name: Build
-        run: dotnet build headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -v:q -nologo /clp:ErrorsOnly
+        run: dotnet build headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -p:GeneratePackageOnBuild=false -v:minimal -nologo
+
+      - name: Pack immutable release artifacts
+        run: dotnet pack headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build --output "${{ env.PACKAGES_DIR }}"
 
       - name: Test
         # Microsoft Testing Platform runner (global.json "test.runner"); same MTP arg shape as ci.yml.
+        env:
+          HEADLESS_PACKAGES_DIR: ${{ github.workspace }}/artifacts/packages-results
         run: dotnet test headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build -- --report-trx --results-directory ./artifacts/test-results
 
-      - name: Pack
-        run: dotnet pack headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --output "${{ env.PACKAGES_DIR }}"
+      - name: Record package hashes
+        run: |
+          cd "${{ env.PACKAGES_DIR }}"
+          shopt -s nullglob
+          artifacts=(./*.nupkg ./*.snupkg)
+          if [ ${#artifacts[@]} -eq 0 ]; then
+            echo "No package artifacts found."
+            exit 1
+          fi
+          sha256sum "${artifacts[@]}" | sort --key=2 > SHA256SUMS
+
+          package_ids=(
+            Headless.NET.Sdk
+            Headless.NET.Sdk.Web
+            Headless.NET.Sdk.Test
+            Headless.NET.Sdk.Razor
+            Headless.NET.Sdk.BlazorWebAssembly
+            Headless.NET.Sdk.WindowsDesktop
+          )
+          nupkgs=(./*.nupkg)
+          if [ ${#nupkgs[@]} -ne ${#package_ids[@]} ]; then
+            echo "Expected exactly ${#package_ids[@]} package artifacts; found ${#nupkgs[@]}."
+            exit 1
+          fi
+
+          : > PACKAGE_MANIFEST.tsv
+          for package_id in "${package_ids[@]}"; do
+            # NuGet versions begin with a digit. Requiring it prevents the base
+            # Headless.NET.Sdk ID from also matching every satellite package.
+            matches=("./${package_id}."[0-9]*.nupkg)
+            if [ ${#matches[@]} -ne 1 ]; then
+              echo "Expected exactly one package for ${package_id}; found ${#matches[@]}."
+              exit 1
+            fi
+            filename="${matches[0]#./}"
+            version="${filename#"${package_id}."}"
+            version="${version%.nupkg}"
+            printf '%s\t%s\n' "$package_id" "$version" >> PACKAGE_MANIFEST.tsv
+          done
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: test-results
           path: ./artifacts/test-results
           if-no-files-found: ignore
 
       - name: Upload packages
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: packages
           path: ${{ env.PACKAGES_DIR }}
@@ -99,14 +130,14 @@ jobs:
 
     steps:
       - name: Download packages
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: packages
           path: ./artifacts/packages-results
 
       - name: Publish packages to GitHub Packages
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           shopt -s nullglob
@@ -118,11 +149,18 @@ jobs:
             exit 1
           fi
 
+          (
+            cd ./artifacts/packages-results
+            sha256sum --check SHA256SUMS
+          )
+
+          bash .github/scripts/github-package-preflight.sh \
+            ./artifacts/packages-results/PACKAGE_MANIFEST.tsv
+
           for package in "${packages[@]}"; do
             dotnet nuget push "$package" \
               --source "https://nuget.pkg.github.com/xshaheen/index.json" \
-              --api-key "$GITHUB_TOKEN" \
-              --skip-duplicate
+              --api-key "$GH_TOKEN"
           done
 
           symbols=(./artifacts/packages-results/*.snupkg)
@@ -130,54 +168,36 @@ jobs:
           for symbol in "${symbols[@]}"; do
             dotnet nuget push "$symbol" \
               --source "https://nuget.pkg.github.com/xshaheen/index.json" \
-              --api-key "$GITHUB_TOKEN" \
-              --skip-duplicate
+              --api-key "$GH_TOKEN"
           done
 
-  publish-nuget-packages:
-    name: Publish nuget.org packages
-    needs: publish-github-packages
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release'
-    permissions:
-      contents: read
-    environment:
-      name: NuGet Release
-      url: https://www.nuget.org/packages?q=Headless.NET.Sdk
+          while IFS=$'\t' read -r package_id version; do
+            api_name="${package_id,,}"
+            verified=false
 
-    steps:
-      - name: Download packages
-        uses: actions/download-artifact@v8
-        with:
-          name: packages
-          path: ./artifacts/packages-results
+            # GitHub's package API can lag a successful NuGet push. Retry only observation;
+            # never retry the push itself or weaken duplicate-version protection.
+            for attempt in {1..12}; do
+              if metadata="$(gh api "/user/packages/nuget/${api_name}" 2>/dev/null)"; then
+                visibility="$(jq -r '.visibility' <<<"$metadata")"
+                if [ "$visibility" = "public" ]; then
+                  echo "${package_id} became public; release set is not internal-only."
+                  exit 1
+                fi
 
-      - name: Publish packages to nuget.org
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
+                if gh api --paginate "/user/packages/nuget/${api_name}/versions?per_page=100" \
+                  --jq ".[] | select(.name == \"${version}\") | .name" | grep -Fxq "$version"; then
+                  verified=true
+                  break
+                fi
+              fi
 
-          packages=(./artifacts/packages-results/*.nupkg)
+              echo "Waiting for GitHub Packages to expose ${package_id} ${version} (${attempt}/12)."
+              sleep 5
+            done
 
-          if [ ${#packages[@]} -eq 0 ]; then
-            echo "No .nupkg files found in ./artifacts/packages-results."
-            exit 1
-          fi
-
-          for package in "${packages[@]}"; do
-            dotnet nuget push "$package" \
-              --source "https://api.nuget.org/v3/index.json" \
-              --api-key "$NUGET_API_KEY" \
-              --skip-duplicate
-          done
-
-          symbols=(./artifacts/packages-results/*.snupkg)
-
-          for symbol in "${symbols[@]}"; do
-            dotnet nuget push "$symbol" \
-              --source "https://api.nuget.org/v3/index.json" \
-              --api-key "$NUGET_API_KEY" \
-              --skip-duplicate
-          done
+            if [ "$verified" != "true" ]; then
+              echo "GitHub Packages did not expose ${package_id} ${version} after 12 checks."
+              exit 1
+            fi
+          done < ./artifacts/packages-results/PACKAGE_MANIFEST.tsv

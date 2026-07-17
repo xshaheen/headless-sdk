@@ -12,6 +12,7 @@ on:
       - "global.json"
       - "headless-sdk.slnx"
       - "nuget.config"
+      - "logo.png"
       - "README.md"
   push:
     branches:
@@ -24,12 +25,12 @@ on:
       - "global.json"
       - "headless-sdk.slnx"
       - "nuget.config"
+      - "logo.png"
       - "README.md"
   workflow_dispatch:
 
 permissions:
   contents: read
-  packages: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -51,50 +52,48 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5.4.0
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           global-json-file: ./global.json
 
+      - name: Test release preflight
+        run: bash .github/scripts/tests/github-package-preflight-tests.sh
+
       - name: Cache NuGet packages
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ env.NUGET_PACKAGES }}
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', 'global.json', 'nuget.config') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Authenticate GitHub Packages
-        run: dotnet nuget update source github.com --username xshaheen --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --configfile nuget.config
-
       - name: Restore
-        run: dotnet restore headless-sdk.slnx -p:RestorePackagesWithLockFile=false -p:RestoreLockedMode=false
-
-      # Refresh the injected test-tool versions from Directory.Packages.props before build/pack so a
-      # Dependabot bump of the central pins flows into the shipped assets without a manual edit.
-      - name: Sync injected test-tool versions
-        run: dotnet msbuild src/Headless.NET.Sdk/Headless.NET.Sdk.csproj -t:GenerateHeadlessTestToolVersions -nologo
+        run: dotnet restore headless-sdk.slnx
 
       - name: Build
-        run: dotnet build headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -v:q -nologo /clp:ErrorsOnly
+        run: dotnet build headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -p:GeneratePackageOnBuild=false -v:minimal -nologo
+
+      - name: Pack immutable release artifacts
+        run: dotnet pack headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build --output "${{ env.PACKAGES_DIR }}"
 
       - name: Test
         # Microsoft Testing Platform runner (global.json "test.runner"). The integration project
         # references the Microsoft.Testing.Extensions.TrxReport and .CodeCoverage packages, so
         # everything after "--" is forwarded to the platform: --report-trx for the trx, --coverage
         # (cobertura) for code coverage, and --results-directory to pin both to a known path.
+        env:
+          HEADLESS_PACKAGES_DIR: ${{ github.workspace }}/artifacts/packages-results
         run: dotnet test headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build -- --report-trx --coverage --coverage-output-format cobertura --results-directory ./artifacts/test-results
-
-      - name: Pack
-        run: dotnet pack headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --output "${{ env.PACKAGES_DIR }}"
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: test-results
           path: ./artifacts/test-results
@@ -105,7 +104,7 @@ jobs:
       # upload only and never fail the build on a threshold.
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage
           path: |
@@ -114,8 +113,60 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload packages
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: packages
           path: ${{ env.PACKAGES_DIR }}
           if-no-files-found: error
+
+  platform-smoke:
+    name: ${{ matrix.name }} smoke
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+            test_class: "*WindowsPlatformContractTests"
+          - name: macOS
+            os: macos-latest
+            test_class: "*MacOsPlatformContractTests"
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          global-json-file: ./global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', 'global.json', 'nuget.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Download immutable packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: packages
+          path: ./artifacts/packages-results
+
+      - name: Restore test harness
+        run: dotnet restore tests/Headless.NET.Sdk.Tests.Integrations/Headless.NET.Sdk.Tests.Integrations.csproj
+
+      - name: Build test harness
+        run: dotnet build tests/Headless.NET.Sdk.Tests.Integrations/Headless.NET.Sdk.Tests.Integrations.csproj --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -v:minimal -nologo
+
+      - name: Run platform contract tests
+        env:
+          HEADLESS_PACKAGES_DIR: ${{ github.workspace }}/artifacts/packages-results
+        run: dotnet test tests/Headless.NET.Sdk.Tests.Integrations/Headless.NET.Sdk.Tests.Integrations.csproj --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build -- --filter-class "${{ matrix.test_class }}" --minimum-expected-tests 1
