@@ -1,3 +1,6 @@
 <Project>
-  <Import Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.Test.targets" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.Test.targets"
+    Condition="'$(_HeadlessTestSdkBuildTargetsImported)' != 'true'"
+  />
 </Project>

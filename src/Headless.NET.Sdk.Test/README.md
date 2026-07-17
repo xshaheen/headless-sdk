@@ -1,34 +1,50 @@
 # Headless.NET.Sdk.Test
 
-The Test project-type wrapper in the Headless family — `Microsoft.NET.Sdk` plus the Headless defaults, with test classification forced on. Use it for test projects.
+The .NET 10 Microsoft Testing Platform wrapper: `Microsoft.NET.Sdk` plus the complete Headless build baseline and test classification.
 
-## Install
+> [!IMPORTANT]
+> This is an internal package distributed through the `xshaheen` GitHub Packages feed. It is not published to NuGet.org. The repository currently has no license and grants no external use or redistribution rights.
 
-As an MSBuild SDK:
+## Use
+
+The SDK supplies the MTP host extensions; the consumer chooses its test framework:
 
 ```xml
 <Project Sdk="Headless.NET.Sdk.Test/x.y.z">
-</Project>
-```
-
-Or as a package reference alongside the Microsoft SDK:
-
-```xml
-<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Headless.NET.Sdk.Test" Version="x.y.z" PrivateAssets="all" />
+    <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2" />
   </ItemGroup>
 </Project>
 ```
 
-## What it adds over the core SDK
+Direct PackageReference consumption uses `Microsoft.NET.Sdk`:
 
-Sets `HeadlessSdkProjectType=Test` and forces `IsTestProject=true`, so the project receives the full test toolchain without name-based guessing. (Name inference like `MyApp.Tests` is intentionally not supported — too many false positives for a public SDK. If you don't want the Test SDK, set `<IsTestProject>true</IsTestProject>` yourself; for shared harness projects that should get test defaults without executing as test hosts, set `<IsTestHarnessProject>true</IsTestHarnessProject>` instead.) Test projects force `IsPackable=false` and `IsPublishable=false`, add crash/hang dumps, TRX output and loggers, enable code coverage on CI, switch to Microsoft Testing Platform when `xunit.v3.mtp-v2` or `TUnit` is referenced, disable analyzers during `dotnet test`, and relax a few test-noise warnings (`CA1849`, `MA0042`, `MA0166`, `CA1861`, `CA1859`, `CA1720`).
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Headless.NET.Sdk.Test" Version="x.y.z" PrivateAssets="all" />
+    <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2" />
+  </ItemGroup>
+</Project>
+```
 
-## Opinionated defaults (overridable)
+Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headless.NET.Sdk.Test@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
 
-Inherits the full strict Headless baseline. Every default is overridable via the `Disable*` and `Headless*` properties. See the [Configuration Reference in the main repo README](https://github.com/xshaheen/headless-sdk#configuration-reference) for the complete list, including the full Test Projects section.
+## Test contract
 
-## License
+- Executable MTP host by default, with `IsTestProject=true`, `IsPackable=false`, and `IsPublishable=false`.
+- Microsoft Testing Platform only; VSTest and `Microsoft.NET.Test.Sdk` are not injected.
+- Restore-visible crash dump, hang dump, hot reload, retry, TRX, and coverage extensions.
+- Default TRX output, crash and hang dumps, and a minimum expected test count.
+- Coverage enabled on CI and analyzer work skipped during the test-build phase unless explicitly retained.
+- Mandatory Headless analyzer, banned-API, audit, and CI policies with narrow test-code severity relaxations.
 
-See [LICENSE](https://github.com/xshaheen/headless-sdk/blob/main/LICENSE).
+The package is self-contained and ships no `buildTransitive` assets. Shared harness libraries can instead use `IsTestHarnessProject=true` with the base SDK to receive test analysis defaults without becoming executable test hosts.
+
+The SDK owns the versions of its six implicit MTP extensions. Central Package Management consumers must not declare `PackageVersion` entries for those extension IDs; test-framework versions remain consumer-owned and centrally manageable.

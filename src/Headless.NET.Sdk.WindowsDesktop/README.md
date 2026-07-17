@@ -1,34 +1,31 @@
 # Headless.NET.Sdk.WindowsDesktop
 
-The Windows Desktop project-type wrapper in the Headless family — `Microsoft.NET.Sdk.WindowsDesktop` plus the same opinionated Headless defaults. Use it for WPF and Windows Forms apps.
+The .NET 10 WPF and Windows Forms wrapper: `Microsoft.NET.Sdk.WindowsDesktop` plus the complete Headless build baseline.
 
-## Install
+> [!IMPORTANT]
+> This is an internal package distributed through the `xshaheen` GitHub Packages feed. It is not published to NuGet.org. The repository currently has no license and grants no external use or redistribution rights.
 
-As an MSBuild SDK:
+## Use
 
 ```xml
 <Project Sdk="Headless.NET.Sdk.WindowsDesktop/x.y.z">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
 </Project>
 ```
 
-Or as a package reference alongside the Microsoft Windows Desktop SDK:
+Direct PackageReference consumption uses `Microsoft.NET.Sdk.WindowsDesktop`:
 
 ```xml
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
-  <ItemGroup>
-    <PackageReference Include="Headless.NET.Sdk.WindowsDesktop" Version="x.y.z" PrivateAssets="all" />
-  </ItemGroup>
-</Project>
+<PackageReference Include="Headless.NET.Sdk.WindowsDesktop" Version="x.y.z" PrivateAssets="all" />
 ```
 
-## What it adds over the core SDK
+Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headless.NET.Sdk.WindowsDesktop@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
 
-Sets `HeadlessSdkProjectType=WindowsDesktop` and wraps `Microsoft.NET.Sdk.WindowsDesktop` so WPF and Windows Forms projects compile correctly (you still set `UseWPF` / `UseWindowsForms` as needed), while applying the full Headless baseline. `IsPackable` defaults to `true` for Windows Desktop projects.
+## Windows Desktop contract
 
-## Opinionated defaults (overridable)
+The package sets `HeadlessSdkProjectType=WindowsDesktop` and defaults `IsPackable=true`. Consumers still select `UseWPF` or `UseWindowsForms` and a compatible Windows TFM. Use `HeadlessEnforceConfigureAwait=true` when a library must surface `CA2007` for synchronization-context correctness.
 
-Inherits the full strict Headless baseline (banned `Newtonsoft.Json`, `latest-all` analyzers, warnings as errors on CI, and more). Every default is overridable via the `Disable*` and `Headless*` properties. See the [Configuration Reference in the main repo README](https://github.com/xshaheen/headless-sdk#configuration-reference) for the complete list.
-
-## License
-
-See [LICENSE](https://github.com/xshaheen/headless-sdk/blob/main/LICENSE).
+The package preserves the mandatory Headless analyzer, banned-API, audit, CI, symbol, SBOM, and direct-opt-in policies. It is self-contained and ships no `buildTransitive` assets.

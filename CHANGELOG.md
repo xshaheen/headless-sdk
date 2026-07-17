@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added contract coverage for all five supported consumption modes: direct `PackageReference`, project SDK, additional SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk` file-based apps.
+- Added package-content and clean-consumer validation for exact import behavior, multi-targeting outer builds, mandatory dependencies, and explicit consumer overrides.
+- Added SHA-256 package manifests so the publish workflow promotes and verifies the exact artifacts produced by its build job.
+
+### Changed
+
+- The package family now supports .NET 10 only. MSBuild projects must declare a target framework explicitly; Headless no longer infers one.
+- Analyzer packages, analyzer configuration, banned API lists, deterministic output, CI warning escalation, and NuGet audit are authoritative quality policies rather than optional convenience defaults.
+- CI now treats compiler, analyzer, nullable, MSBuild, and confirmed vulnerability warnings (`NU1901`-`NU1904`) as errors. `NU1900` and `NU1905` remain warnings because they indicate missing audit data, not a confirmed vulnerability.
+- CI locked restore is enabled only when `packages.lock.json` exists or `NuGetLockFilePath` identifies an existing lock file.
+- `Headless.NET.Sdk.Test` is now Microsoft Testing Platform only. MTP extensions are restore-visible in every consumption mode; consumers continue to choose their test framework.
+- SBOM generation remains opt-in through `GenerateSBOM=true`, while the required `Microsoft.Sbom.Targets` dependency is available consistently before the opt-in is evaluated.
+- Headless follows the Microsoft SDK default for `EmbedUntrackedSources` instead of forcing it.
+- File-based apps always receive the dedicated analyzer profile, and Headless extra global usings are added only when implicit usings are enabled.
+- Package publishing is internal to GitHub Packages. Actions are SHA-pinned, duplicate versions fail, and the publish job verifies artifact hashes before upload.
+- Documentation now describes the internal distribution and no-license status instead of presenting the packages as a public NuGet contract.
+- Direct PackageReference documentation now calls out NuGet's first-clean-restore import boundary and the required repository-owned restore-policy bootstrap.
+
+### Removed
+
+- Removed all `buildTransitive` package assets. Each project must opt in directly; `buildMultiTargeting` remains for multi-targeting outer builds.
+- Removed target-framework inference, VSTest defaults, conditional test-runner classification, public NuGet.org publishing, ineffective package API validation, and obsolete quality-policy opt-out switches.
+- Removed build-time test-tool version generation. Shipped MTP extension pins are checked against `Directory.Packages.props` by package contract tests.
+
 ## [0.0.129] - 2026-07-14
 
 ### Changed

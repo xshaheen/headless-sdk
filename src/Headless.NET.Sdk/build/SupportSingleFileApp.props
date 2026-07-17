@@ -1,12 +1,10 @@
 <Project>
-  <PropertyGroup>
-    <!-- FileBasedProgram is set by the .NET SDK for .NET 10 file-based apps. -->
-    <HeadlessSingleFileApp Condition="'$(HeadlessSingleFileApp)' == '' and '$(FileBasedProgram)' == 'true'"
-      >true</HeadlessSingleFileApp
-    >
-  </PropertyGroup>
-
-  <ItemGroup Condition="'$(HeadlessSingleFileApp)' == 'true'">
+  <!--
+    FileBasedProgram is set by the .NET 10 SDK before SDK props are evaluated. File-based apps
+    always receive this analyzer profile because the mandatory baseline is intentionally tuned
+    differently for their single-file source model.
+  -->
+  <ItemGroup Condition="'$(FileBasedProgram)' == 'true'">
     <EditorConfigFiles Include="$(MSBuildThisFileDirectory)../configurations/Headless.NET.Sdk.SingleFileApp.editorconfig" />
   </ItemGroup>
 </Project>

@@ -1,34 +1,28 @@
 # Headless.NET.Sdk.Razor
 
-The Razor project-type wrapper in the Headless family — `Microsoft.NET.Sdk.Razor` plus the same opinionated Headless defaults. Use it for Razor class libraries.
+The .NET 10 Razor class-library wrapper: `Microsoft.NET.Sdk.Razor` plus the complete Headless build baseline.
 
-## Install
+> [!IMPORTANT]
+> This is an internal package distributed through the `xshaheen` GitHub Packages feed. It is not published to NuGet.org. The repository currently has no license and grants no external use or redistribution rights.
 
-As an MSBuild SDK:
+## Use
 
 ```xml
 <Project Sdk="Headless.NET.Sdk.Razor/x.y.z">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
 </Project>
 ```
 
-Or as a package reference alongside the Microsoft Razor SDK:
+Direct PackageReference consumption uses `Microsoft.NET.Sdk.Razor`:
 
 ```xml
-<Project Sdk="Microsoft.NET.Sdk.Razor">
-  <ItemGroup>
-    <PackageReference Include="Headless.NET.Sdk.Razor" Version="x.y.z" PrivateAssets="all" />
-  </ItemGroup>
-</Project>
+<PackageReference Include="Headless.NET.Sdk.Razor" Version="x.y.z" PrivateAssets="all" />
 ```
 
-## What it adds over the core SDK
+Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headless.NET.Sdk.Razor@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
 
-Sets `HeadlessSdkProjectType=Razor` and wraps `Microsoft.NET.Sdk.Razor` so Razor class libraries compile correctly, while applying the full Headless baseline. `IsPackable` defaults to `true` for Razor projects, since Razor class libraries are usually shipped as packages.
+## Razor contract
 
-## Opinionated defaults (overridable)
-
-Inherits the full strict Headless baseline (banned `Newtonsoft.Json`, `latest-all` analyzers, warnings as errors on CI, and more). Every default is overridable via the `Disable*` and `Headless*` properties. See the [Configuration Reference in the main repo README](https://github.com/xshaheen/headless-sdk#configuration-reference) for the complete list.
-
-## License
-
-See [LICENSE](https://github.com/xshaheen/headless-sdk/blob/main/LICENSE).
+The package sets `HeadlessSdkProjectType=Razor`, defaults `IsPackable=true`, and preserves the mandatory Headless analyzer, banned-API, audit, CI, symbol, SBOM, and direct-opt-in policies. It is self-contained and ships no `buildTransitive` assets.

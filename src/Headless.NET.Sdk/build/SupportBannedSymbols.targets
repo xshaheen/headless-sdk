@@ -1,19 +1,15 @@
 <Project>
   <!--
     Wires the shipped BannedSymbols.txt files into BannedApiAnalyzers as AdditionalFiles.
-    Toggles:
-      IncludeDefaultBannedSymbols    (default: true)  - core .NET banned APIs (DateTime.Now, Tuple, non-UTC IO, etc.)
-      BannedNewtonsoftJsonSymbols    (default: true)  - bans Newtonsoft.Json types in favor of System.Text.Json
+    Both the core .NET and Newtonsoft.Json bans are mandatory parts of the Headless quality policy.
   -->
   <ItemGroup>
     <AdditionalFiles
       Include="$(MSBuildThisFileDirectory)..\configurations\BannedSymbols.txt"
-      Condition="'$(IncludeDefaultBannedSymbols)' != 'false'"
       Visible="false"
     />
     <AdditionalFiles
       Include="$(MSBuildThisFileDirectory)..\configurations\BannedSymbols.NewtonsoftJson.txt"
-      Condition="'$(BannedNewtonsoftJsonSymbols)' != 'false'"
       Visible="false"
     />
   </ItemGroup>

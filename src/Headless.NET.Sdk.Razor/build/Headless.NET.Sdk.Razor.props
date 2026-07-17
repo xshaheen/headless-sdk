@@ -1,7 +1,8 @@
-<Project>
+<Project Condition="'$(_HeadlessRazorSdkBuildPropsImported)' != 'true'">
   <PropertyGroup>
-    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk.Razor</HeadlessSdkName>
-    <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Razor</HeadlessSdkProjectType>
+    <_HeadlessRazorSdkBuildPropsImported>true</_HeadlessRazorSdkBuildPropsImported>
+    <HeadlessSdkName>Headless.NET.Sdk.Razor</HeadlessSdkName>
+    <HeadlessSdkProjectType>Razor</HeadlessSdkProjectType>
     <_HeadlessSdkDefaultIsPackable Condition="'$(_HeadlessSdkDefaultIsPackable)' == ''"
       >true</_HeadlessSdkDefaultIsPackable
     >

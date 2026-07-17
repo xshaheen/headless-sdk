@@ -31,21 +31,19 @@
       PrivateAssets="none"
       IncludeAssets="all"
     />
+    <PackageReference
+      Include="Microsoft.Sbom.Targets"
+      VersionOverride="[4.1.5]"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="sdk/Sdk.props;sdk/Sdk.targets" Pack="true" PackagePath="sdk/%(Filename)%(Extension)" />
     <None Include="build\$(PackageId).props" Pack="true" PackagePath="build\$(PackageId).props" />
     <None Include="build\$(PackageId).targets" Pack="true" PackagePath="build\$(PackageId).targets" />
-    <!--
-      Packs the base SDK's entire build/ tree (Support* modules + the generated
-      SupportTestProjects.Versions.props) into this satellite package. NOTE: that versions file is
-      produced by the GenerateHeadlessTestToolVersions target on the BASE project only, so the base
-      must build before a satellite is packed or the satellite ships a stale copy. The full-solution
-      build (`dotnet build headless-sdk.slnx`) and CI both build the base first, so this holds in
-      practice; avoid packing a satellite in isolation without first building Headless.NET.Sdk.
-      VersionConsistencyTests guards the committed file's freshness.
-    -->
+    <!-- Packs the shared base SDK build tree so every satellite is self-contained. -->
     <None
       Include="..\Headless.NET.Sdk\build\**\*.*"
       Pack="true"
@@ -61,13 +59,8 @@
       Pack="true"
       PackagePath="buildMultiTargeting\$(PackageId).targets"
     />
-    <None Include="buildTransitive\$(PackageId).props" Pack="true" PackagePath="buildTransitive\$(PackageId).props" />
-    <None
-      Include="buildTransitive\$(PackageId).targets"
-      Pack="true"
-      PackagePath="buildTransitive\$(PackageId).targets"
-    />
     <None Include="..\Headless.NET.Sdk\configurations\**" Pack="true" PackagePath="configurations/" />
+    <None Include="../../logo.png" Pack="true" PackagePath="" />
     <!-- README.md is resolved and packed by SupportPackageInformation.targets from each satellite's own README.md -->
     <None Include="..\Headless.NET.Sdk\_._" Pack="true" PackagePath="lib\$(TargetFramework)" Visible="false" />
   </ItemGroup>

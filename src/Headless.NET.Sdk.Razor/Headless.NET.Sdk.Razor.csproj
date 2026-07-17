@@ -2,6 +2,7 @@
   <PropertyGroup>
     <HeadlessSdkName>Headless.NET.Sdk.Razor</HeadlessSdkName>
     <HeadlessSdkProjectType>Razor</HeadlessSdkProjectType>
+    <IsBuildTaskProject>true</IsBuildTaskProject>
   </PropertyGroup>
 
   <Import Project="..\Headless.NET.Sdk\build\Headless.NET.Sdk.props" />

@@ -2,6 +2,7 @@
   <PropertyGroup>
     <HeadlessSdkName>Headless.NET.Sdk.BlazorWebAssembly</HeadlessSdkName>
     <HeadlessSdkProjectType>BlazorWebAssembly</HeadlessSdkProjectType>
+    <IsBuildTaskProject>true</IsBuildTaskProject>
   </PropertyGroup>
 
   <Import Project="..\Headless.NET.Sdk\build\Headless.NET.Sdk.props" />

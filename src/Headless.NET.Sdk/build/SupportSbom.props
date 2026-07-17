@@ -1,0 +1,21 @@
+<Project>
+  <!--
+    MSBuild SDK package dependencies are resolved for SDK discovery but do not become consumer
+    project dependencies. Add the SBOM tool explicitly so it is restored in every SDK consumption
+    mode. Headless owns the targets import, so NuGet build assets are excluded to prevent a second
+    import through the generated NuGet targets file.
+  -->
+  <PropertyGroup>
+    <_HeadlessMicrosoftSbomTargetsVersion>[4.1.5]</_HeadlessMicrosoftSbomTargetsVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsBuildTaskProject)' != 'true'">
+    <PackageReference
+      Include="Microsoft.Sbom.Targets"
+      Version="$(_HeadlessMicrosoftSbomTargetsVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="none"
+    />
+  </ItemGroup>
+</Project>

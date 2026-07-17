@@ -2,7 +2,7 @@ is_global = true
 global_level = 0
 
 # This file is the always-on analyzer/code-style/naming baseline injected by the Headless SDK
-# (wired via build/SupportAnalyzerEditorConfigs.props, gated by DisableSupportAnalyzerEditorConfigs).
+# (wired unconditionally via build/SupportAnalyzerEditorConfigs.props).
 # Consumers get these opinions WITHOUT adding any .editorconfig of their own. The optional
 # editorconfig.txt eject only carries editor-formatting settings and per-project overrides.
 #

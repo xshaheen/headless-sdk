@@ -2,7 +2,24 @@
   <PropertyGroup>
     <HeadlessSdkName>Headless.NET.Sdk.Test</HeadlessSdkName>
     <HeadlessSdkProjectType>Test</HeadlessSdkProjectType>
+    <IsBuildTaskProject>true</IsBuildTaskProject>
+    <!-- This project constructs the SDK package; it is not itself an MTP test application. -->
+    <IsTestingPlatformApplication>false</IsTestingPlatformApplication>
   </PropertyGroup>
+
+  <!--
+    These are package dependencies, rather than late build-target injections, so every
+    Headless.NET.Sdk.Test consumption mode has the MTP extensions available on its first restore.
+    Test frameworks remain consumer-selected.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" VersionOverride="[2.3.1]" PrivateAssets="none" IncludeAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" VersionOverride="[18.9.0]" PrivateAssets="none" IncludeAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" VersionOverride="[2.3.1]" PrivateAssets="none" IncludeAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.HotReload" VersionOverride="[2.3.1]" PrivateAssets="none" IncludeAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.Retry" VersionOverride="[2.3.1]" PrivateAssets="none" IncludeAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" VersionOverride="[2.3.1]" PrivateAssets="none" IncludeAssets="all" />
+  </ItemGroup>
 
   <Import Project="..\Headless.NET.Sdk\build\Headless.NET.Sdk.props" />
   <Import Project="..\_shared\Satellite.props" />

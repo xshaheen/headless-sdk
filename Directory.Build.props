@@ -1,12 +1,15 @@
 <Project>
   <PropertyGroup Label="Package settings">
     <Title>$(MSBuildProjectName)</Title>
-    <Description>`Headless.NET.Sdk` is an opinionated MSBuild SDK I built for my own .NET projects and the teams I work with. The repo is public and you're welcome to consume it, but the defaults reflect a strict house style — `Newtonsoft.Json` banned, `latest-all` analyzer level, MSBuild warnings as errors on CI, `RollForward=LatestMajor` for executables, implicit analyzer hygiene. If any of that doesn't fit your project, every default is overridable via the `Disable*` and `Headless*` properties.</Description>
+    <Description>Internal .NET 10 MSBuild SDK baseline for Headless Framework projects. Provides deterministic evaluation, mandatory analyzer and banned-API policy, CI quality gates, packaging defaults, and Microsoft Testing Platform support. Distributed through GitHub Packages only; no license is currently granted.</Description>
     <Authors>Mahmoud Shaheen</Authors>
     <Company>Mahmoud Shaheen</Company>
     <RepositoryUrl>https://github.com/xshaheen/headless-sdk.git</RepositoryUrl>
     <PackageProjectUrl>https://github.com/xshaheen/headless-sdk</PackageProjectUrl>
     <PackageReleaseNotes>$(PackageProjectUrl)/releases</PackageReleaseNotes>
+    <!-- Repository-owned packages always carry the root icon, including isolated project packs. -->
+    <PackageIcon>logo.png</PackageIcon>
+    <DisablePackageLogo>true</DisablePackageLogo>
     <PackageTags>sdk;msbuild-sdk;msbuild;editorconfig;configuration;settings;props;targets</PackageTags>
     <CopyrightYearStart>2024</CopyrightYearStart>
   </PropertyGroup>

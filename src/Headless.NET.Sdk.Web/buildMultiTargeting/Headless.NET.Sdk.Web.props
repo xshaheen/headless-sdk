@@ -1,3 +1,6 @@
 <Project>
-  <Import Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.Web.props" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.Web.props"
+    Condition="'$(_HeadlessWebSdkBuildPropsImported)' != 'true'"
+  />
 </Project>

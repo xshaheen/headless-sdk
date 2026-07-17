@@ -1,7 +1,8 @@
-<Project>
+<Project Condition="'$(_HeadlessBlazorWebAssemblySdkBuildPropsImported)' != 'true'">
   <PropertyGroup>
-    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk.BlazorWebAssembly</HeadlessSdkName>
-    <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">BlazorWebAssembly</HeadlessSdkProjectType>
+    <_HeadlessBlazorWebAssemblySdkBuildPropsImported>true</_HeadlessBlazorWebAssemblySdkBuildPropsImported>
+    <HeadlessSdkName>Headless.NET.Sdk.BlazorWebAssembly</HeadlessSdkName>
+    <HeadlessSdkProjectType>BlazorWebAssembly</HeadlessSdkProjectType>
     <_HeadlessSdkDefaultIsPackable Condition="'$(_HeadlessSdkDefaultIsPackable)' == ''"
       >false</_HeadlessSdkDefaultIsPackable
     >

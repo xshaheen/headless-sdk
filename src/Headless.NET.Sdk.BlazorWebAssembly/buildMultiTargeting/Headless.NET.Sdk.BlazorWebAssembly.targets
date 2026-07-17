@@ -1,3 +1,6 @@
 <Project>
-  <Import Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.BlazorWebAssembly.targets" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.BlazorWebAssembly.targets"
+    Condition="'$(_HeadlessBlazorWebAssemblySdkBuildTargetsImported)' != 'true'"
+  />
 </Project>

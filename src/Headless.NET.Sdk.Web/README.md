@@ -1,34 +1,41 @@
 # Headless.NET.Sdk.Web
 
-The Web project-type wrapper in the Headless family — `Microsoft.NET.Sdk.Web` plus the same opinionated Headless defaults. Use it for ASP.NET Core apps and Web APIs.
+The .NET 10 ASP.NET Core and Web API wrapper: `Microsoft.NET.Sdk.Web` plus the complete Headless build baseline.
 
-## Install
+> [!IMPORTANT]
+> This is an internal package distributed through the `xshaheen` GitHub Packages feed. It is not published to NuGet.org. The repository currently has no license and grants no external use or redistribution rights.
 
-As an MSBuild SDK:
+## Use
+
+As a project SDK:
 
 ```xml
 <Project Sdk="Headless.NET.Sdk.Web/x.y.z">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
 </Project>
 ```
 
-Or as a package reference alongside the Microsoft Web SDK:
+Or opt a `Microsoft.NET.Sdk.Web` project in directly:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Headless.NET.Sdk.Web" Version="x.y.z" PrivateAssets="all" />
   </ItemGroup>
 </Project>
 ```
 
-## What it adds over the core SDK
+Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headless.NET.Sdk.Web@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
 
-Sets `HeadlessSdkProjectType=Web` and wraps `Microsoft.NET.Sdk.Web`. On top of the core Headless baseline it enables GitHub Actions container support: when a Web project builds on GitHub Actions, SDK container publishing turns on with `ghcr.io` as the registry, the image repository computed from the GitHub owner and repo name, and computed image tags (`latest` plus a versioned tag on `main`). `IsPackable` defaults to `false` for Web projects. Skip the container defaults with `DisableSupportWebContainer`.
+## Web contract
 
-## Opinionated defaults (overridable)
+The package sets `HeadlessSdkProjectType=Web`, defaults `IsPackable=false`, and preserves the mandatory Headless analyzer, banned-API, audit, CI, symbol, and direct-opt-in policies.
 
-Inherits the full strict Headless baseline (banned `Newtonsoft.Json`, `latest-all` analyzers, warnings as errors on CI, and more). Every default is overridable via the `Disable*` and `Headless*` properties. See the [Configuration Reference in the main repo README](https://github.com/xshaheen/headless-sdk#configuration-reference) for the complete list.
+On GitHub Actions, Web projects default to SDK container publishing through `ghcr.io`. The repository and tags are derived from GitHub metadata; `main` receives the configured version prefix and `latest`, while other refs receive preview tags. Set `DisableSupportWebContainer=true` only when the project owns its container policy.
 
-## License
-
-See [LICENSE](https://github.com/xshaheen/headless-sdk/blob/main/LICENSE).
+The package is self-contained and does not rely on a separate `Headless.NET.Sdk` package. It ships no `buildTransitive` assets.

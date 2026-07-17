@@ -1,12 +1,61 @@
-<Project>
+<Project Condition="'$(_HeadlessTestSdkBuildPropsImported)' != 'true'">
+  <Import Project="$(MSBuildThisFileDirectory)SupportTestProjects.Versions.props" />
+
   <PropertyGroup>
-    <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk.Test</HeadlessSdkName>
-    <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Test</HeadlessSdkProjectType>
+    <_HeadlessTestSdkBuildPropsImported>true</_HeadlessTestSdkBuildPropsImported>
+    <HeadlessSdkName>Headless.NET.Sdk.Test</HeadlessSdkName>
+    <HeadlessSdkProjectType>Test</HeadlessSdkProjectType>
     <IsTestProject Condition="'$(IsTestProject)' == ''">true</IsTestProject>
+    <OutputType Condition="'$(OutputType)' == '' or '$(OutputType)' == 'Library'">Exe</OutputType>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <_HeadlessSdkDefaultIsPackable Condition="'$(_HeadlessSdkDefaultIsPackable)' == ''"
       >false</_HeadlessSdkDefaultIsPackable
     >
   </PropertyGroup>
+
+  <!--
+    SDK-package dependencies are restored for SDK resolution but are not added to the consumer
+    project. These early implicit references make the MTP extensions project dependencies in
+    project-SDK, additional-SDK, global.json, and PackageReference consumption alike.
+  -->
+  <ItemGroup>
+    <PackageReference
+      Include="Microsoft.Testing.Extensions.CrashDump"
+      Version="$(_HeadlessMtpCrashDumpVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="Microsoft.Testing.Extensions.CodeCoverage"
+      Version="$(_HeadlessMtpCodeCoverageVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="Microsoft.Testing.Extensions.HangDump"
+      Version="$(_HeadlessMtpHangDumpVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="Microsoft.Testing.Extensions.HotReload"
+      Version="$(_HeadlessMtpHotReloadVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="Microsoft.Testing.Extensions.Retry"
+      Version="$(_HeadlessMtpRetryVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+    />
+    <PackageReference
+      Include="Microsoft.Testing.Extensions.TrxReport"
+      Version="$(_HeadlessMtpTrxReportVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+    />
+  </ItemGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)Headless.NET.Sdk.props" />
 </Project>
