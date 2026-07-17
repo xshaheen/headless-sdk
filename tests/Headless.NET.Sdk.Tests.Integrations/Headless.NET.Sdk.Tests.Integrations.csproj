@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <!-- Keep TargetFrameworks (rather than TargetFramework): CSharpier.MSBuild's inner format build expects it. -->
+    <TargetFrameworks>net10.0</TargetFrameworks>
     <!-- xUnit v3 + Microsoft Testing Platform test projects are executables. -->
     <OutputType>Exe</OutputType>
     <!--

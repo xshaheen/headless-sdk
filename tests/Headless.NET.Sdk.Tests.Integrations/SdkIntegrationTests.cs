@@ -264,14 +264,11 @@ indent_size = 2
 
         var testTargets = ReadPackageEntry(package, "build/SupportTestProjects.targets");
         Assert.Contains("configurations/default.runsettings", testTargets, StringComparison.Ordinal);
-        // MTP coverage settings use --coverage-settings; --settings is a dotnet test CLI option the
-        // MTP runner rejects as unknown. (Behavioral check that the args actually flow to an MTP
-        // consumer lives in MsBuildSetsMtpCommandLineArgumentsForTestSdk.)
+        // MTP coverage settings use the platform's --coverage-settings argument.
         Assert.Contains("--coverage-settings", testTargets, StringComparison.Ordinal);
 
         var runsettings = ReadPackageEntry(package, "configurations/default.runsettings");
         Assert.Contains("<TreatNoTestsAsError>true</TreatNoTestsAsError>", runsettings, StringComparison.Ordinal);
-        Assert.Contains(@"GitHubActionsTestLogger\.dll", runsettings, StringComparison.Ordinal);
         Assert.Contains(@".*\.Tests\.[^.]+\.dll$", runsettings, StringComparison.Ordinal);
         Assert.Contains(@".*\.Testing\.[^.]+\.dll$", runsettings, StringComparison.Ordinal);
         Assert.Contains(@".*\.g\.cs$", runsettings, StringComparison.Ordinal);
@@ -280,7 +277,9 @@ indent_size = 2
         var generalTargets = ReadPackageEntry(package, "build/SupportGeneral.targets");
         Assert.Contains("DisableDocumentationWarnings", generalTargets, StringComparison.Ordinal);
         Assert.Contains("CS1573;CS1591", generalTargets, StringComparison.Ordinal);
-        Assert.Contains("Headless.NET.Sdk.Tests.editorconfig", generalTargets, StringComparison.Ordinal);
+
+        var mandatoryAnalyzers = ReadPackageEntry(package, "build/SupportMandatoryAnalyzers.targets");
+        Assert.Contains("Headless.NET.Sdk.Tests.editorconfig", mandatoryAnalyzers, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -328,12 +327,12 @@ indent_size = 2
     }
 
     [Fact]
-    public void should_pack_single_file_target_framework_and_sdk_metadata_support()
+    public void should_pack_single_file_and_sdk_metadata_support_without_target_framework_inference()
     {
         using var package = ZipFile.OpenRead(fixture.PackagePath);
 
         Assert.NotNull(package.GetEntry("build/SupportSingleFileApp.props"));
-        Assert.NotNull(package.GetEntry("build/SupportTargetFrameworkInference.props"));
+        Assert.Null(package.GetEntry("build/SupportTargetFrameworkInference.props"));
         Assert.Null(package.GetEntry("build/SupportNpm.targets"));
         Assert.NotNull(package.GetEntry("configurations/Headless.NET.Sdk.SingleFileApp.editorconfig"));
 
@@ -369,8 +368,8 @@ indent_size = 2
             Assert.NotNull(package.GetEntry($"build/{packageId}.targets"));
             Assert.NotNull(package.GetEntry($"buildMultiTargeting/{packageId}.props"));
             Assert.NotNull(package.GetEntry($"buildMultiTargeting/{packageId}.targets"));
-            Assert.NotNull(package.GetEntry($"buildTransitive/{packageId}.props"));
-            Assert.NotNull(package.GetEntry($"buildTransitive/{packageId}.targets"));
+            Assert.Null(package.GetEntry($"buildTransitive/{packageId}.props"));
+            Assert.Null(package.GetEntry($"buildTransitive/{packageId}.targets"));
             Assert.NotNull(package.GetEntry("build/SupportGeneral.props"));
             Assert.NotNull(package.GetEntry("configurations/editorconfig.txt"));
 
@@ -383,11 +382,7 @@ indent_size = 2
             Assert.Contains($"Sdk=\"{baseSdk}\"", sdkProps, StringComparison.Ordinal);
 
             var buildProps = ReadPackageEntry(package, $"build/{packageId}.props");
-            Assert.Contains(
-                $"<HeadlessSdkName Condition=\"'$(HeadlessSdkName)' == ''\">{packageId}</HeadlessSdkName>",
-                buildProps,
-                StringComparison.Ordinal
-            );
+            Assert.Contains($"<HeadlessSdkName>{packageId}</HeadlessSdkName>", buildProps, StringComparison.Ordinal);
         }
     }
 
@@ -415,7 +410,17 @@ indent_size = 2
 
                 foreach (var packageReference in document.Descendants("PackageReference"))
                 {
-                    Assert.Equal("true", packageReference.Attribute("IsImplicitlyDefined")?.Value);
+                    if (packageReference.Attribute("Include") is not null)
+                    {
+                        Assert.Equal("true", packageReference.Attribute("IsImplicitlyDefined")?.Value);
+                    }
+                    else
+                    {
+                        Assert.True(
+                            packageReference.Attribute("Update") is not null
+                                || packageReference.Attribute("Remove") is not null
+                        );
+                    }
                 }
             }
         }
@@ -451,9 +456,8 @@ indent_size = 2
             fixture.PackageVersion,
             fixture.PackageSourceDirectory,
             outputType: "Exe",
-            // The Headless SDK defaults TreatWarningsAsErrors=true in Debug; this test asserts MA0047
-            // surfaces as a *warning* (proving the bundled analyzer editorconfig was imported), so keep
-            // warnings non-fatal here -- the warnings-as-error policy is covered by its own tests.
+            // This test asserts MA0047 surfaces as a warning, proving the bundled analyzer
+            // editorconfig was imported. Keep warnings non-fatal explicitly for isolation.
             extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["TreatWarningsAsErrors"] = "false",
@@ -515,9 +519,8 @@ class Foo { }
             sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
             targetFramework: "net10.0",
             includePackageReference: false,
-            // The Headless SDK defaults TreatWarningsAsErrors=true in Debug; this test asserts CA2007
-            // surfaces as a *warning* (proving the opt-in enforcement editorconfig was imported), so keep
-            // warnings non-fatal here -- the warnings-as-error policy is covered by its own tests.
+            // This test asserts CA2007 surfaces as a warning, proving the opt-in enforcement
+            // editorconfig was imported. Keep warnings non-fatal explicitly for isolation.
             extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["HeadlessEnforceConfigureAwait"] = "true",
@@ -609,7 +612,7 @@ class Foo { }
     }
 
     [Fact]
-    public async Task should_treat_warnings_as_errors_when_on_continuous_integration()
+    public async Task should_treat_msbuild_warnings_as_errors_on_continuous_integration()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -620,7 +623,7 @@ class Foo { }
         var properties = await project.EvaluateHeadlessPropertiesAsync("-p:CI=true");
 
         Assert.Equal("true", properties["MSBuildTreatWarningsAsErrors"]);
-        Assert.Equal("true", properties["RestoreLockedMode"]);
+        Assert.NotEqual("true", properties["RestoreLockedMode"]);
     }
 
     [Fact]
@@ -664,7 +667,7 @@ class Foo { }
     }
 
     [Fact]
-    public async Task should_infer_target_framework_when_explicitly_enabled()
+    public async Task should_require_an_explicit_target_framework()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -674,10 +677,12 @@ class Foo { }
             includePackageReference: false
         );
 
-        var properties = await project.EvaluateHeadlessPropertiesAsync("-p:HeadlessInferTargetFramework=true");
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
 
-        Assert.StartsWith("net", properties["TargetFramework"], StringComparison.Ordinal);
-        Assert.NotEqual("net", properties["TargetFramework"]);
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("NETSDK1013", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -741,11 +746,7 @@ public static class JsonConsumer
             fixture.PackageSourceDirectory,
             sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
             includePackageReference: false,
-            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["IsTestProject"] = "true",
-                ["UseMicrosoftTestingPlatform"] = "true",
-            }
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal) { ["IsTestProject"] = "true" }
         );
 
         var properties = await project.EvaluateHeadlessPropertiesAsync();
@@ -769,10 +770,7 @@ public static class JsonConsumer
         Assert.Contains("CA1859", noWarn);
         Assert.Contains("CA1720", noWarn);
 
-        var packageReferences = properties["PackageReferences"].Split('|', StringSplitOptions.RemoveEmptyEntries);
-        Assert.Contains("Microsoft.Testing.Extensions.TrxReport", packageReferences);
-        Assert.DoesNotContain("Microsoft.NET.Test.Sdk", packageReferences);
-        Assert.Contains("--report-trx", properties["TestingPlatformCommandLineArguments"], StringComparison.Ordinal);
+        Assert.Empty(properties["TestingPlatformCommandLineArguments"]);
     }
 
     [Fact]
@@ -786,7 +784,6 @@ public static class JsonConsumer
             extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["IsTestHarnessProject"] = "true",
-                ["UseMicrosoftTestingPlatform"] = "true",
             }
         );
 
@@ -794,8 +791,8 @@ public static class JsonConsumer
 
         Assert.Equal("true", properties["IsTestHarnessProject"]);
         Assert.Equal("false", properties["IsTestProject"]);
-        Assert.Equal("false", properties["IsTestingPlatformApplication"]);
-        Assert.Equal("true", properties["GenerateRuntimeConfigurationFiles"]);
+        Assert.Empty(properties["IsTestingPlatformApplication"]);
+        Assert.Empty(properties["GenerateRuntimeConfigurationFiles"]);
         Assert.Equal("false", properties["IsPackable"]);
         Assert.Equal(string.Empty, properties["HeadlessSymbolFormat"]);
         Assert.DoesNotContain("xshaheen", properties["PackageTags"], StringComparison.Ordinal);
@@ -813,10 +810,7 @@ public static class JsonConsumer
         Assert.Contains("CA1859", noWarn);
         Assert.Contains("CA1720", noWarn);
 
-        var packageReferences = properties["PackageReferences"].Split('|', StringSplitOptions.RemoveEmptyEntries);
-        Assert.Contains("Microsoft.Testing.Extensions.TrxReport", packageReferences);
-        Assert.DoesNotContain("Microsoft.NET.Test.Sdk", packageReferences);
-        Assert.Contains("--report-trx", properties["TestingPlatformCommandLineArguments"], StringComparison.Ordinal);
+        Assert.Empty(properties["TestingPlatformCommandLineArguments"]);
     }
 
     [Fact]
@@ -841,8 +835,7 @@ public static class JsonConsumer
         Assert.Contains("--minimum-expected-tests 1", args, StringComparison.Ordinal);
         Assert.DoesNotContain("--coverage", args, StringComparison.Ordinal);
 
-        // With coverage enabled: add --coverage plus the MTP --coverage-settings flag
-        // (not the VSTest --settings option, which the MTP runner rejects as unknown).
+        // With coverage enabled, add the MTP coverage and settings arguments.
         var withCoverage = await project.EvaluateHeadlessPropertiesAsync("-p:EnableCodeCoverage=true");
         var coverageArgs = withCoverage["TestingPlatformCommandLineArguments"];
         Assert.Contains("--coverage", coverageArgs, StringComparison.Ordinal);
@@ -851,111 +844,24 @@ public static class JsonConsumer
     }
 
     [Fact]
-    public async Task should_not_reference_github_actions_logger_when_mtp_is_used_on_github_actions()
+    public async Task should_reference_all_mtp_extensions_unconditionally()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
             fixture.PackageSourceDirectory,
             sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
-            includePackageReference: false,
-            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["UseMicrosoftTestingPlatform"] = "true",
-            }
-        );
-
-        var properties = await project.EvaluateHeadlessPropertiesAsync("-p:GITHUB_ACTIONS=true");
-        var packageReferences = properties["PackageReferences"].Split('|', StringSplitOptions.RemoveEmptyEntries);
-
-        Assert.Contains("Microsoft.Testing.Extensions.TrxReport", packageReferences);
-        Assert.DoesNotContain("Microsoft.NET.Test.Sdk", packageReferences);
-        Assert.DoesNotContain("GitHubActionsTestLogger", packageReferences);
-    }
-
-    [Fact]
-    public async Task should_reference_github_actions_logger_for_vstest_on_github_actions()
-    {
-        await using var project = await ConsumerProject.CreateAsync(
-            fixture.PackageVersion,
-            fixture.PackageSourceDirectory,
-            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
-            includePackageReference: false,
-            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["UseMicrosoftTestingPlatform"] = "false",
-            }
-        );
-
-        var properties = await project.EvaluateHeadlessPropertiesAsync("-p:GITHUB_ACTIONS=true");
-        var packageReferences = properties["PackageReferences"].Split('|', StringSplitOptions.RemoveEmptyEntries);
-
-        Assert.Contains("Microsoft.NET.Test.Sdk", packageReferences);
-        Assert.DoesNotContain("Microsoft.Testing.Extensions.TrxReport", packageReferences);
-        Assert.Contains("GitHubActionsTestLogger", packageReferences);
-        Assert.Contains("GitHubActions", properties["VSTestLogger"], StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task should_reference_github_actions_logger_for_vstest_without_github_actions()
-    {
-        // The PackageReference is unconditional with respect to GITHUB_ACTIONS so the restore
-        // graph (and consumer lock files) never depend on CI environment variables. Only the
-        // VSTestLogger activation is CI-gated.
-        await using var project = await ConsumerProject.CreateAsync(
-            fixture.PackageVersion,
-            fixture.PackageSourceDirectory,
-            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
-            includePackageReference: false,
-            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["UseMicrosoftTestingPlatform"] = "false",
-            }
+            includePackageReference: false
         );
 
         var properties = await project.EvaluateHeadlessPropertiesAsync();
         var packageReferences = properties["PackageReferences"].Split('|', StringSplitOptions.RemoveEmptyEntries);
 
-        Assert.Contains("GitHubActionsTestLogger", packageReferences);
-        Assert.DoesNotContain("GitHubActions", properties["VSTestLogger"], StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task should_produce_identical_lock_files_when_restoring_with_and_without_github_actions()
-    {
-        // Regression guard for CI-dependent restore graphs: GitHubActionsTestLogger used to be
-        // referenced only when GITHUB_ACTIONS=true, so lock files committed from CI restores were
-        // rewritten by every local restore (recurring dirty packages.lock.json noise).
-        await using var project = await ConsumerProject.CreateAsync(
-            fixture.PackageVersion,
-            fixture.PackageSourceDirectory,
-            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
-            includePackageReference: false,
-            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["UseMicrosoftTestingPlatform"] = "false",
-            }
-        );
-
-        var lockFilePath = Path.Combine(project.RootDirectory, "packages.lock.json");
-        const string RestoreArguments = "-p:RestorePackagesWithLockFile=true -p:RestoreLockedMode=false";
-
-        var ciResult = await project.RunDotNetAsync(
-            $"restore {Quote(project.ProjectFilePath)} -p:GITHUB_ACTIONS=true {RestoreArguments} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
-        );
-        Assert.True(ciResult.ExitCode == 0, ciResult.Output);
-        var ciLockFile = await File.ReadAllTextAsync(lockFilePath, TestContext.Current.CancellationToken);
-
-        // --force so the second restore re-evaluates the graph instead of no-opping on the
-        // cached assets, which would leave a stale lock file behind and make the test vacuous.
-        var localResult = await project.RunDotNetAsync(
-            $"restore {Quote(project.ProjectFilePath)} --force {RestoreArguments} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
-        );
-        Assert.True(localResult.ExitCode == 0, localResult.Output);
-        var localLockFile = await File.ReadAllTextAsync(lockFilePath, TestContext.Current.CancellationToken);
-
-        Assert.Contains("GitHubActionsTestLogger", ciLockFile, StringComparison.Ordinal);
-        Assert.Contains("GitHubActionsTestLogger", localLockFile, StringComparison.Ordinal);
-        Assert.Equal(ciLockFile, localLockFile);
+        Assert.Contains("Microsoft.Testing.Extensions.CodeCoverage", packageReferences);
+        Assert.Contains("Microsoft.Testing.Extensions.CrashDump", packageReferences);
+        Assert.Contains("Microsoft.Testing.Extensions.HangDump", packageReferences);
+        Assert.Contains("Microsoft.Testing.Extensions.HotReload", packageReferences);
+        Assert.Contains("Microsoft.Testing.Extensions.Retry", packageReferences);
+        Assert.Contains("Microsoft.Testing.Extensions.TrxReport", packageReferences);
     }
 
     [Theory]
@@ -1133,24 +1039,6 @@ public static class JsonConsumer
     }
 
     [Fact]
-    public async Task should_include_single_file_editorconfig_when_enabled()
-    {
-        await using var project = await ConsumerProject.CreateAsync(
-            fixture.PackageVersion,
-            fixture.PackageSourceDirectory
-        );
-
-        var properties = await project.EvaluateHeadlessPropertiesAsync("-p:HeadlessSingleFileApp=true");
-
-        Assert.Equal("true", properties["HeadlessSingleFileApp"]);
-        Assert.Contains(
-            "Headless.NET.Sdk.SingleFileApp.editorconfig",
-            properties["EditorConfigFiles"],
-            StringComparison.Ordinal
-        );
-    }
-
-    [Fact]
     public async Task should_include_bundled_analyzer_editorconfig_when_using_defaults()
     {
         await using var project = await ConsumerProject.CreateAsync(
@@ -1192,7 +1080,7 @@ public static class JsonConsumer
     }
 
     [Fact]
-    public async Task should_disable_bundled_analyzer_editorconfig_when_explicitly_disabled()
+    public async Task should_keep_bundled_analyzer_editorconfig_when_legacy_opt_out_is_set()
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
@@ -1201,7 +1089,7 @@ public static class JsonConsumer
 
         var properties = await project.EvaluateHeadlessPropertiesAsync("-p:DisableSupportAnalyzerEditorConfigs=true");
 
-        Assert.DoesNotContain(
+        Assert.Contains(
             "Headless.NET.Sdk.Analyzers.editorconfig",
             properties["EditorConfigFiles"],
             StringComparison.Ordinal
@@ -1452,7 +1340,7 @@ public static class JsonConsumer
             entry => entry.FullName.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)
         );
 
-        var assembly = ReadPackageEntryBytes(package, "lib/net8.0/ConsumerProject.dll");
+        var assembly = ReadPackageEntryBytes(package, "lib/net10.0/ConsumerProject.dll");
         Assert.True(
             HasEmbeddedPortablePdb(assembly),
             "Expected the packed assembly to contain an embedded (MPDB) portable PDB."
@@ -1481,7 +1369,7 @@ public static class JsonConsumer
         Assert.True(File.Exists(symbolPackagePath), "Expected a .snupkg symbol package next to the nupkg.");
 
         using var package = ZipFile.OpenRead(Path.Combine(project.PackagesDirectory, "ConsumerProject.1.2.3.nupkg"));
-        var assembly = ReadPackageEntryBytes(package, "lib/net8.0/ConsumerProject.dll");
+        var assembly = ReadPackageEntryBytes(package, "lib/net10.0/ConsumerProject.dll");
         Assert.False(HasEmbeddedPortablePdb(assembly), "snupkg mode must keep the PDB out of the assembly.");
 
         using var symbolPackage = ZipFile.OpenRead(symbolPackagePath);
@@ -1552,14 +1440,14 @@ public static class JsonConsumer
     }
 
     [Fact]
-    public async Task should_add_strict_system_text_json_runtime_options_when_enabled_on_net9()
+    public async Task should_add_strict_system_text_json_runtime_options_when_enabled_on_net10()
     {
         // RuntimeHostConfigurationOption.props -- off by default; opt-in adds STJ runtime switches
-        // on net9.0+.
+        // for the supported .NET 10 target framework.
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
             fixture.PackageSourceDirectory,
-            targetFramework: "net9.0",
+            targetFramework: "net10.0",
             outputType: "Exe"
         );
 
@@ -1614,42 +1502,20 @@ public static class JsonConsumer
         );
 
         var properties = await project.EvaluateHeadlessPropertiesAsync("-p:CI=true");
-        var packageReferences = properties["PackageReferences"].Split('|', StringSplitOptions.RemoveEmptyEntries);
 
         Assert.Equal("false", properties["GenerateSBOM"]);
-        Assert.DoesNotContain("Microsoft.Sbom.Targets", packageReferences);
     }
 
     [Fact]
-    public void should_reference_sbom_targets_only_when_sbom_generation_enabled()
+    public void should_keep_sbom_generation_opt_in_with_binding_only_in_targets()
     {
-        // SupportSbom.targets gates a Microsoft.Sbom.Targets PackageReference on GenerateSBOM=true
-        // and leaves SBOM generation opt-in. The reference is implicitly defined so it is not
-        // governed by the consumer's CPM; verify the shipped asset contract directly rather than
-        // via a network restore of the SBOM package.
+        // The restore-visible dependency is injected from props. The targets asset may reinforce
+        // metadata on that existing item, but it must not add a new restore dependency.
         using var package = ZipFile.OpenRead(fixture.PackagePath);
-        var content = ReadPackageEntry(package, "build/SupportSbom.targets");
-        var document = XDocument.Parse(content);
-
-        var sbomGroup = document
-            .Root!.Elements("ItemGroup")
-            .Single(group =>
-                string.Equals(
-                    group.Attribute("Condition")?.Value,
-                    "'$(GenerateSBOM)' == 'true'",
-                    StringComparison.Ordinal
-                )
-            );
-        var reference = sbomGroup
-            .Elements("PackageReference")
-            .Single(element =>
-                string.Equals(element.Attribute("Include")?.Value, "Microsoft.Sbom.Targets", StringComparison.Ordinal)
-            );
-
-        Assert.Equal("true", reference.Attribute("IsImplicitlyDefined")?.Value);
-        Assert.Contains("GenerateSBOM", content, StringComparison.Ordinal);
-        Assert.DoesNotContain("IsContinuousIntegration", content, StringComparison.Ordinal);
-        Assert.DoesNotContain("ContinuousIntegrationBuild", content, StringComparison.Ordinal);
+        var document = XDocument.Parse(ReadPackageEntry(package, "build/SupportSbom.targets"));
+        var bindingUpdate = Assert.Single(document.Descendants("PackageReference"));
+        Assert.Null(bindingUpdate.Attribute("Include"));
+        Assert.Equal("Microsoft.Sbom.Targets", bindingUpdate.Attribute("Update")?.Value);
     }
 
     [Fact]
@@ -1786,8 +1652,7 @@ public static class JsonConsumer
         }
 
         return entry.FullName.StartsWith("build/", StringComparison.Ordinal)
-            || entry.FullName.StartsWith("buildMultiTargeting/", StringComparison.Ordinal)
-            || entry.FullName.StartsWith("buildTransitive/", StringComparison.Ordinal);
+            || entry.FullName.StartsWith("buildMultiTargeting/", StringComparison.Ordinal);
     }
 
     private static string ReadPackageEntry(ZipArchive package, string entryName)
@@ -1817,35 +1682,51 @@ public static class JsonConsumer
 
 public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
 {
+    private static readonly string[] PackageIds =
+    [
+        "Headless.NET.Sdk",
+        "Headless.NET.Sdk.Web",
+        "Headless.NET.Sdk.Test",
+        "Headless.NET.Sdk.Razor",
+        "Headless.NET.Sdk.BlazorWebAssembly",
+        "Headless.NET.Sdk.WindowsDesktop",
+    ];
+
     private readonly Dictionary<string, string> packagePaths = new(StringComparer.Ordinal);
+    private bool deletePackageRootDirectory;
 
     public string PackageRootDirectory { get; private set; } = null!;
 
     public string PackagePath { get; private set; } = null!;
 
-    public string PackageSourceDirectory => Path.Combine(PackageRootDirectory, "packages");
+    public string PackageSourceDirectory { get; private set; } = null!;
 
     public string PackageVersion { get; private set; } = null!;
 
     public async ValueTask InitializeAsync()
     {
+        var repositoryRoot = TestRepository.FindRoot("integration tests");
+        var prepackedPackagesDirectory = Environment.GetEnvironmentVariable("HEADLESS_PACKAGES_DIR");
+
+        if (!string.IsNullOrWhiteSpace(prepackedPackagesDirectory))
+        {
+            PackageRootDirectory = Path.IsPathFullyQualified(prepackedPackagesDirectory)
+                ? Path.GetFullPath(prepackedPackagesDirectory)
+                : Path.GetFullPath(prepackedPackagesDirectory, repositoryRoot);
+            PackageSourceDirectory = PackageRootDirectory;
+            LoadPackagePaths(PackageSourceDirectory);
+            return;
+        }
+
         PackageRootDirectory = Path.Combine(Path.GetTempPath(), "Headless.NET.Sdk.Tests", Guid.NewGuid().ToString("N"));
+        PackageSourceDirectory = Path.Combine(PackageRootDirectory, "packages");
+        deletePackageRootDirectory = true;
         Directory.CreateDirectory(PackageSourceDirectory);
 
         var cancellationToken = TestContext.Current.CancellationToken;
-        var repositoryRoot = TestRepository.FindRoot("integration tests");
         var env = DotNetCommandEnvironment.CreateIsolatedEnvironment(PackageRootDirectory);
-        var packageIds = new[]
-        {
-            "Headless.NET.Sdk",
-            "Headless.NET.Sdk.Web",
-            "Headless.NET.Sdk.Test",
-            "Headless.NET.Sdk.Razor",
-            "Headless.NET.Sdk.BlazorWebAssembly",
-            "Headless.NET.Sdk.WindowsDesktop",
-        };
 
-        foreach (var packageId in packageIds)
+        foreach (var packageId in PackageIds)
         {
             var projectPath = Path.Combine(repositoryRoot, "src", packageId, $"{packageId}.csproj");
             var baseIntermediateOutputPath = EnsureTrailingDirectorySeparator(
@@ -1877,8 +1758,7 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
             packagePaths[packageId] = packagePath;
         }
 
-        PackagePath = packagePaths["Headless.NET.Sdk"];
-        PackageVersion = Path.GetFileNameWithoutExtension(PackagePath)["Headless.NET.Sdk.".Length..];
+        SetPackageIdentity();
     }
 
     public string GetPackagePath(string packageId) => packagePaths[packageId];
@@ -1892,11 +1772,56 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
     private static string EnsureTrailingDirectorySeparator(string path) =>
         $"{Path.TrimEndingDirectorySeparator(path)}{Path.DirectorySeparatorChar}";
 
+    private void LoadPackagePaths(string packageDirectory)
+    {
+        if (!Directory.Exists(packageDirectory))
+        {
+            throw new DirectoryNotFoundException($"HEADLESS_PACKAGES_DIR does not exist: '{packageDirectory}'.");
+        }
+
+        foreach (var packageId in PackageIds)
+        {
+            var candidates = Directory
+                .EnumerateFiles(packageDirectory, $"{packageId}.*.nupkg", SearchOption.TopDirectoryOnly)
+                .Where(path => HasVersionSuffix(Path.GetFileName(path), packageId))
+                .ToArray();
+
+            if (candidates.Length != 1)
+            {
+                throw new InvalidOperationException(
+                    $"HEADLESS_PACKAGES_DIR must contain exactly one {packageId} nupkg; found {candidates.Length} in '{packageDirectory}'."
+                );
+            }
+
+            packagePaths[packageId] = candidates[0];
+        }
+
+        SetPackageIdentity();
+    }
+
+    private void SetPackageIdentity()
+    {
+        var versions = packagePaths
+            .Select(pair => Path.GetFileNameWithoutExtension(pair.Value)[(pair.Key.Length + 1)..])
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        if (versions.Length != 1)
+        {
+            throw new InvalidOperationException(
+                $"All six Headless SDK packages must have one consistent version; found: {string.Join(", ", versions)}."
+            );
+        }
+
+        PackagePath = packagePaths["Headless.NET.Sdk"];
+        PackageVersion = versions[0];
+    }
+
     public ValueTask DisposeAsync()
     {
         try
         {
-            if (Directory.Exists(PackageRootDirectory))
+            if (deletePackageRootDirectory && Directory.Exists(PackageRootDirectory))
             {
                 Directory.Delete(PackageRootDirectory, recursive: true);
             }
@@ -1964,7 +1889,7 @@ internal sealed class ConsumerProject : IAsyncDisposable
         string packageVersion,
         string packageSourceDirectory,
         string sdk = "Microsoft.NET.Sdk",
-        string? targetFramework = "net8.0",
+        string? targetFramework = "net10.0",
         string? outputType = null,
         string? editorConfigContent = null,
         bool enableEditorConfigCopy = false,
@@ -2223,7 +2148,6 @@ public sealed class Class1;
                   <_HeadlessEvaluatedPackageReferences>@(PackageReference->'%(Identity)', '|')</_HeadlessEvaluatedPackageReferences>
                   <_HeadlessEvaluatedRuntimeHostOptions>@(RuntimeHostConfigurationOption->'%(Identity)=%(Value)', '|')</_HeadlessEvaluatedRuntimeHostOptions>
                   <_HeadlessEvaluatedInternalsVisibleTo>@(InternalsVisibleTo, '|')</_HeadlessEvaluatedInternalsVisibleTo>
-                  <_HeadlessEvaluatedVSTestLogger>$(VSTestLogger.Replace(';', '|'))</_HeadlessEvaluatedVSTestLogger>
                 </PropertyGroup>
                 <ItemGroup>
                   <_HeadlessEvaluatedNoWarnItems Include="$(NoWarn)" />
@@ -2233,7 +2157,7 @@ public sealed class Class1;
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
-                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);HeadlessSingleFileApp=$(HeadlessSingleFileApp);IsTestHarnessProject=$(IsTestHarnessProject);IsTestProject=$(IsTestProject);IsTestingPlatformApplication=$(IsTestingPlatformApplication);GenerateRuntimeConfigurationFiles=$(GenerateRuntimeConfigurationFiles);GenerateSBOM=$(GenerateSBOM);IsPackable=$(IsPackable);NoWarn=$(_HeadlessEvaluatedNoWarn);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);VSTestSetting=$(VSTestSetting);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);DebugType=$(DebugType);HeadlessSymbolFormat=$(HeadlessSymbolFormat);VSTestLogger=$(_HeadlessEvaluatedVSTestLogger);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);IsTestHarnessProject=$(IsTestHarnessProject);IsTestProject=$(IsTestProject);IsTestingPlatformApplication=$(IsTestingPlatformApplication);GenerateRuntimeConfigurationFiles=$(GenerateRuntimeConfigurationFiles);GenerateSBOM=$(GenerateSBOM);IsPackable=$(IsPackable);NoWarn=$(_HeadlessEvaluatedNoWarn);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);DebugType=$(DebugType);HeadlessSymbolFormat=$(HeadlessSymbolFormat);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
                   Overwrite="true"
                 />
               </Target>
@@ -2420,6 +2344,9 @@ internal static class DotNetCommand
             startInfo.Environment[key] = value;
         }
 
+        // MTP sets this marker on the outer dotnet test process. Nested clean-consumer test runs
+        // must be independent CLI invocations; the marker's presence, even empty, suppresses them.
+        startInfo.Environment.Remove("DOTNET_CLI_TEST_COMMAND_WORKING_DIRECTORY");
         startInfo.Environment["MSBUILDDISABLENODEREUSE"] = "1";
         startInfo.Environment["DOTNET_CLI_USE_MSBUILDNOINPROCNODE"] = "1";
 

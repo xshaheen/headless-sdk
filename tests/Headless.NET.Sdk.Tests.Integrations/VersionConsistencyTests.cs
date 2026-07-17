@@ -9,71 +9,94 @@ using Xunit;
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-// Guards the single source of truth for the versions the SDK injects into consumer test projects.
-// build/SupportTestProjects.targets references them as $(_Headless*Version) properties; those
-// properties live in build/SupportTestProjects.Versions.props, which the
-// GenerateHeadlessTestToolVersions target regenerates from Directory.Packages.props on every build.
-// These are pure source-file checks (no packaging fixture), so they stay out of the collection.
+// Guards the checked-in dependency pins injected by Headless.NET.Sdk.Test. These are pure source
+// checks (no packaging fixture), so they stay out of the package collection.
 public sealed class VersionConsistencyTests
 {
-    // Generated property name -> the package whose version it carries.
+    // Shipped property name -> the package whose version it carries.
     private static readonly IReadOnlyDictionary<string, string> InjectedVersionProperties = new Dictionary<
         string,
         string
     >(StringComparer.Ordinal)
     {
-        ["_HeadlessMicrosoftNetTestSdkVersion"] = "Microsoft.NET.Test.Sdk",
         ["_HeadlessMtpCrashDumpVersion"] = "Microsoft.Testing.Extensions.CrashDump",
         ["_HeadlessMtpHangDumpVersion"] = "Microsoft.Testing.Extensions.HangDump",
         ["_HeadlessMtpHotReloadVersion"] = "Microsoft.Testing.Extensions.HotReload",
         ["_HeadlessMtpRetryVersion"] = "Microsoft.Testing.Extensions.Retry",
         ["_HeadlessMtpTrxReportVersion"] = "Microsoft.Testing.Extensions.TrxReport",
         ["_HeadlessMtpCodeCoverageVersion"] = "Microsoft.Testing.Extensions.CodeCoverage",
-        ["_HeadlessGitHubActionsTestLoggerVersion"] = "GitHubActionsTestLogger",
     };
 
     [Fact]
-    public void generated_test_tool_versions_should_match_central_package_versions()
+    public void shipped_test_tool_versions_should_match_central_package_versions()
     {
         var repositoryRoot = TestRepository.FindRoot("version consistency tests");
         var central = ReadCentralPackageVersions(Path.Combine(repositoryRoot, "Directory.Packages.props"));
-        var generated = ReadPropertyValues(
+        var shipped = ReadPropertyValues(
             Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "build", "SupportTestProjects.Versions.props")
         );
 
         foreach (var (property, packageId) in InjectedVersionProperties)
         {
             Assert.True(
-                generated.TryGetValue(property, out var generatedVersion),
-                $"SupportTestProjects.Versions.props is missing {property}. Rebuild Headless.NET.Sdk to regenerate it."
+                shipped.TryGetValue(property, out var shippedVersion),
+                $"SupportTestProjects.Versions.props is missing {property}."
             );
             Assert.True(
                 central.TryGetValue(packageId, out var centralVersion),
                 $"Directory.Packages.props has no <PackageVersion> for {packageId}."
             );
             Assert.True(
-                string.Equals(generatedVersion, centralVersion, StringComparison.Ordinal),
-                $"{packageId}: SupportTestProjects.Versions.props has {generatedVersion} but Directory.Packages.props "
-                    + $"pins {centralVersion}. Rebuild Headless.NET.Sdk to regenerate the file, then commit it."
+                string.Equals(shippedVersion, $"[{centralVersion}]", StringComparison.Ordinal),
+                $"{packageId}: SupportTestProjects.Versions.props has {shippedVersion} but "
+                    + $"Directory.Packages.props pins {centralVersion}."
             );
         }
     }
 
     [Fact]
-    public void injected_test_tool_references_should_use_generated_version_properties()
+    public void implicit_test_tool_references_should_use_shipped_version_properties()
     {
         var repositoryRoot = TestRepository.FindRoot("version consistency tests");
-        var targets = File.ReadAllText(
-            Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "build", "SupportTestProjects.targets")
+        var props = XDocument.Load(
+            Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk.Test", "build", "Headless.NET.Sdk.Test.props")
         );
+        var references = props
+            .Descendants("PackageReference")
+            .ToDictionary(
+                element => element.Attribute("Include")?.Value ?? string.Empty,
+                element => element,
+                StringComparer.Ordinal
+            );
 
-        foreach (var property in InjectedVersionProperties.Keys)
+        Assert.Equal(InjectedVersionProperties.Count, references.Count);
+
+        foreach (var (property, packageId) in InjectedVersionProperties)
         {
             Assert.True(
-                targets.Contains($"$({property})", StringComparison.Ordinal),
-                $"SupportTestProjects.targets should inject the version via $({property}) so it stays single-sourced."
+                references.TryGetValue(packageId, out var reference),
+                $"Missing implicit reference: {packageId}."
             );
+            Assert.Equal($"$({property})", reference.Attribute("Version")?.Value);
+            Assert.Equal("true", reference.Attribute("IsImplicitlyDefined")?.Value);
+            Assert.Equal("all", reference.Attribute("PrivateAssets")?.Value);
         }
+    }
+
+    [Fact]
+    public void shipped_sbom_import_path_should_match_the_central_package_version()
+    {
+        var repositoryRoot = TestRepository.FindRoot("SBOM version consistency tests");
+        var central = ReadCentralPackageVersions(Path.Combine(repositoryRoot, "Directory.Packages.props"));
+        Assert.True(
+            central.TryGetValue("Microsoft.Sbom.Targets", out var centralVersion),
+            "Directory.Packages.props has no <PackageVersion> for Microsoft.Sbom.Targets."
+        );
+
+        var props = ReadPropertyValues(
+            Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "build", "SupportSbom.props")
+        );
+        Assert.Equal($"[{centralVersion}]", props["_HeadlessMicrosoftSbomTargetsVersion"]);
     }
 
     private static Dictionary<string, string> ReadCentralPackageVersions(string path) =>
