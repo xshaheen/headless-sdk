@@ -10,6 +10,8 @@
   parent-relative paths work from each of the five satellite locations.
 -->
 <Project>
+  <Import Project="$(MSBuildThisFileDirectory)ExactAnalyzerDependencies.props" />
+
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -26,11 +28,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference
-      Update="Meziantou.Analyzer;Microsoft.CodeAnalysis.BannedApiAnalyzers;AsyncFixer;Asyncify;Microsoft.VisualStudio.Threading.Analyzers;SmartAnalyzers.MultithreadingAnalyzer;Roslynator.Analyzers;ReflectionAnalyzers;ErrorProne.NET.CoreAnalyzers"
-      PrivateAssets="none"
-      IncludeAssets="all"
-    />
     <PackageReference
       Include="Microsoft.Sbom.Targets"
       VersionOverride="[4.1.5]"

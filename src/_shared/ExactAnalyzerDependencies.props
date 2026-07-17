@@ -1,0 +1,63 @@
+<Project>
+  <!--
+    PackageReference consumers discover build assets only after NuGet has selected this package's
+    dependencies. Exact nuspec ranges keep Central Package Management from replacing the mandatory
+    analyzer baseline before Headless can reassert its implicit references during evaluation.
+  -->
+  <ItemGroup>
+    <PackageReference
+      Update="Meziantou.Analyzer"
+      VersionOverride="[$(_HeadlessMeziantouAnalyzerVersion)]"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
+    <PackageReference
+      Update="Microsoft.CodeAnalysis.BannedApiAnalyzers"
+      VersionOverride="[$(_HeadlessBannedApiAnalyzersVersion)]"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
+    <PackageReference
+      Update="AsyncFixer"
+      VersionOverride="[$(_HeadlessAsyncFixerVersion)]"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
+    <PackageReference
+      Update="Asyncify"
+      VersionOverride="[$(_HeadlessAsyncifyVersion)]"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
+    <PackageReference
+      Update="Microsoft.VisualStudio.Threading.Analyzers"
+      VersionOverride="[$(_HeadlessVisualStudioThreadingAnalyzersVersion)]"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
+    <PackageReference
+      Update="SmartAnalyzers.MultithreadingAnalyzer"
+      VersionOverride="[$(_HeadlessMultithreadingAnalyzerVersion)]"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
+    <PackageReference
+      Update="Roslynator.Analyzers"
+      VersionOverride="[$(_HeadlessRoslynatorAnalyzersVersion)]"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
+    <PackageReference
+      Update="ReflectionAnalyzers"
+      VersionOverride="[$(_HeadlessReflectionAnalyzersVersion)]"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
+    <PackageReference
+      Update="ErrorProne.NET.CoreAnalyzers"
+      VersionOverride="[$(_HeadlessErrorProneAnalyzersVersion)]"
+      PrivateAssets="none"
+      IncludeAssets="all"
+    />
+  </ItemGroup>
+</Project>

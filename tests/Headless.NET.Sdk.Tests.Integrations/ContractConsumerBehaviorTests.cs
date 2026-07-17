@@ -15,19 +15,6 @@ namespace Headless.NET.Sdk.Tests.Integrations;
 [Collection(nameof(HeadlessSdkPackageCollection))]
 public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixture)
 {
-    private static readonly string[] MandatoryAnalyzerPackages =
-    [
-        "AsyncFixer",
-        "Asyncify",
-        "ErrorProne.NET.CoreAnalyzers",
-        "Meziantou.Analyzer",
-        "Microsoft.CodeAnalysis.BannedApiAnalyzers",
-        "Microsoft.VisualStudio.Threading.Analyzers",
-        "ReflectionAnalyzers",
-        "Roslynator.Analyzers",
-        "SmartAnalyzers.MultithreadingAnalyzer",
-    ];
-
     private static readonly string[] RequiredMtpExtensions =
     [
         "Microsoft.Testing.Extensions.CodeCoverage",
@@ -67,7 +54,7 @@ public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixt
             additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["BannedApiConsumer.cs"] =
-                    "namespace ConsumerProject; public static class BannedApiConsumer { public static System.DateTime Value => System.DateTime.Now; }",
+                    "namespace ConsumerProject; public static class BannedApiConsumer { public static System.DateTime Value => System.DateTime.Now; public static System.Collections.ArrayList Values => new(); public static System.Reflection.Assembly? Find() => System.Reflection.Assembly.GetAssembly(typeof(BannedApiConsumer)); }",
             }
         );
 
@@ -77,9 +64,11 @@ public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixt
 
         Assert.True(result.ExitCode == 0, result.Output);
         Assert.Contains("RS0030", result.Output, StringComparison.Ordinal);
+        Assert.Contains("List<T>", result.Output, StringComparison.Ordinal);
+        Assert.Contains("Type.Assembly", result.Output, StringComparison.Ordinal);
 
         var assets = await File.ReadAllTextAsync(project.ProjectAssetsPath, TestContext.Current.CancellationToken);
-        foreach (var analyzerPackage in MandatoryAnalyzerPackages)
+        foreach (var analyzerPackage in HeadlessSdkPackageFixture.MandatoryAnalyzerPackageIds)
         {
             Assert.Contains($"\"{analyzerPackage}/", assets, StringComparison.Ordinal);
         }
@@ -189,7 +178,11 @@ public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixt
 
         var assets = await File.ReadAllTextAsync(project.ProjectAssetsPath, TestContext.Current.CancellationToken);
         Assert.DoesNotContain("\"Meziantou.Analyzer/", assets, StringComparison.Ordinal);
-        foreach (var analyzerPackage in MandatoryAnalyzerPackages.Where(package => package != "Meziantou.Analyzer"))
+        foreach (
+            var analyzerPackage in HeadlessSdkPackageFixture.MandatoryAnalyzerPackageIds.Where(package =>
+                package != "Meziantou.Analyzer"
+            )
+        )
         {
             Assert.Contains($"\"{analyzerPackage}/", assets, StringComparison.Ordinal);
         }
@@ -198,7 +191,7 @@ public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixt
     [Fact]
     public async Task should_restore_required_mtp_extensions_and_run_a_clean_consumer_on_first_restore()
     {
-        var xunitVersion = ReadCentralPackageVersion("xunit.v3.mtp-v2");
+        var xunitVersion = TestRepository.ReadCentralPackageVersion("xunit.v3.mtp-v2");
         var testSdkPackagePath = fixture.GetPackagePath("Headless.NET.Sdk.Test");
         var testSdkDependencies = ReadPackageDependencyVersions(testSdkPackagePath);
         var crashDumpVersion = testSdkDependencies["Microsoft.Testing.Extensions.CrashDump"];
@@ -500,7 +493,7 @@ public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixt
 
         var properties = await project.EvaluateHeadlessPropertiesAsync();
         var packageReferences = properties["PackageReferences"].Split('|', StringSplitOptions.RemoveEmptyEntries);
-        foreach (var analyzerPackage in MandatoryAnalyzerPackages)
+        foreach (var analyzerPackage in HeadlessSdkPackageFixture.MandatoryAnalyzerPackageIds)
         {
             Assert.Equal(
                 1,
@@ -557,6 +550,36 @@ public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixt
         Assert.True(result.ExitCode == 0, result.Output);
         Assert.Contains("RS0030", result.Output, StringComparison.Ordinal);
         await AssertMandatoryAnalyzersInAssetsAsync(project);
+
+        var preprocessedProjectPath = Path.Combine(project.RootDirectory, "preprocessed.xml");
+        var preprocess = await project.RunDotNetAsync(
+            $"msbuild {Quote(project.ProjectFilePath)} /pp:{Quote(preprocessedProjectPath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -nologo"
+        );
+        Assert.True(preprocess.ExitCode == 0, preprocess.Output);
+
+        var preprocessedProject = await File.ReadAllTextAsync(
+            preprocessedProjectPath,
+            TestContext.Current.CancellationToken
+        );
+        const string HeadlessTargetMarker = "<Target Name=\"HeadlessValidateTargetFramework\"";
+        const string MicrosoftTargetMarker = "<EnableDynamicLoading Condition=";
+        var headlessTargetIndex = preprocessedProject.IndexOf(HeadlessTargetMarker, StringComparison.Ordinal);
+        var microsoftTargetIndex = preprocessedProject.IndexOf(MicrosoftTargetMarker, StringComparison.Ordinal);
+
+        Assert.True(headlessTargetIndex >= 0, "The preprocessed project did not contain the Headless targets.");
+        Assert.True(microsoftTargetIndex >= 0, "The preprocessed project did not contain Microsoft.NET.Sdk.targets.");
+        Assert.True(
+            headlessTargetIndex < microsoftTargetIndex,
+            "Headless targets must evaluate before Microsoft.NET.Sdk.targets in additional-SDK mode."
+        );
+        Assert.Equal(
+            -1,
+            preprocessedProject.IndexOf(
+                HeadlessTargetMarker,
+                headlessTargetIndex + HeadlessTargetMarker.Length,
+                StringComparison.Ordinal
+            )
+        );
     }
 
     [Fact]
@@ -725,16 +748,19 @@ public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixt
             fixture.PackageVersion,
             fixture.PackageSourceDirectory,
             targetFramework: "net10.0",
-            includePackageReference: false
+            includePackageReference: true
         );
         await WriteProjectAsync(
             project,
             $$"""
-            <Project Sdk="Headless.NET.Sdk/{{fixture.PackageVersion}}">
+            <Project Sdk="Microsoft.NET.Sdk">
               <PropertyGroup>
                 <TargetFrameworks>net10.0;net10.0-windows</TargetFrameworks>
                 <Nullable>enable</Nullable>
               </PropertyGroup>
+              <ItemGroup>
+                <PackageReference Include="Headless.NET.Sdk" Version="{{fixture.PackageVersion}}" PrivateAssets="all" />
+              </ItemGroup>
               <Target
                 Name="WriteHeadlessOuterBuildContract"
                 BeforeTargets="DispatchToInnerBuilds"
@@ -804,8 +830,9 @@ public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixt
             appPath,
             $$"""
             #:sdk Headless.NET.Sdk@{{fixture.PackageVersion}}
-            #:property TargetFramework=net10.0
+            #:package Humanizer@2.14.1
 
+            using Humanizer;
             using System.Reflection;
 
             var sdkName = Assembly
@@ -813,7 +840,7 @@ public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixt
                 .GetCustomAttributes<AssemblyMetadataAttribute>()
                 .Single(attribute => attribute.Key == "Headless.NET.Sdk.SdkName")
                 .Value;
-            Console.WriteLine($"SDK={sdkName};JSON_TYPE={typeof(JsonSerializer).FullName};NOW={DateTime.Now:O}");
+            Console.WriteLine($"SDK={sdkName};JSON_TYPE={typeof(JsonSerializer).FullName};HUMANIZED={2.ToWords()};NOW={DateTime.Now:O}");
             """,
             Encoding.UTF8,
             TestContext.Current.CancellationToken
@@ -824,7 +851,46 @@ public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixt
         Assert.True(result.ExitCode == 0, result.Output);
         Assert.Contains("SDK=Headless.NET.Sdk", result.Output, StringComparison.Ordinal);
         Assert.Contains("JSON_TYPE=System.Text.Json.JsonSerializer", result.Output, StringComparison.Ordinal);
+        Assert.Contains("HUMANIZED=two", result.Output, StringComparison.Ordinal);
         Assert.Contains("RS0030", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_run_every_sdk_family_member_as_a_ci_file_app()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            targetFramework: "net10.0",
+            includePackageReference: false
+        );
+        foreach (var packageId in HeadlessSdkPackageFixture.PackageIds)
+        {
+            var appPath = Path.Combine(project.RootDirectory, $"{packageId}-contract-app.cs");
+            await File.WriteAllTextAsync(
+                appPath,
+                $$"""
+                #:sdk {{packageId}}@{{fixture.PackageVersion}}
+                #:property ContinuousIntegrationBuild=true
+
+                using System.Reflection;
+
+                var sdkName = Assembly
+                    .GetExecutingAssembly()
+                    .GetCustomAttributes<AssemblyMetadataAttribute>()
+                    .Single(attribute => attribute.Key == "Headless.NET.Sdk.SdkName")
+                    .Value;
+                Console.WriteLine($"SDK={sdkName}");
+                """,
+                Encoding.UTF8,
+                TestContext.Current.CancellationToken
+            );
+
+            var result = await project.RunDotNetAsync($"run --file {Quote(appPath)}");
+
+            Assert.True(result.ExitCode == 0, $"{packageId}:{Environment.NewLine}{result.Output}");
+            Assert.Contains($"SDK={packageId}", result.Output, StringComparison.Ordinal);
+        }
     }
 
     [Theory]
@@ -855,18 +921,6 @@ public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixt
             package.Entries,
             entry => string.Equals(entry.FullName, "_manifest/spdx_2.2/manifest.spdx.json", StringComparison.Ordinal)
         );
-    }
-
-    private static string ReadCentralPackageVersion(string packageId)
-    {
-        var repositoryRoot = TestRepository.FindRoot($"central package version for {packageId}");
-        var document = XDocument.Load(Path.Combine(repositoryRoot, "Directory.Packages.props"));
-        var package = document
-            .Descendants("PackageVersion")
-            .Single(element => string.Equals(element.Attribute("Include")?.Value, packageId, StringComparison.Ordinal));
-
-        return package.Attribute("Version")?.Value
-            ?? throw new InvalidOperationException($"PackageVersion {packageId} does not declare Version.");
     }
 
     private static IReadOnlyDictionary<string, string> ReadPackageDependencyVersions(string packagePath)
@@ -939,7 +993,7 @@ public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixt
     private static async Task AssertMandatoryAnalyzersInAssetsAsync(ConsumerProject project)
     {
         var assets = await File.ReadAllTextAsync(project.ProjectAssetsPath, TestContext.Current.CancellationToken);
-        foreach (var analyzerPackage in MandatoryAnalyzerPackages)
+        foreach (var analyzerPackage in HeadlessSdkPackageFixture.MandatoryAnalyzerPackageIds)
         {
             Assert.Contains($"\"{analyzerPackage}/", assets, StringComparison.Ordinal);
         }
@@ -956,7 +1010,7 @@ public sealed class ContractConsumerBehaviorTests(HeadlessSdkPackageFixture fixt
 
         Assert.Equal("Headless.NET.Sdk", properties["SdkName"]);
         var packageReferences = properties["PackageReferences"].Split('|', StringSplitOptions.RemoveEmptyEntries);
-        foreach (var analyzerPackage in MandatoryAnalyzerPackages)
+        foreach (var analyzerPackage in HeadlessSdkPackageFixture.MandatoryAnalyzerPackageIds)
         {
             Assert.Equal(
                 1,

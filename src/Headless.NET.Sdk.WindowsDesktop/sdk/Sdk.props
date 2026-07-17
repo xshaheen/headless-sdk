@@ -8,7 +8,7 @@
     <CustomBeforeDirectoryBuildProps Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
       >$(CustomBeforeDirectoryBuildProps);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.WindowsDesktop.props</CustomBeforeDirectoryBuildProps
     >
-    <BeforeMicrosoftNETSdkTargets Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
+    <BeforeMicrosoftNETSdkTargets
       >$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.WindowsDesktop.targets</BeforeMicrosoftNETSdkTargets
     >
   </PropertyGroup>
@@ -16,7 +16,14 @@
   <Import
     Project="Sdk.props"
     Sdk="Microsoft.NET.Sdk.WindowsDesktop"
-    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true' and '$(FileBasedProgram)' != 'true'"
+  />
+  <!-- File apps cannot author WPF or WinForms project items. Importing WindowsDesktop would only
+       emit NETSDK1137/NETSDK1106, so preserve the Headless identity over the base SDK. -->
+  <Import
+    Project="Sdk.props"
+    Sdk="Microsoft.NET.Sdk"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true' and '$(FileBasedProgram)' == 'true'"
   />
   <Import
     Project="$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.WindowsDesktop.props"

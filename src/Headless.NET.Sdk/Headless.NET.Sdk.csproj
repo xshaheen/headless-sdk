@@ -4,6 +4,7 @@
   </PropertyGroup>
 
   <Import Project="build\Headless.NET.Sdk.props" />
+  <Import Project="..\_shared\ExactAnalyzerDependencies.props" />
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -19,11 +20,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference
-      Update="Meziantou.Analyzer;Microsoft.CodeAnalysis.BannedApiAnalyzers;AsyncFixer;Asyncify;Microsoft.VisualStudio.Threading.Analyzers;SmartAnalyzers.MultithreadingAnalyzer;Roslynator.Analyzers;ReflectionAnalyzers;ErrorProne.NET.CoreAnalyzers"
-      PrivateAssets="none"
-      IncludeAssets="all"
-    />
     <PackageReference
       Include="Microsoft.Sbom.Targets"
       VersionOverride="[4.1.5]"

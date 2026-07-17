@@ -8,7 +8,7 @@
     <CustomBeforeDirectoryBuildProps Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
       >$(CustomBeforeDirectoryBuildProps);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.BlazorWebAssembly.props</CustomBeforeDirectoryBuildProps
     >
-    <BeforeMicrosoftNETSdkTargets Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
+    <BeforeMicrosoftNETSdkTargets
       >$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.BlazorWebAssembly.targets</BeforeMicrosoftNETSdkTargets
     >
   </PropertyGroup>
@@ -16,7 +16,14 @@
   <Import
     Project="Sdk.props"
     Sdk="Microsoft.NET.Sdk.BlazorWebAssembly"
-    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true' and '$(FileBasedProgram)' != 'true'"
+  />
+  <!-- File apps cannot author Blazor project items. The specialized SDK also assumes browser
+       workload references and PublishAot behavior that the generated file project cannot satisfy. -->
+  <Import
+    Project="Sdk.props"
+    Sdk="Microsoft.NET.Sdk"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true' and '$(FileBasedProgram)' == 'true'"
   />
   <Import
     Project="$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.BlazorWebAssembly.props"

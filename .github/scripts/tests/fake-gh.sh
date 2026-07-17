@@ -20,7 +20,13 @@ if [[ $arguments == *" --include "* ]]; then
     public)
       printf 'HTTP/2.0 200 OK\n\n{"visibility":"public"}\n'
       ;;
-    private-duplicate)
+    missing-visibility)
+      printf 'HTTP/2.0 200 OK\n\n{}\n'
+      ;;
+    unknown-visibility)
+      printf 'HTTP/2.0 200 OK\n\n{"visibility":"internal"}\n'
+      ;;
+    private-duplicate | private-duplicate-early)
       printf 'HTTP/2.0 200 OK\n\n{"visibility":"private"}\n'
       ;;
     *)
@@ -30,4 +36,9 @@ if [[ $arguments == *" --include "* ]]; then
   esac
 elif [[ $scenario == private-duplicate && $arguments == *"/second.package/versions"* ]]; then
   echo "1.0.0"
+elif [[ $scenario == private-duplicate-early && $arguments == *"/first.package/versions"* ]]; then
+  echo "1.0.0"
+  for version in {1..10000}; do
+    echo "0.0.${version}"
+  done
 fi

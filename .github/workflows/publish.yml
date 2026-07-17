@@ -10,13 +10,17 @@ permissions:
   contents: read
 
 concurrency:
-  group: publish-${{ github.ref }}
+  # Serialize the package family across tags and manually selected refs. Different refs can resolve
+  # to the same MinVer version, so per-ref concurrency would leave a preflight-to-push race.
+  group: publish-headless-sdk-packages
   cancel-in-progress: false
 
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: "true"
   DOTNET_NOLOGO: "true"
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+  DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: "true"
   CONFIGURATION: Release
   MINVERBUILDMETADATA: build.${{ github.run_number }}
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
@@ -66,13 +70,6 @@ jobs:
         run: |
           cd "${{ env.PACKAGES_DIR }}"
           shopt -s nullglob
-          artifacts=(./*.nupkg ./*.snupkg)
-          if [ ${#artifacts[@]} -eq 0 ]; then
-            echo "No package artifacts found."
-            exit 1
-          fi
-          sha256sum "${artifacts[@]}" | sort --key=2 > SHA256SUMS
-
           package_ids=(
             Headless.NET.Sdk
             Headless.NET.Sdk.Web
@@ -82,10 +79,16 @@ jobs:
             Headless.NET.Sdk.WindowsDesktop
           )
           nupkgs=(./*.nupkg)
+          snupkgs=(./*.snupkg)
           if [ ${#nupkgs[@]} -ne ${#package_ids[@]} ]; then
             echo "Expected exactly ${#package_ids[@]} package artifacts; found ${#nupkgs[@]}."
             exit 1
           fi
+          if [ ${#snupkgs[@]} -ne 0 ]; then
+            echo "Unexpected symbol packages found; the release contract uses embedded symbols."
+            exit 1
+          fi
+          sha256sum "${nupkgs[@]}" | sort --key=2 > SHA256SUMS
 
           : > PACKAGE_MANIFEST.tsv
           for package_id in "${package_ids[@]}"; do
@@ -117,9 +120,15 @@ jobs:
           path: ${{ env.PACKAGES_DIR }}
           if-no-files-found: error
 
+  platform-smoke:
+    needs: build
+    uses: ./.github/workflows/platform-smoke.yml
+
   publish-github-packages:
     name: Publish GitHub Packages
-    needs: build
+    needs:
+      - build
+      - platform-smoke
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -129,6 +138,16 @@ jobs:
       url: https://github.com/xshaheen/headless-sdk/packages
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          global-json-file: ./global.json
+
       - name: Download packages
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -163,14 +182,6 @@ jobs:
               --api-key "$GH_TOKEN"
           done
 
-          symbols=(./artifacts/packages-results/*.snupkg)
-
-          for symbol in "${symbols[@]}"; do
-            dotnet nuget push "$symbol" \
-              --source "https://nuget.pkg.github.com/xshaheen/index.json" \
-              --api-key "$GH_TOKEN"
-          done
-
           while IFS=$'\t' read -r package_id version; do
             api_name="${package_id,,}"
             verified=false
@@ -179,14 +190,18 @@ jobs:
             # never retry the push itself or weaken duplicate-version protection.
             for attempt in {1..12}; do
               if metadata="$(gh api "/user/packages/nuget/${api_name}" 2>/dev/null)"; then
-                visibility="$(jq -r '.visibility' <<<"$metadata")"
-                if [ "$visibility" = "public" ]; then
-                  echo "${package_id} became public; release set is not internal-only."
+                if ! visibility="$(jq -er '.visibility | select(type == \"string\")' <<<"$metadata")"; then
+                  echo "GitHub Packages returned invalid visibility for ${package_id}."
+                  exit 1
+                fi
+                if [ "$visibility" != "private" ]; then
+                  echo "${package_id} visibility is '${visibility}', not private; release set is not internal-only."
                   exit 1
                 fi
 
-                if gh api --paginate "/user/packages/nuget/${api_name}/versions?per_page=100" \
-                  --jq ".[] | select(.name == \"${version}\") | .name" | grep -Fxq "$version"; then
+                if versions="$(gh api --paginate "/user/packages/nuget/${api_name}/versions?per_page=100" \
+                  --jq ".[] | select(.name == \"${version}\") | .name" 2>/dev/null)" \
+                  && grep -Fxq "$version" <<<"$versions"; then
                   verified=true
                   break
                 fi

@@ -64,6 +64,9 @@
       >true</RestoreSerializeGlobalProperties
     >
 
+    <!-- Run the Microsoft package-validation checks for packable projects by default. -->
+    <EnablePackageValidation Condition="'$(EnablePackageValidation)' == ''">true</EnablePackageValidation>
+
   </PropertyGroup>
 
   <PropertyGroup

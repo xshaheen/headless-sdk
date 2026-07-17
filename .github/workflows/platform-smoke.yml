@@ -1,0 +1,76 @@
+name: Platform smoke
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: "true"
+  DOTNET_NOLOGO: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+  DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: "true"
+  CONFIGURATION: Release
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+jobs:
+  platform-smoke:
+    name: ${{ matrix.name }} smoke
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+            test_class: "*WindowsPlatformContractTests"
+          - name: macOS
+            os: macos-latest
+            test_class: "*MacOsPlatformContractTests"
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          global-json-file: ./global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', 'global.json', 'nuget.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Download immutable packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: packages
+          path: ./artifacts/packages-results
+
+      - name: Restore test harness
+        run: dotnet restore tests/Headless.NET.Sdk.Tests.Integrations/Headless.NET.Sdk.Tests.Integrations.csproj
+
+      - name: Build test harness
+        run: dotnet build tests/Headless.NET.Sdk.Tests.Integrations/Headless.NET.Sdk.Tests.Integrations.csproj --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -v:minimal -nologo
+
+      - name: Run platform contract tests
+        env:
+          HEADLESS_PACKAGES_DIR: ${{ github.workspace }}/artifacts/packages-results
+        run: dotnet test tests/Headless.NET.Sdk.Tests.Integrations/Headless.NET.Sdk.Tests.Integrations.csproj --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build -- --filter-class "${{ matrix.test_class }}" --minimum-expected-tests 1 --report-trx --results-directory ./artifacts/test-results/platform
+
+      - name: Upload platform diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: platform-${{ matrix.name }}-test-results
+          path: ./artifacts/test-results/platform
+          if-no-files-found: warn

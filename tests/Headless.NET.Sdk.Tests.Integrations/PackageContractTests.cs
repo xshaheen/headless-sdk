@@ -63,43 +63,20 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
         "sdk/Sdk.targets",
     ];
 
-    private static readonly string[] PackageIds =
-    [
-        "Headless.NET.Sdk",
-        "Headless.NET.Sdk.Web",
-        "Headless.NET.Sdk.Test",
-        "Headless.NET.Sdk.Razor",
-        "Headless.NET.Sdk.BlazorWebAssembly",
-        "Headless.NET.Sdk.WindowsDesktop",
-    ];
-
-    private static readonly string[] MandatoryAnalyzerPackages =
-    [
-        "AsyncFixer",
-        "Asyncify",
-        "ErrorProne.NET.CoreAnalyzers",
-        "Meziantou.Analyzer",
-        "Microsoft.CodeAnalysis.BannedApiAnalyzers",
-        "Microsoft.VisualStudio.Threading.Analyzers",
-        "ReflectionAnalyzers",
-        "Roslynator.Analyzers",
-        "SmartAnalyzers.MultithreadingAnalyzer",
-    ];
-
     private static readonly Dictionary<string, string> BaseDependencySnapshot = new Dictionary<string, string>(
         StringComparer.Ordinal
     )
     {
-        ["AsyncFixer"] = "2.1.0",
-        ["Asyncify"] = "0.9.7",
-        ["ErrorProne.NET.CoreAnalyzers"] = "0.1.2",
-        ["Meziantou.Analyzer"] = "3.0.75",
-        ["Microsoft.CodeAnalysis.BannedApiAnalyzers"] = "4.14.0",
+        ["AsyncFixer"] = "[2.1.0]",
+        ["Asyncify"] = "[0.9.7]",
+        ["ErrorProne.NET.CoreAnalyzers"] = "[0.1.2]",
+        ["Meziantou.Analyzer"] = "[3.0.75]",
+        ["Microsoft.CodeAnalysis.BannedApiAnalyzers"] = "[4.14.0]",
         ["Microsoft.Sbom.Targets"] = "[4.1.5]",
-        ["Microsoft.VisualStudio.Threading.Analyzers"] = "17.14.15",
-        ["ReflectionAnalyzers"] = "0.3.1",
-        ["Roslynator.Analyzers"] = "4.15.0",
-        ["SmartAnalyzers.MultithreadingAnalyzer"] = "1.1.31",
+        ["Microsoft.VisualStudio.Threading.Analyzers"] = "[17.14.15]",
+        ["ReflectionAnalyzers"] = "[0.3.1]",
+        ["Roslynator.Analyzers"] = "[4.15.0]",
+        ["SmartAnalyzers.MultithreadingAnalyzer"] = "[1.1.31]",
     };
 
     private static readonly Dictionary<string, string> TestDependencySnapshot = new Dictionary<string, string>(
@@ -117,7 +94,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
     [Fact]
     public void should_match_the_exact_package_entry_snapshots()
     {
-        foreach (var packageId in PackageIds)
+        foreach (var packageId in HeadlessSdkPackageFixture.PackageIds)
         {
             using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
             var actual = package
@@ -137,7 +114,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
     [Fact]
     public void should_match_the_exact_nuspec_contract_snapshots()
     {
-        foreach (var packageId in PackageIds)
+        foreach (var packageId in HeadlessSdkPackageFixture.PackageIds)
         {
             using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
             var nuspec = ReadNuspec(package, packageId);
@@ -174,23 +151,18 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
                     element.Name.LocalName == "packageType"
                     && string.Equals(element.Attribute("name")?.Value, "MSBuildSdk", StringComparison.Ordinal)
             );
-            Assert.Contains(
-                metadata.Descendants(),
-                element =>
-                    element.Name.LocalName == "repository"
-                    && string.Equals(
-                        element.Attribute("url")?.Value,
-                        "https://github.com/xshaheen/headless-sdk.git",
-                        StringComparison.Ordinal
-                    )
-            );
+            var repository = Assert.Single(metadata.Descendants(), element => element.Name.LocalName == "repository");
+            Assert.Equal("git", repository.Attribute("type")?.Value);
+            Assert.Equal("https://github.com/xshaheen/headless-sdk.git", repository.Attribute("url")?.Value);
+            Assert.False(string.IsNullOrWhiteSpace(repository.Attribute("branch")?.Value));
+            Assert.False(string.IsNullOrWhiteSpace(repository.Attribute("commit")?.Value));
         }
     }
 
     [Fact]
     public void should_ship_only_direct_build_assets()
     {
-        foreach (var packageId in PackageIds)
+        foreach (var packageId in HeadlessSdkPackageFixture.PackageIds)
         {
             using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
 
@@ -206,14 +178,35 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
     }
 
     [Fact]
+    public void should_hook_build_targets_before_microsoft_targets_in_every_sdk_wrapper()
+    {
+        foreach (var packageId in HeadlessSdkPackageFixture.PackageIds)
+        {
+            using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
+            var sdkProps = package.GetEntry("sdk/Sdk.props");
+            Assert.NotNull(sdkProps);
+
+            using var stream = sdkProps.Open();
+            var document = XDocument.Load(stream);
+            var hook = Assert.Single(
+                document.Descendants(),
+                element => element.Name.LocalName == "BeforeMicrosoftNETSdkTargets"
+            );
+
+            Assert.Null(hook.Attribute("Condition"));
+            Assert.Contains($"../build/{packageId}.targets", hook.Value, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void should_make_mandatory_quality_and_optional_sbom_dependencies_restore_visible()
     {
-        foreach (var packageId in PackageIds)
+        foreach (var packageId in HeadlessSdkPackageFixture.PackageIds)
         {
             using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
             var dependencies = ReadDependencies(package, packageId);
 
-            foreach (var analyzerPackage in MandatoryAnalyzerPackages)
+            foreach (var analyzerPackage in HeadlessSdkPackageFixture.MandatoryAnalyzerPackageIds)
             {
                 Assert.Contains(analyzerPackage, dependencies);
             }

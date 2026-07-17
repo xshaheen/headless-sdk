@@ -24,6 +24,18 @@ if output=$(GH_BIN="$fake_gh" GH_FAKE_SCENARIO=public bash "$preflight" "$test_r
 fi
 grep -Fq "already public" <<<"$output"
 
+if output=$(GH_BIN="$fake_gh" GH_FAKE_SCENARIO=missing-visibility bash "$preflight" "$test_root/one-package.tsv" 2>&1); then
+  echo "Expected missing package visibility to fail preflight."
+  exit 1
+fi
+grep -Fq "invalid visibility" <<<"$output"
+
+if output=$(GH_BIN="$fake_gh" GH_FAKE_SCENARIO=unknown-visibility bash "$preflight" "$test_root/one-package.tsv" 2>&1); then
+  echo "Expected unsupported package visibility to fail preflight."
+  exit 1
+fi
+grep -Fq "expected private" <<<"$output"
+
 if output=$(
   GH_BIN="$fake_gh" GH_FAKE_SCENARIO=private-duplicate \
     bash "$preflight" "$test_root/two-packages.tsv" 2>&1
@@ -32,5 +44,14 @@ if output=$(
   exit 1
 fi
 grep -Fq "Second.Package 1.0.0 already exists" <<<"$output"
+
+if output=$(
+  GH_BIN="$fake_gh" GH_FAKE_SCENARIO=private-duplicate-early \
+    bash "$preflight" "$test_root/one-package.tsv" 2>&1
+); then
+  echo "Expected an early duplicate in a long version list to fail preflight."
+  exit 1
+fi
+grep -Fq "First.Package 1.0.0 already exists" <<<"$output"
 
 echo "GitHub package preflight tests passed."

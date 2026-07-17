@@ -40,6 +40,14 @@ Authenticate to GitHub Packages with an account or token that can read the packa
     <add key="github" value="https://nuget.pkg.github.com/xshaheen/index.json" />
     <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
   </packageSources>
+  <packageSourceMapping>
+    <packageSource key="github">
+      <package pattern="Headless.NET.Sdk*" />
+    </packageSource>
+    <packageSource key="nuget.org">
+      <package pattern="*" />
+    </packageSource>
+  </packageSourceMapping>
   <auditSources>
     <clear />
     <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
@@ -48,6 +56,9 @@ Authenticate to GitHub Packages with an account or token that can read the packa
 ```
 
 Do not commit credentials to the repository. Supply them through the supported NuGet credential provider or the CI secret store.
+The more-specific `Headless.NET.Sdk*` mapping keeps the family on GitHub Packages; the `*` fallback
+routes all other direct and transitive packages to nuget.org and satisfies Central Package Management's
+multi-source mapping requirement.
 
 ## Consumption modes
 
@@ -170,6 +181,12 @@ dotnet run App.cs
 
 File-based apps always receive the shipped file-app analyzer profile. The relaxation is automatic because the single-file source model differs from a normal project; there is no Headless opt-out switch for it.
 
+All six family members accept `#:sdk`. The Blazor WebAssembly and Windows Desktop wrappers preserve
+their Headless identity over the base Microsoft SDK for file apps because a single source file cannot
+author Blazor, WPF, or Windows Forms project items. This also avoids browser workload, Native AOT, and
+legacy Windows Desktop assumptions that the generated file project cannot satisfy. Normal project
+consumption retains the specialized Microsoft SDKs and their full behavior.
+
 ## Build and analysis baseline
 
 The SDK establishes nullable reference types, implicit usings, latest C#, deterministic output, static-graph restore, XML documentation output, `AnalysisLevel=latest-all`, all analyzer categories, and code-style enforcement.
@@ -188,7 +205,51 @@ The following analyzer packages are injected as private, implicit dependencies f
 
 The bundled general and Newtonsoft.Json banned-symbol lists are also mandatory. This is a deliberate house policy, not a convenience default. Rule severities and narrow project-type relaxations remain defined by the shipped analyzer configurations.
 
+The SDK owns the versions of all nine implicit analyzer references. Central Package Management
+consumers must not add `PackageVersion` entries for those analyzer IDs. SDK-form consumption rejects
+them as SDK-defined implicit references with NU1009; PackageReference consumption rejects conflicting
+central versions against the package family's exact dependency ranges.
+
 Headless adds its extra global usings only when `ImplicitUsings` is `enable` or `true`. Setting `ImplicitUsings=disable` prevents both the Microsoft implicit-usings feature and the Headless additions.
+
+### Supported customization properties
+
+The following properties are the supported consumer configuration surface. An empty value receives
+the listed default; explicit values win unless the behavior is identified as mandatory below.
+
+| Property | Default | Contract |
+| --- | --- | --- |
+| `DisableDocumentationWarnings` | `true` | Set `false` to report CS1573 and CS1591 while keeping XML documentation generation enabled. |
+| `HeadlessEnforceConfigureAwait` | `false` | Set `true` to enable CA2007 through the shipped analyzer profile. |
+| `HeadlessEmitInternalsVisibleToAttributes` | `true` | Set `false` when the project owns its friend-assembly list. |
+| `HeadlessEmitClsCompliantAttribute` | `true` | Set `false` when the project supplies its own `CLSCompliant` attribute. |
+| `HeadlessEnableStrictSystemTextJsonRuntimeDefaults` | `false` | Enables the two process-wide strict System.Text.Json runtime switches. |
+| `HeadlessSymbolFormat` | `embedded` (`none` for Blazor WebAssembly) | Accepts `embedded`, `snupkg`, or `none`. |
+| `EnablePackageValidation` | `true` (`false` for `PackAsTool`) | Enables Microsoft package validation for ordinary packages; Microsoft disables API compatibility validation for tool packages. Consumers may explicitly disable it. |
+| `GenerateSBOM` | `false` | Generates an SPDX SBOM inside the package when enabled. |
+| `IsTestHarnessProject` | `false` | Applies test-library defaults without creating an executable test host. |
+| `EnableCodeCoverage` | `true` on CI, otherwise unset | Adds MTP coverage arguments when `true`. |
+| `EnableDefaultTestSettings` | enabled unless `false` | Set `false` to own all MTP command-line defaults. |
+| `OptimizeTestRun` | enabled unless `false` | Set `false` to keep analyzers enabled during MTP's test-build phase. |
+| `DisableSupportPackageInformation` | `false` | Set `true` to opt out of Headless package metadata and symbol policy. |
+| `SearchReadmeFileAbove` | `false` | Searches parent directories for a package README. |
+| `DisableReadme` | `false` | Prevents automatic package README discovery and packing. |
+| `DisablePackageLogo` | `false` | Prevents automatic `logo.png` discovery and packing. |
+| `DisableSupportCopyright` | `false` | Prevents Headless copyright generation. |
+| `DisableSupportEmbedBinlog` | `false` | Prevents Headless configuration inputs from being embedded in binlogs. |
+| `DisableSupportWebContainer` | `false` | Prevents Web container defaults from being evaluated. |
+| `HeadlessSuppressNonPackablePackWarning` | `true` | Set `false` to retain the Microsoft warning for packing a non-packable project. |
+| `HeadlessConfigFilesDir` | solution directory, then project directory | Overrides the explicit scaffold target's destination. |
+| `HeadlessCopyDefaultConfigFilesToSolutionDir` | `false` | Selects all scaffold files when the target is explicitly invoked. |
+| `HeadlessCopyEditorConfigToSolutionDir` | `false` | Selects only `.editorconfig`. |
+| `HeadlessCopyCSharpierIgnoreToSolutionDir` | master selector | Selects only `.csharpierignore`. |
+| `HeadlessCopyGitIgnoreToSolutionDir` | master selector | Selects only `.gitignore`. |
+| `HeadlessCopyGitAttributesToSolutionDir` | master selector | Selects only `.gitattributes`. |
+| `HeadlessOverwriteConfigFiles` | `false` | Allows the explicit scaffold target to replace existing files. |
+
+The explicit target framework, .NET 10 compatibility check, nine analyzer packages, analyzer and
+banned-symbol configuration, CI warning gate, NuGet audit policy, and SDK-owned MTP extension
+versions are mandatory policy. Legacy analyzer/configuration opt-out names do not disable them.
 
 ## CI, restore, and vulnerability policy
 
@@ -208,7 +269,7 @@ Locked restore is enforced on CI only when the project has opted in by committin
 
 ## Test SDK contract
 
-`Headless.NET.Sdk.Test` is Microsoft Testing Platform only. It defaults test hosts to `OutputType=Exe`, forces `IsTestProject=true`, `IsPackable=false`, and `IsPublishable=false`, and supplies restore-visible MTP extensions for crash dumps, hang dumps, hot reload, retry, TRX reporting, and coverage. Default execution includes TRX output, crash and hang dumps, and a minimum expected test count; coverage is enabled on CI.
+`Headless.NET.Sdk.Test` is Microsoft Testing Platform only. It defaults test hosts to `OutputType=Exe`, `IsTestProject=true`, `IsPackable=false`, and `IsPublishable=false`, and supplies restore-visible MTP extensions for crash dumps, hang dumps, hot reload, retry, TRX reporting, and coverage. Default execution includes TRX output, crash and hang dumps, and a minimum expected test count; coverage is enabled on CI.
 
 The test framework remains consumer-selected. For example:
 
@@ -224,7 +285,7 @@ The test framework remains consumer-selected. For example:
 </Project>
 ```
 
-The Test SDK owns the versions of its six implicit MTP extension references. Central Package Management consumers must not add `PackageVersion` entries for those extension IDs; NuGet rejects central versions for SDK-defined implicit references. The consumer's test-framework version remains centrally manageable.
+The Test SDK owns the versions of its six implicit MTP extension references. Central Package Management consumers must not add `PackageVersion` entries for those extension IDs; NuGet rejects central versions for SDK-defined implicit references with NU1009. The consumer's test-framework version remains centrally manageable.
 
 VSTest classification, `Microsoft.NET.Test.Sdk`, and VSTest logger defaults are not part of this contract. Shared test harness libraries can use `IsTestHarnessProject=true` to receive test analysis defaults without becoming executable test hosts.
 
@@ -294,7 +355,7 @@ HEADLESS_PACKAGES_DIR="$PWD/artifacts/packages-results" \
   dotnet test headless-sdk.slnx --configuration Release --no-restore --no-build
 ```
 
-The publish workflow promotes the exact packages produced by its build job, verifies SHA-256 hashes before upload, and fails on duplicate package versions. Publishing targets GitHub Packages only.
+The publish workflow promotes the exact packages produced by its build job, verifies SHA-256 hashes before upload, requires Linux, Windows, and macOS validation, and fails on duplicate package versions. Publishing targets GitHub Packages only. GitHub Packages does not provide an atomic multi-package transaction: if a release stops after publishing only part of the family, abandon that version, fix the cause, and publish a new version. Never retry the same partial version or bypass the duplicate-version preflight.
 
 ## Repository layout
 

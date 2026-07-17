@@ -16,7 +16,7 @@
     <CustomBeforeDirectoryBuildProps Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
       >$(CustomBeforeDirectoryBuildProps);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.props</CustomBeforeDirectoryBuildProps
     >
-    <BeforeMicrosoftNETSdkTargets Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
+    <BeforeMicrosoftNETSdkTargets
       >$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.targets</BeforeMicrosoftNETSdkTargets
     >
   </PropertyGroup>

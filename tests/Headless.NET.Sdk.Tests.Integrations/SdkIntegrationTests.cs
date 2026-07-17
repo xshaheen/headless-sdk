@@ -559,8 +559,19 @@ class Foo { }
         Assert.Equal("Headless.NET.Sdk", properties["HeadlessSdkName"]);
         Assert.Equal("Default", properties["HeadlessSdkProjectType"]);
         Assert.Equal("true", properties["IsPackable"]);
+        Assert.Equal("false", properties["EnablePackageValidation"]);
         Assert.Equal("true", properties["HeadlessEmitInternalsVisibleToAttributes"]);
         Assert.Contains("ConsumerProject.Tests.Unit", properties["InternalsVisibleTo"], StringComparison.Ordinal);
+
+        await using var libraryProject = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory
+        );
+        var libraryDefaults = await libraryProject.EvaluateHeadlessPropertiesAsync();
+        Assert.Equal("true", libraryDefaults["EnablePackageValidation"]);
+
+        var overrides = await libraryProject.EvaluateHeadlessPropertiesAsync("-p:EnablePackageValidation=false");
+        Assert.Equal("false", overrides["EnablePackageValidation"]);
     }
 
     [Fact]
@@ -1001,17 +1012,7 @@ public static class JsonConsumer
             useCentralPackageManagement: true,
             additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["Directory.Packages.props"] = $$"""
-                <Project>
-                  <PropertyGroup>
-                    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-                    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-                  </PropertyGroup>
-                  <ItemGroup>
-                    {{packageVersionItems}}
-                  </ItemGroup>
-                </Project>
-                """,
+                ["Directory.Packages.props"] = CreateCentralPackageManagementProps(packageVersionItems),
             }
         );
 
@@ -1021,6 +1022,90 @@ public static class JsonConsumer
 
         Assert.True(result.ExitCode == 0, result.Output);
         Assert.DoesNotContain("NU1008", result.Output, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task should_enforce_test_sdk_owned_mtp_versions_with_central_package_management(
+        bool addCentralExtensionVersion
+    )
+    {
+        var centralExtension = addCentralExtensionVersion
+            ? $@"<PackageVersion Include=""Microsoft.Testing.Extensions.CrashDump"" Version=""{TestRepository.ReadCentralPackageVersion("Microsoft.Testing.Extensions.CrashDump")}"" />"
+            : string.Empty;
+
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
+            includePackageReference: false,
+            useCentralPackageManagement: true,
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Directory.Packages.props"] = CreateCentralPackageManagementProps(centralExtension),
+            }
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"restore {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        if (addCentralExtensionVersion)
+        {
+            Assert.NotEqual(0, result.ExitCode);
+            Assert.True(result.Output.Contains("NU1009", StringComparison.Ordinal), result.Output);
+        }
+        else
+        {
+            Assert.True(result.ExitCode == 0, result.Output);
+            Assert.DoesNotContain("NU1009", result.Output, StringComparison.Ordinal);
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task should_reject_central_overrides_for_sdk_owned_analyzers(bool useSdkConsumption)
+    {
+        var headlessVersion = useSdkConsumption
+            ? string.Empty
+            : $@"<PackageVersion Include=""Headless.NET.Sdk"" Version=""{fixture.PackageVersion}"" />";
+        var analyzerVersion = useSdkConsumption ? "3.0.75" : "1.0.102";
+        var centralVersions =
+            $@"{headlessVersion}
+<PackageVersion Include=""Meziantou.Analyzer"" Version=""{analyzerVersion}"" />";
+
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: useSdkConsumption ? $"Headless.NET.Sdk/{fixture.PackageVersion}" : "Microsoft.NET.Sdk",
+            includePackageReference: !useSdkConsumption,
+            useCentralPackageManagement: true,
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Directory.Packages.props"] = CreateCentralPackageManagementProps(centralVersions),
+            }
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"restore {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -p:RestoreIgnoreFailedSources=true"
+        );
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("Meziantou.Analyzer", result.Output, StringComparison.Ordinal);
+        if (useSdkConsumption)
+        {
+            Assert.True(result.Output.Contains("NU1009", StringComparison.Ordinal), result.Output);
+        }
+        else
+        {
+            Assert.True(
+                result.Output.Contains("NU1107", StringComparison.Ordinal)
+                    || result.Output.Contains("NU1109", StringComparison.Ordinal),
+                result.Output
+            );
+        }
     }
 
     [Fact]
@@ -1629,6 +1714,19 @@ public static class JsonConsumer
 
     private static string NormalizeLineEndings(string value) => value.ReplaceLineEndings("\n");
 
+    private static string CreateCentralPackageManagementProps(string packageVersionItems) =>
+        $$"""
+            <Project>
+              <PropertyGroup>
+                <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+                <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+              </PropertyGroup>
+              <ItemGroup>
+                {{packageVersionItems}}
+              </ItemGroup>
+            </Project>
+            """;
+
     private static void AssertImplicitAnalyzerReference(
         IReadOnlyDictionary<string, XElement> packageReferences,
         string packageId
@@ -1682,15 +1780,28 @@ public static class JsonConsumer
 
 public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
 {
-    private static readonly string[] PackageIds =
-    [
-        "Headless.NET.Sdk",
-        "Headless.NET.Sdk.Web",
-        "Headless.NET.Sdk.Test",
-        "Headless.NET.Sdk.Razor",
-        "Headless.NET.Sdk.BlazorWebAssembly",
-        "Headless.NET.Sdk.WindowsDesktop",
-    ];
+    internal static IReadOnlyList<string> MandatoryAnalyzerPackageIds { get; } =
+        [
+            "AsyncFixer",
+            "Asyncify",
+            "ErrorProne.NET.CoreAnalyzers",
+            "Meziantou.Analyzer",
+            "Microsoft.CodeAnalysis.BannedApiAnalyzers",
+            "Microsoft.VisualStudio.Threading.Analyzers",
+            "ReflectionAnalyzers",
+            "Roslynator.Analyzers",
+            "SmartAnalyzers.MultithreadingAnalyzer",
+        ];
+
+    internal static IReadOnlyList<string> PackageIds { get; } =
+        [
+            "Headless.NET.Sdk",
+            "Headless.NET.Sdk.Web",
+            "Headless.NET.Sdk.Test",
+            "Headless.NET.Sdk.Razor",
+            "Headless.NET.Sdk.BlazorWebAssembly",
+            "Headless.NET.Sdk.WindowsDesktop",
+        ];
 
     private readonly Dictionary<string, string> packagePaths = new(StringComparer.Ordinal);
     private bool deletePackageRootDirectory;
@@ -1998,6 +2109,17 @@ public sealed class Class1;
         return new BuildDiagnosticsResult(result.ExitCode, result.Output, binLogFiles, sarif);
     }
 
+    public async Task<DotNetCommandResult> BuildWithBinLogAsync(string additionalArguments = "")
+    {
+        if (File.Exists(BinLogPath))
+        {
+            File.Delete(BinLogPath);
+        }
+
+        var argumentsSuffix = string.IsNullOrWhiteSpace(additionalArguments) ? string.Empty : $" {additionalArguments}";
+        return await RunDotNetAsync($"build {Quote(ProjectFilePath)}{argumentsSuffix} /bl:{Quote(BinLogPath)}");
+    }
+
     public async Task<Dictionary<string, string>> EvaluateHeadlessPropertiesAsync(string additionalArguments = "")
     {
         var argumentsSuffix = string.IsNullOrWhiteSpace(additionalArguments) ? string.Empty : $" {additionalArguments}";
@@ -2045,6 +2167,14 @@ public sealed class Class1;
                 <add key="local" value="{{packageSourceDirectory}}" />
                 <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
               </packageSources>
+              <packageSourceMapping>
+                <packageSource key="local">
+                  <package pattern="Headless.NET.Sdk*" />
+                </packageSource>
+                <packageSource key="nuget.org">
+                  <package pattern="*" />
+                </packageSource>
+              </packageSourceMapping>
             </configuration>
             """;
     }
@@ -2157,7 +2287,7 @@ public sealed class Class1;
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
-                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);IsTestHarnessProject=$(IsTestHarnessProject);IsTestProject=$(IsTestProject);IsTestingPlatformApplication=$(IsTestingPlatformApplication);GenerateRuntimeConfigurationFiles=$(GenerateRuntimeConfigurationFiles);GenerateSBOM=$(GenerateSBOM);IsPackable=$(IsPackable);NoWarn=$(_HeadlessEvaluatedNoWarn);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);DebugType=$(DebugType);HeadlessSymbolFormat=$(HeadlessSymbolFormat);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);IsTestHarnessProject=$(IsTestHarnessProject);IsTestProject=$(IsTestProject);IsTestingPlatformApplication=$(IsTestingPlatformApplication);GenerateRuntimeConfigurationFiles=$(GenerateRuntimeConfigurationFiles);GenerateSBOM=$(GenerateSBOM);IsPackable=$(IsPackable);EnablePackageValidation=$(EnablePackageValidation);NoWarn=$(_HeadlessEvaluatedNoWarn);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);DebugType=$(DebugType);HeadlessSymbolFormat=$(HeadlessSymbolFormat);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
                   Overwrite="true"
                 />
               </Target>
@@ -2176,6 +2306,18 @@ public sealed class Class1;
 
 internal static class TestRepository
 {
+    public static string ReadCentralPackageVersion(string packageId)
+    {
+        var repositoryRoot = FindRoot($"central package version for {packageId}");
+        var document = XDocument.Load(Path.Combine(repositoryRoot, "Directory.Packages.props"));
+        var package = document
+            .Descendants("PackageVersion")
+            .Single(element => string.Equals(element.Attribute("Include")?.Value, packageId, StringComparison.Ordinal));
+
+        return package.Attribute("Version")?.Value
+            ?? throw new InvalidOperationException($"PackageVersion {packageId} does not declare Version.");
+    }
+
     public static string FindRoot(string purpose)
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
@@ -2201,16 +2343,18 @@ internal static class DotNetCommandEnvironment
         var environment = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1",
+            ["DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE"] = "true",
             ["DOTNET_CLI_HOME"] = Path.Combine(tempRoot, "dotnet-cli-home"),
             ["DOTNET_NOLOGO"] = "1",
             ["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1",
+            ["DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK"] = "true",
             ["NUGET_PACKAGES"] = Path.Combine(tempRoot, ".nuget-packages"),
             ["NUGET_HTTP_CACHE_PATH"] = Path.Combine(tempRoot, ".nuget-http-cache"),
         };
 
-        foreach (var value in environment.Values)
+        foreach (var pathKey in new[] { "DOTNET_CLI_HOME", "NUGET_PACKAGES", "NUGET_HTTP_CACHE_PATH" })
         {
-            Directory.CreateDirectory(value);
+            Directory.CreateDirectory(environment[pathKey]);
         }
 
         AddNeutralBuildEnvironment(environment);
