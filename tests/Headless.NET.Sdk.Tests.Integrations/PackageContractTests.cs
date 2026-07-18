@@ -11,6 +11,9 @@ namespace Headless.NET.Sdk.Tests.Integrations;
 [Collection(nameof(HeadlessSdkPackageCollection))]
 public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
 {
+    private const string PackageDescription =
+        "An opinionated .NET 10 MSBuild SDK family for consistent project evaluation, mandatory analyzer and banned-API policy, CI quality gates, packaging defaults, and Microsoft Testing Platform support. Distributed through GitHub Packages; no license is currently granted.";
+
     private static readonly string[] SharedPackageEntries =
     [
         "_rels/.rels",
@@ -142,6 +145,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
             );
             Assert.Equal(packageId, MetadataValue(metadata, "id"));
             Assert.Equal("Mahmoud Shaheen", MetadataValue(metadata, "authors"));
+            Assert.Equal(PackageDescription, MetadataValue(metadata, "description"));
             Assert.Equal("README.md", MetadataValue(metadata, "readme"));
             Assert.Equal("logo.png", MetadataValue(metadata, "icon"));
             Assert.Null(metadata.Elements().SingleOrDefault(element => element.Name.LocalName == "license"));
@@ -156,6 +160,23 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
             Assert.Equal("https://github.com/xshaheen/headless-sdk.git", repository.Attribute("url")?.Value);
             Assert.False(string.IsNullOrWhiteSpace(repository.Attribute("branch")?.Value));
             Assert.False(string.IsNullOrWhiteSpace(repository.Attribute("commit")?.Value));
+        }
+    }
+
+    [Fact]
+    public void should_describe_every_package_as_available_to_compatible_dotnet_projects()
+    {
+        foreach (var packageId in HeadlessSdkPackageFixture.PackageIds)
+        {
+            using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
+            var readme = package.GetEntry("README.md");
+            Assert.NotNull(readme);
+
+            using var reader = new StreamReader(readme.Open());
+            var content = reader.ReadToEnd();
+
+            Assert.Contains("any compatible .NET project", content, StringComparison.Ordinal);
+            Assert.DoesNotContain("internal package", content, StringComparison.OrdinalIgnoreCase);
         }
     }
 

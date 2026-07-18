@@ -3,7 +3,7 @@
 The .NET 10 Blazor WebAssembly wrapper: `Microsoft.NET.Sdk.BlazorWebAssembly` plus the complete Headless build baseline.
 
 > [!IMPORTANT]
-> This is an internal package distributed through the `xshaheen` GitHub Packages feed. It is not published to NuGet.org. The repository currently has no license and grants no external use or redistribution rights.
+> This package is currently distributed through the `xshaheen` GitHub Packages feed and is not published to NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
 
 ## Use
 

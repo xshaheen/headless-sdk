@@ -1,9 +1,9 @@
 # Headless.NET.Sdk
 
-`Headless.NET.Sdk` is the internal MSBuild SDK baseline for Headless Framework repositories. It is consumer-facing build infrastructure: the package family standardizes evaluation order, restore policy, analyzers, packaging, and test execution across .NET projects.
+`Headless.NET.Sdk` is an opinionated MSBuild SDK family for .NET 10 projects. It is consumer-facing build infrastructure that standardizes evaluation order, restore policy, analyzers, packaging, and test execution across any compatible .NET repository.
 
 > [!IMPORTANT]
-> The packages are distributed only through the `xshaheen` GitHub Packages feed. They are not published to NuGet.org and are not offered as a public package contract. This repository currently has no license; no external right to use, modify, or redistribute its contents is granted.
+> The packages are currently distributed through the `xshaheen` GitHub Packages feed and are not published to NuGet.org. The SDK family is not specific to Headless Framework. This repository currently has no license; source availability does not itself grant legal rights to use, modify, or redistribute its contents.
 
 ## Support contract
 
@@ -373,4 +373,4 @@ tests/
 
 ## License status
 
-No license has been selected. Copyright is reserved; do not treat source availability as permission to use, modify, or redistribute the repository or its packages outside the authorized internal environment.
+No license has been selected. Copyright is reserved; source availability does not itself grant legal rights to use, modify, or redistribute the repository or its packages.
