@@ -14,6 +14,7 @@ concurrency:
   # to the same MinVer version, so per-ref concurrency would leave a preflight-to-push race.
   group: publish-headless-sdk-packages
   cancel-in-progress: false
+  queue: max
 
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
@@ -30,6 +31,7 @@ jobs:
   build:
     name: Build, test, and pack
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -59,6 +61,9 @@ jobs:
 
       - name: Pack immutable release artifacts
         run: dotnet pack headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build --output "${{ env.PACKAGES_DIR }}"
+
+      - name: Test clean .NET 10 MTP consumer
+        run: bash .github/scripts/tests/clean-mtp-consumer-tests.sh "${{ env.PACKAGES_DIR }}"
 
       - name: Test
         # Microsoft Testing Platform runner (global.json "test.runner"); same MTP arg shape as ci.yml.
@@ -130,6 +135,7 @@ jobs:
       - build
       - platform-smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
@@ -182,37 +188,5 @@ jobs:
               --api-key "$GH_TOKEN"
           done
 
-          while IFS=$'\t' read -r package_id version; do
-            api_name="${package_id,,}"
-            verified=false
-
-            # GitHub's package API can lag a successful NuGet push. Retry only observation;
-            # never retry the push itself or weaken duplicate-version protection.
-            for attempt in {1..12}; do
-              if metadata="$(gh api "/user/packages/nuget/${api_name}" 2>/dev/null)"; then
-                if ! visibility="$(jq -er '.visibility | select(type == \"string\")' <<<"$metadata")"; then
-                  echo "GitHub Packages returned invalid visibility for ${package_id}."
-                  exit 1
-                fi
-                if [ "$visibility" != "private" ]; then
-                  echo "${package_id} visibility is '${visibility}', not private; release set is not internal-only."
-                  exit 1
-                fi
-
-                if versions="$(gh api --paginate "/user/packages/nuget/${api_name}/versions?per_page=100" \
-                  --jq ".[] | select(.name == \"${version}\") | .name" 2>/dev/null)" \
-                  && grep -Fxq "$version" <<<"$versions"; then
-                  verified=true
-                  break
-                fi
-              fi
-
-              echo "Waiting for GitHub Packages to expose ${package_id} ${version} (${attempt}/12)."
-              sleep 5
-            done
-
-            if [ "$verified" != "true" ]; then
-              echo "GitHub Packages did not expose ${package_id} ${version} after 12 checks."
-              exit 1
-            fi
-          done < ./artifacts/packages-results/PACKAGE_MANIFEST.tsv
+          bash .github/scripts/github-package-postflight.sh \
+            ./artifacts/packages-results/PACKAGE_MANIFEST.tsv

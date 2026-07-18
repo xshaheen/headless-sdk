@@ -6,6 +6,7 @@ repository_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 preflight="$repository_root/.github/scripts/github-package-preflight.sh"
 fake_gh="$repository_root/.github/scripts/tests/fake-gh.sh"
 test_root=$(mktemp -d)
+trap 'rm -rf "$test_root"' EXIT
 
 printf 'First.Package\t1.0.0\n' > "$test_root/one-package.tsv"
 printf 'First.Package\t1.0.0\nSecond.Package\t1.0.0\n' > "$test_root/two-packages.tsv"

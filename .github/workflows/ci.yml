@@ -66,8 +66,10 @@ jobs:
         with:
           global-json-file: ./global.json
 
-      - name: Test release preflight
-        run: bash .github/scripts/tests/github-package-preflight-tests.sh
+      - name: Test release package state scripts
+        run: |
+          bash .github/scripts/tests/github-package-preflight-tests.sh
+          bash .github/scripts/tests/github-package-postflight-tests.sh
 
       - name: Cache NuGet packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
@@ -85,6 +87,9 @@ jobs:
 
       - name: Pack immutable release artifacts
         run: dotnet pack headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build --output "${{ env.PACKAGES_DIR }}"
+
+      - name: Test clean .NET 10 MTP consumer
+        run: bash .github/scripts/tests/clean-mtp-consumer-tests.sh "${{ env.PACKAGES_DIR }}"
 
       - name: Test
         # Microsoft Testing Platform runner (global.json "test.runner"). The integration project
