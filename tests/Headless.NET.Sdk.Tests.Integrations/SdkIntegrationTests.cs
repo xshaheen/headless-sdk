@@ -1797,27 +1797,27 @@ public static class JsonConsumer
 public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
 {
     internal static IReadOnlyList<string> MandatoryAnalyzerPackageIds { get; } =
-    [
-        "AsyncFixer",
-        "Asyncify",
-        "ErrorProne.NET.CoreAnalyzers",
-        "Meziantou.Analyzer",
-        "Microsoft.CodeAnalysis.BannedApiAnalyzers",
-        "Microsoft.VisualStudio.Threading.Analyzers",
-        "ReflectionAnalyzers",
-        "Roslynator.Analyzers",
-        "SmartAnalyzers.MultithreadingAnalyzer",
-    ];
+        [
+            "AsyncFixer",
+            "Asyncify",
+            "ErrorProne.NET.CoreAnalyzers",
+            "Meziantou.Analyzer",
+            "Microsoft.CodeAnalysis.BannedApiAnalyzers",
+            "Microsoft.VisualStudio.Threading.Analyzers",
+            "ReflectionAnalyzers",
+            "Roslynator.Analyzers",
+            "SmartAnalyzers.MultithreadingAnalyzer",
+        ];
 
     internal static IReadOnlyList<string> PackageIds { get; } =
-    [
-        "Headless.NET.Sdk",
-        "Headless.NET.Sdk.Web",
-        "Headless.NET.Sdk.Test",
-        "Headless.NET.Sdk.Razor",
-        "Headless.NET.Sdk.BlazorWebAssembly",
-        "Headless.NET.Sdk.WindowsDesktop",
-    ];
+        [
+            "Headless.NET.Sdk",
+            "Headless.NET.Sdk.Web",
+            "Headless.NET.Sdk.Test",
+            "Headless.NET.Sdk.Razor",
+            "Headless.NET.Sdk.BlazorWebAssembly",
+            "Headless.NET.Sdk.WindowsDesktop",
+        ];
 
     private readonly Dictionary<string, string> packagePaths = new(StringComparer.Ordinal);
     private bool deletePackageRootDirectory;
