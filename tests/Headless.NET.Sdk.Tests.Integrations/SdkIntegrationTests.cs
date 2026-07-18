@@ -1247,6 +1247,22 @@ public static class JsonConsumer
     }
 
     [Fact]
+    public async Task should_infer_repository_branch_after_package_information_defaults_on_github_actions()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync(
+            "-p:GITHUB_ACTIONS=true -p:GITHUB_REF=refs/pull/26/merge"
+        );
+
+        Assert.Equal("true", properties["PublishRepositoryUrl"]);
+        Assert.Equal("pr26", properties["RepositoryBranch"]);
+    }
+
+    [Fact]
     public async Task should_use_snupkg_symbol_packages_when_symbol_format_is_snupkg()
     {
         // HeadlessSymbolFormat=snupkg restores the previous SDK behavior: portable PDB shipped
@@ -1781,27 +1797,27 @@ public static class JsonConsumer
 public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
 {
     internal static IReadOnlyList<string> MandatoryAnalyzerPackageIds { get; } =
-        [
-            "AsyncFixer",
-            "Asyncify",
-            "ErrorProne.NET.CoreAnalyzers",
-            "Meziantou.Analyzer",
-            "Microsoft.CodeAnalysis.BannedApiAnalyzers",
-            "Microsoft.VisualStudio.Threading.Analyzers",
-            "ReflectionAnalyzers",
-            "Roslynator.Analyzers",
-            "SmartAnalyzers.MultithreadingAnalyzer",
-        ];
+    [
+        "AsyncFixer",
+        "Asyncify",
+        "ErrorProne.NET.CoreAnalyzers",
+        "Meziantou.Analyzer",
+        "Microsoft.CodeAnalysis.BannedApiAnalyzers",
+        "Microsoft.VisualStudio.Threading.Analyzers",
+        "ReflectionAnalyzers",
+        "Roslynator.Analyzers",
+        "SmartAnalyzers.MultithreadingAnalyzer",
+    ];
 
     internal static IReadOnlyList<string> PackageIds { get; } =
-        [
-            "Headless.NET.Sdk",
-            "Headless.NET.Sdk.Web",
-            "Headless.NET.Sdk.Test",
-            "Headless.NET.Sdk.Razor",
-            "Headless.NET.Sdk.BlazorWebAssembly",
-            "Headless.NET.Sdk.WindowsDesktop",
-        ];
+    [
+        "Headless.NET.Sdk",
+        "Headless.NET.Sdk.Web",
+        "Headless.NET.Sdk.Test",
+        "Headless.NET.Sdk.Razor",
+        "Headless.NET.Sdk.BlazorWebAssembly",
+        "Headless.NET.Sdk.WindowsDesktop",
+    ];
 
     private readonly Dictionary<string, string> packagePaths = new(StringComparer.Ordinal);
     private bool deletePackageRootDirectory;
@@ -2287,7 +2303,7 @@ public sealed class Class1;
                 </PropertyGroup>
                 <WriteLinesToFile
                   File="$(MSBuildProjectDirectory)/headless-properties.txt"
-                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);IsTestHarnessProject=$(IsTestHarnessProject);IsTestProject=$(IsTestProject);IsTestingPlatformApplication=$(IsTestingPlatformApplication);GenerateRuntimeConfigurationFiles=$(GenerateRuntimeConfigurationFiles);GenerateSBOM=$(GenerateSBOM);IsPackable=$(IsPackable);EnablePackageValidation=$(EnablePackageValidation);NoWarn=$(_HeadlessEvaluatedNoWarn);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);DebugType=$(DebugType);HeadlessSymbolFormat=$(HeadlessSymbolFormat);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
+                  Lines="TargetFramework=$(TargetFramework);RollForward=$(RollForward);PackAsTool=$(PackAsTool);HeadlessSdkName=$(HeadlessSdkName);HeadlessSdkProjectType=$(HeadlessSdkProjectType);IsTestHarnessProject=$(IsTestHarnessProject);IsTestProject=$(IsTestProject);IsTestingPlatformApplication=$(IsTestingPlatformApplication);GenerateRuntimeConfigurationFiles=$(GenerateRuntimeConfigurationFiles);GenerateSBOM=$(GenerateSBOM);IsPackable=$(IsPackable);EnablePackageValidation=$(EnablePackageValidation);NoWarn=$(_HeadlessEvaluatedNoWarn);EditorConfigFiles=$(_HeadlessEvaluatedEditorConfigFiles);NoneItems=$(_HeadlessEvaluatedNoneItems);PackageReferences=$(_HeadlessEvaluatedPackageReferences);MSBuildTreatWarningsAsErrors=$(MSBuildTreatWarningsAsErrors);RestoreLockedMode=$(RestoreLockedMode);HeadlessEmitInternalsVisibleToAttributes=$(HeadlessEmitInternalsVisibleToAttributes);InternalsVisibleTo=$(_HeadlessEvaluatedInternalsVisibleTo);TestingPlatformCommandLineArguments=$(TestingPlatformCommandLineArguments);PackageTags=$(PackageTags);PublishRepositoryUrl=$(PublishRepositoryUrl);RepositoryType=$(RepositoryType);RepositoryBranch=$(RepositoryBranch);IncludeSymbols=$(IncludeSymbols);SymbolPackageFormat=$(SymbolPackageFormat);DebugType=$(DebugType);HeadlessSymbolFormat=$(HeadlessSymbolFormat);Copyright=$(Copyright);RuntimeHostConfigurationOptions=$(_HeadlessEvaluatedRuntimeHostOptions);EnableSdkContainerSupport=$(EnableSdkContainerSupport);ContainerRegistry=$(ContainerRegistry);ContainerRepository=$(ContainerRepository)"
                   Overwrite="true"
                 />
               </Target>

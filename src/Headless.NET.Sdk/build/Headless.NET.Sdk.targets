@@ -29,14 +29,15 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
     <Error Text="$(HeadlessSdkName) supports only .NET 10 target frameworks. Set TargetFramework to net10.0 or a net10.0 platform-specific TFM." />
   </Target>
 
-  <Import Project="$(MSBuildThisFileDirectory)SupportDetectContinuousIntegration.targets" />
-  <Import Project="$(MSBuildThisFileDirectory)SupportGeneral.targets" />
-  <Import Project="$(MSBuildThisFileDirectory)SupportMandatoryAnalyzers.targets" />
-  <Import Project="$(MSBuildThisFileDirectory)GlobalUsing.targets" />
+  <!-- Package metadata defaults must evaluate before CI fills provider-specific repository values. -->
   <Import
     Project="$(MSBuildThisFileDirectory)SupportPackageInformation.targets"
     Condition=" '$(DisableSupportPackageInformation)' != 'true' "
   />
+  <Import Project="$(MSBuildThisFileDirectory)SupportDetectContinuousIntegration.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)SupportGeneral.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)SupportMandatoryAnalyzers.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)GlobalUsing.targets" />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportCopyright.targets"
     Condition=" '$(DisableSupportCopyright)' != 'true' "
