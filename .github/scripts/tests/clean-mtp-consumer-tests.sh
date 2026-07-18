@@ -6,6 +6,7 @@ repository_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 packages_directory=${1:?Packed-package directory is required.}
 packages_directory=$(cd "$packages_directory" && pwd)
 test_root=$(mktemp -d)
+consumer_root="$test_root/consumer"
 
 cleanup() {
   status=$?
@@ -42,11 +43,11 @@ if [[ -z $xunit_version ]]; then
   exit 1
 fi
 
-mkdir -p "$test_root/local-source" "$test_root/nuget-packages" "$test_root/dotnet-home"
+mkdir -p "$consumer_root" "$test_root/local-source" "$test_root/nuget-packages" "$test_root/dotnet-home"
 cp "$packages_directory"/*.nupkg "$test_root/local-source/"
-cp "$repository_root/global.json" "$test_root/global.json"
+cp "$repository_root/global.json" "$consumer_root/global.json"
 
-cat > "$test_root/NuGet.Config" <<EOF
+cat > "$consumer_root/NuGet.Config" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
@@ -65,7 +66,7 @@ cat > "$test_root/NuGet.Config" <<EOF
 </configuration>
 EOF
 
-cat > "$test_root/ConsumerProject.csproj" <<EOF
+cat > "$consumer_root/ConsumerProject.csproj" <<EOF
 <Project Sdk="Headless.NET.Sdk.Test/$package_version">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -76,7 +77,7 @@ cat > "$test_root/ConsumerProject.csproj" <<EOF
 </Project>
 EOF
 
-cat > "$test_root/ContractSmokeTests.cs" <<'EOF'
+cat > "$consumer_root/ContractSmokeTests.cs" <<'EOF'
 using Xunit;
 
 public sealed class ContractSmokeTests
@@ -93,7 +94,7 @@ export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 export NUGET_PACKAGES="$test_root/nuget-packages"
 
 (
-  cd "$test_root"
+  cd "$consumer_root"
   dotnet restore ConsumerProject.csproj \
     --configfile NuGet.Config \
     -p:RestorePackagesWithLockFile=false \
