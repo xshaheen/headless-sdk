@@ -57,7 +57,7 @@ public sealed class WindowsPlatformContractTests(HeadlessSdkPackageFixture fixtu
             fixture.PackageVersion,
             fixture.PackageSourceDirectory,
             sdk: $"Headless.NET.Sdk.WindowsDesktop/{fixture.PackageVersion}",
-            targetFramework: "net10.0-windows",
+            targetFramework: "net8.0-windows",
             includePackageReference: false,
             extraProperties: new Dictionary<string, string>(StringComparer.Ordinal) { [desktopProperty] = "true" },
             additionalFiles: additionalFiles
@@ -90,7 +90,7 @@ public sealed class MacOsPlatformContractTests(HeadlessSdkPackageFixture fixture
             fixture.PackageVersion,
             fixture.PackageSourceDirectory,
             sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
-            targetFramework: "net10.0",
+            targetFramework: "net8.0",
             includePackageReference: false
         );
 

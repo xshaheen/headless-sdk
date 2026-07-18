@@ -14,6 +14,7 @@
     <LangVersion>latest</LangVersion>
     <IsPackable>true</IsPackable>
     <PackageType>MSBuildSdk</PackageType>
+    <NuspecFile>../_shared/Headless.NET.Sdk.nuspec</NuspecFile>
     <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -26,24 +27,6 @@
       PrivateAssets="none"
       IncludeAssets="all"
     />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Files that should have no role in the build process -->
-    <None Include="sdk/Sdk.props;sdk/Sdk.targets" Pack="true"
-      PackagePath="sdk/%(Filename)%(Extension)" />
-    <None Include="build/**/*.*" Pack="true"
-      PackagePath="build/%(RecursiveDir)%(Filename)%(Extension)" />
-    <None
-      Include="buildMultiTargeting/**/*.*"
-      Pack="true"
-      PackagePath="buildMultiTargeting/%(RecursiveDir)%(Filename)%(Extension)"
-    />
-    <None Include="configurations/**" Pack="true" PackagePath="configurations/" />
-    <None Include="../../logo.png" Pack="true" PackagePath="" />
-    <!-- README.md is resolved and packed by SupportPackageInformation.targets from this project's
-    own README.md -->
-    <None Include="_._" Pack="true" PackagePath="lib\$(TargetFramework)" Visible="false" />
   </ItemGroup>
 
   <Import Project="build\Headless.NET.Sdk.targets" />

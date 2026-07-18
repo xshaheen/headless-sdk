@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>$PackageId$</id>
+    <version>$PackageVersion$</version>
+    <title>$Title$</title>
+    <authors>$Authors$</authors>
+    <developmentDependency>true</developmentDependency>
+    <icon>$PackageIcon$</icon>
+    <readme>$PackageReadmeFile$</readme>
+    <projectUrl>$PackageProjectUrl$</projectUrl>
+    <description>$Description$</description>
+    <releaseNotes>$PackageReleaseNotes$</releaseNotes>
+    <copyright>$Copyright$</copyright>
+    <tags>$PackageTags$</tags>
+    <packageTypes>
+      <packageType name="MSBuildSdk" />
+    </packageTypes>
+    <repository type="$RepositoryType$" url="$RepositoryUrl$" branch="$RepositoryBranch$" commit="$RepositoryCommit$" />
+    <dependencies>
+      <dependency id="AsyncFixer" version="[$AsyncFixerVersion$]" include="All" />
+      <dependency id="Asyncify" version="[$AsyncifyVersion$]" include="All" />
+      <dependency id="ErrorProne.NET.CoreAnalyzers" version="[$ErrorProneAnalyzersVersion$]" include="All" />
+      <dependency id="Meziantou.Analyzer" version="[$MeziantouAnalyzerVersion$]" include="All" />
+      <dependency id="Microsoft.CodeAnalysis.BannedApiAnalyzers" version="[$BannedApiAnalyzersVersion$]" include="All" />
+      <dependency id="Microsoft.Sbom.Targets" version="$SbomTargetsVersion$" include="All" />
+      <dependency id="Microsoft.Testing.Extensions.CodeCoverage" version="$MtpCodeCoverageVersion$" include="All" />
+      <dependency id="Microsoft.Testing.Extensions.CrashDump" version="$MtpCrashDumpVersion$" include="All" />
+      <dependency id="Microsoft.Testing.Extensions.HangDump" version="$MtpHangDumpVersion$" include="All" />
+      <dependency id="Microsoft.Testing.Extensions.HotReload" version="$MtpHotReloadVersion$" include="All" />
+      <dependency id="Microsoft.Testing.Extensions.Retry" version="$MtpRetryVersion$" include="All" />
+      <dependency id="Microsoft.Testing.Extensions.TrxReport" version="$MtpTrxReportVersion$" include="All" />
+      <dependency id="Microsoft.VisualStudio.Threading.Analyzers" version="[$VisualStudioThreadingAnalyzersVersion$]" include="All" />
+      <dependency id="ReflectionAnalyzers" version="[$ReflectionAnalyzersVersion$]" include="All" />
+      <dependency id="Roslynator.Analyzers" version="[$RoslynatorAnalyzersVersion$]" include="All" />
+      <dependency id="SmartAnalyzers.MultithreadingAnalyzer" version="[$MultithreadingAnalyzerVersion$]" include="All" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="$PackageProjectDirectory$/sdk/**/*" target="sdk" />
+    <file src="$PackageProjectDirectory$/build/**/*" target="build" />
+    <file src="$PackageProjectDirectory$/buildMultiTargeting/**/*" target="buildMultiTargeting" />
+    <file src="$BaseSdkDirectory$/build/**/*" target="build" />
+    <file src="$BaseSdkDirectory$/configurations/**/*" target="configurations" />
+    <file src="$PackageProjectDirectory$/README.md" target="" />
+    <file src="$RepositoryRoot$logo.png" target="" />
+  </files>
+</package>

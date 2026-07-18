@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <!--
-      .NET 10 NuGet warnings documented at
+      NuGet warnings recognized by the repository-pinned SDK and documented at
       https://learn.microsoft.com/nuget/reference/errors-and-warnings. Keep ordinary restore, pack,
       signing, and feed diagnostics as warnings when MSBuild warning escalation is active. Actual
       vulnerability findings NU1901-NU1904 are intentionally omitted and escalated separately.

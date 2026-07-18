@@ -7,18 +7,24 @@
     <IsTestingPlatformApplication>false</IsTestingPlatformApplication>
   </PropertyGroup>
 
+  <Import Project="..\Headless.NET.Sdk\build\SupportTestProjects.Versions.props" />
+
+  <PropertyGroup>
+    <NuspecFile>../_shared/Headless.NET.Sdk.Test.nuspec</NuspecFile>
+  </PropertyGroup>
+
   <!--
     These are package dependencies, rather than late build-target injections, so every
     Headless.NET.Sdk.Test consumption mode has the MTP extensions available on its first restore.
     Test frameworks remain consumer-selected.
   -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" VersionOverride="[2.3.1]" PrivateAssets="none" IncludeAssets="all" />
-    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" VersionOverride="[18.9.0]" PrivateAssets="none" IncludeAssets="all" />
-    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" VersionOverride="[2.3.1]" PrivateAssets="none" IncludeAssets="all" />
-    <PackageReference Include="Microsoft.Testing.Extensions.HotReload" VersionOverride="[2.3.1]" PrivateAssets="none" IncludeAssets="all" />
-    <PackageReference Include="Microsoft.Testing.Extensions.Retry" VersionOverride="[2.3.1]" PrivateAssets="none" IncludeAssets="all" />
-    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" VersionOverride="[2.3.1]" PrivateAssets="none" IncludeAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" VersionOverride="$(_HeadlessMtpCrashDumpVersion)" PrivateAssets="none" IncludeAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" VersionOverride="$(_HeadlessMtpCodeCoverageVersion)" PrivateAssets="none" IncludeAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" VersionOverride="$(_HeadlessMtpHangDumpVersion)" PrivateAssets="none" IncludeAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.HotReload" VersionOverride="$(_HeadlessMtpHotReloadVersion)" PrivateAssets="none" IncludeAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.Retry" VersionOverride="$(_HeadlessMtpRetryVersion)" PrivateAssets="none" IncludeAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" VersionOverride="$(_HeadlessMtpTrxReportVersion)" PrivateAssets="none" IncludeAssets="all" />
   </ItemGroup>
 
   <Import Project="..\Headless.NET.Sdk\build\Headless.NET.Sdk.props" />

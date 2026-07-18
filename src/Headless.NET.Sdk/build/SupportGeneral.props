@@ -76,7 +76,7 @@
     <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
     <MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>
     <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
-    <WarningsNotAsErrors>$(WarningsNotAsErrors);$(_HeadlessNuGetWarningsNotAsErrors)</WarningsNotAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NETSDK1138;$(_HeadlessNuGetWarningsNotAsErrors)</WarningsNotAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Label="NoWarn">

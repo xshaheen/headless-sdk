@@ -1,13 +1,13 @@
 # Headless.NET.Sdk
 
-`Headless.NET.Sdk` is an opinionated MSBuild SDK family for .NET 10 projects. It is consumer-facing build infrastructure that standardizes evaluation order, restore policy, analyzers, packaging, and test execution across any compatible .NET repository.
+`Headless.NET.Sdk` is an opinionated MSBuild SDK family for .NET projects. It is consumer-facing build infrastructure that standardizes evaluation order, restore policy, analyzers, packaging, and test execution across any compatible .NET repository.
 
 > [!IMPORTANT]
 > The packages are currently distributed through the `xshaheen` GitHub Packages feed and are not published to NuGet.org. The SDK family is not specific to Headless Framework. This repository currently has no license; source availability does not itself grant legal rights to use, modify, or redistribute its contents.
 
 ## Support contract
 
-- .NET 10 is the only supported SDK and target framework.
+- The package family is built and validated with the repository-pinned .NET 10 SDK. Headless does not restrict consumer target frameworks; compatibility is determined by the selected Microsoft SDK and its installed targeting packs or workloads.
 - Every MSBuild project must declare its target framework explicitly. Headless does not infer one.
 - All five consumption modes below are first-class. Build, pack, analyzer, and application policy
   is identical; the documented first-clean-restore bootstrap is required for PackageReference mode.
@@ -71,7 +71,7 @@ Use the matching Microsoft SDK and add Headless directly:
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -113,7 +113,7 @@ Pin the SDK in the project declaration:
 ```xml
 <Project Sdk="Headless.NET.Sdk/x.y.z">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 </Project>
 ```
@@ -129,7 +129,7 @@ Layer Headless over an already selected Microsoft SDK:
   <Sdk Name="Headless.NET.Sdk" Version="x.y.z" />
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 </Project>
 ```
@@ -160,7 +160,7 @@ Projects can then use the versionless form:
 ```xml
 <Project Sdk="Headless.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 </Project>
 ```
@@ -203,6 +203,11 @@ The following analyzer packages are injected as private, implicit dependencies f
 - `ReflectionAnalyzers`
 - `ErrorProne.NET.CoreAnalyzers`
 
+The sole self-reference exception is a project whose evaluated `PackageId` is
+`Meziantou.Analyzer`; Headless omits that one analyzer reference so the analyzer package can use
+the SDK without depending on itself. The other eight analyzer references and all mandatory policy
+still apply.
+
 The bundled general and Newtonsoft.Json banned-symbol lists are also mandatory. This is a deliberate house policy, not a convenience default. Rule severities and narrow project-type relaxations remain defined by the shipped analyzer configurations.
 
 The SDK owns the versions of all nine implicit analyzer references. Central Package Management
@@ -210,7 +215,7 @@ consumers must not add `PackageVersion` entries for those analyzer IDs. SDK-form
 them as SDK-defined implicit references with NU1009; PackageReference consumption rejects conflicting
 central versions against the package family's exact dependency ranges.
 
-Headless adds its extra global usings only when `ImplicitUsings` is `enable` or `true`. Setting `ImplicitUsings=disable` prevents both the Microsoft implicit-usings feature and the Headless additions.
+Headless adds its extra global usings only when `ImplicitUsings` is `enable` or `true` and the target framework is compatible with `net8.0`. Older or custom TFMs remain valid consumers without receiving namespaces that may not exist in their reference assemblies. Setting `ImplicitUsings=disable` prevents both the Microsoft implicit-usings feature and the Headless additions.
 
 ### Supported customization properties
 
@@ -223,7 +228,7 @@ the listed default; explicit values win unless the behavior is identified as man
 | `HeadlessEnforceConfigureAwait` | `false` | Set `true` to enable CA2007 through the shipped analyzer profile. |
 | `HeadlessEmitInternalsVisibleToAttributes` | `true` | Set `false` when the project owns its friend-assembly list. |
 | `HeadlessEmitClsCompliantAttribute` | `true` | Set `false` when the project supplies its own `CLSCompliant` attribute. |
-| `HeadlessEnableStrictSystemTextJsonRuntimeDefaults` | `false` | Enables the two process-wide strict System.Text.Json runtime switches. |
+| `HeadlessEnableStrictSystemTextJsonRuntimeDefaults` | `false` | Enables the two process-wide strict System.Text.Json runtime switches for TFMs compatible with `net9.0`. |
 | `HeadlessSymbolFormat` | `embedded` (`none` for Blazor WebAssembly) | Accepts `embedded`, `snupkg`, or `none`. |
 | `EnablePackageValidation` | `true` (`false` for `PackAsTool`) | Enables Microsoft package validation for ordinary packages; Microsoft disables API compatibility validation for tool packages. Consumers may explicitly disable it. |
 | `GenerateSBOM` | `false` | Generates an SPDX SBOM inside the package when enabled. |
@@ -238,6 +243,12 @@ the listed default; explicit values win unless the behavior is identified as man
 | `DisableSupportCopyright` | `false` | Prevents Headless copyright generation. |
 | `DisableSupportEmbedBinlog` | `false` | Prevents Headless configuration inputs from being embedded in binlogs. |
 | `DisableSupportWebContainer` | `false` | Prevents Web container defaults from being evaluated. |
+| `EnableSdkContainerSupport` | `true` for Web projects on GitHub Actions | Enables the Microsoft SDK container targets; an explicit value wins. |
+| `ContainerRegistry` | `ghcr.io` for Web projects on GitHub Actions | Overrides the target container registry. |
+| `ContainerRepository` | GitHub owner plus kebab-case repository name | Overrides the target container repository. |
+| `ContainerImageTagsMainVersionPrefix` | `1.0` | Sets the prefix used for main-branch run-number tags. |
+| `ContainerImageTagsIncludeLatest` | `true` | Set `false` to omit `latest` from main-branch image tags. |
+| `ContainerImageTags` | `prefix.run-number;latest` on main, otherwise `0.0.1-preview.sha` | Overrides the complete semicolon-separated image tag set. |
 | `HeadlessSuppressNonPackablePackWarning` | `true` | Set `false` to retain the Microsoft warning for packing a non-packable project. |
 | `HeadlessConfigFilesDir` | solution directory, then project directory | Overrides the explicit scaffold target's destination. |
 | `HeadlessCopyDefaultConfigFilesToSolutionDir` | `false` | Selects all scaffold files when the target is explicitly invoked. |
@@ -247,8 +258,8 @@ the listed default; explicit values win unless the behavior is identified as man
 | `HeadlessCopyGitAttributesToSolutionDir` | master selector | Selects only `.gitattributes`. |
 | `HeadlessOverwriteConfigFiles` | `false` | Allows the explicit scaffold target to replace existing files. |
 
-The explicit target framework, .NET 10 compatibility check, nine analyzer packages, analyzer and
-banned-symbol configuration, CI warning gate, NuGet audit policy, and SDK-owned MTP extension
+The explicit target framework, nine analyzer packages, analyzer and banned-symbol configuration,
+CI warning gate, NuGet audit policy, and SDK-owned MTP extension
 versions are mandatory policy. Legacy analyzer/configuration opt-out names do not disable them.
 
 ## CI, restore, and vulnerability policy
@@ -258,8 +269,12 @@ Headless detects common CI provider environment variables. Consumers can also ac
 On CI, the SDK authoritatively enables:
 
 - compiler, nullable, code-analysis, and MSBuild warnings as errors;
-- preview and end-of-life target-framework warnings;
+- preview target-framework warnings;
 - `NU1901`, `NU1902`, `NU1903`, and `NU1904` as errors.
+
+The Microsoft `NETSDK1138` warning remains visible but non-fatal on CI. End-of-life frameworks do
+not receive security fixes, but Headless does not reject them when the selected Microsoft SDK can
+still target them.
 
 `NU1900` and its companion `NU1905` remain warnings because they report missing audit data rather
 than a confirmed vulnerability. NuGet audit is always enabled with `NuGetAuditMode=all` and
@@ -276,7 +291,7 @@ The test framework remains consumer-selected. For example:
 ```xml
 <Project Sdk="Headless.NET.Sdk.Test/x.y.z">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -284,6 +299,22 @@ The test framework remains consumer-selected. For example:
   </ItemGroup>
 </Project>
 ```
+
+When the command-line host is the .NET 10 SDK, Microsoft Testing Platform also requires the
+repository `global.json` to select the MTP runner. Add this top-level entry alongside the existing
+`sdk` configuration:
+
+```json
+{
+  "test": {
+    "runner": "Microsoft.Testing.Platform"
+  }
+}
+```
+
+Without that entry, .NET 10 routes `dotnet test` through VSTest and Microsoft Testing Platform
+rejects the invocation before discovering tests. This host requirement does not restrict the test
+project's `TargetFramework`.
 
 The Test SDK owns the versions of its six implicit MTP extension references. Central Package Management consumers must not add `PackageVersion` entries for those extension IDs; NuGet rejects central versions for SDK-defined implicit references with NU1009. The consumer's test-framework version remains centrally manageable.
 
@@ -328,7 +359,7 @@ Headless sets repository metadata and discovers a project README, icon, license 
 - Non-test applications default to `RollForward=LatestMajor`.
 - Non-Web executable projects default to .NET tool packaging.
 - Web projects on GitHub Actions receive SDK container defaults for `ghcr.io` and deterministic branch/tag calculation. Set `DisableSupportWebContainer=true` only when the project owns its container policy.
-- `HeadlessEnableStrictSystemTextJsonRuntimeDefaults=true` enables the .NET runtime switches for required constructor parameters and nullable annotations. It is off by default because these process-wide switches can break third-party serializers.
+- `HeadlessEnableStrictSystemTextJsonRuntimeDefaults=true` enables the .NET runtime switches for required constructor parameters and nullable annotations on TFMs compatible with `net9.0`. It is off by default because these process-wide switches can break third-party serializers.
 - When `System.Runtime.Experimental` is referenced, Headless removes only the conflicting `System.Runtime.dll` facade from `Microsoft.NETCore.App.Ref`. The experimental package carries its own facade; leaving both references can make conflict resolution select the wrong compile-time assembly. This targeted correction is intentionally always active.
 
 ## Assembly metadata and repository scaffolding

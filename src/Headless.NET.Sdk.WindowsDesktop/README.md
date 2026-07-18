@@ -1,16 +1,18 @@
 # Headless.NET.Sdk.WindowsDesktop
 
-The .NET 10 WPF and Windows Forms wrapper: `Microsoft.NET.Sdk.WindowsDesktop` plus the complete Headless build baseline.
+The WPF and Windows Forms wrapper: `Microsoft.NET.Sdk.WindowsDesktop` plus the complete Headless build baseline.
 
 > [!IMPORTANT]
 > This package is currently distributed through the `xshaheen` GitHub Packages feed and is not published to NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
 
 ## Use
 
+Headless does not restrict `TargetFramework`; `Microsoft.NET.Sdk.WindowsDesktop` and the installed Windows targeting packs determine compatibility.
+
 ```xml
 <Project Sdk="Headless.NET.Sdk.WindowsDesktop/x.y.z">
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 </Project>

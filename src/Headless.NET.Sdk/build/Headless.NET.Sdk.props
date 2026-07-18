@@ -29,11 +29,6 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
   <Import Project="$(MSBuildThisFileDirectory)RuntimeHostConfigurationOption.props" />
   <Import Project="$(MSBuildThisFileDirectory)SupportSingleFileApp.props" />
   <Import Project="$(MSBuildThisFileDirectory)SupportSbom.props" />
-  <Import
-    Project="$(MSBuildThisFileDirectory)SupportPackageInformation.props"
-    Condition=" '$(DisableSupportPackageInformation)' != 'true' "
-  />
-  <Import Project="$(MSBuildThisFileDirectory)GlobalUsing.props" />
   <Import Project="$(MSBuildThisFileDirectory)SupportImplicitAnalyzers.props" />
   <Import Project="$(MSBuildThisFileDirectory)SupportAnalyzerEditorConfigs.props" />
 </Project>

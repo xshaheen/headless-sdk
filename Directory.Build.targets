@@ -11,4 +11,20 @@
       <MinVerTagPrefix />
     </PropertyGroup>
   </Target>
+
+  <Target
+    Name="HeadlessSetNuspecProperties"
+    BeforeTargets="GenerateNuspec"
+    DependsOnTargets="InitializeSourceControlInformation"
+    Condition="'$(PackageType)' == 'MSBuildSdk' and '$(NuspecFile)' != ''"
+  >
+    <PropertyGroup>
+      <RepositoryBranch Condition="'$(RepositoryBranch)' == ''">$(SourceBranchName)</RepositoryBranch>
+      <RepositoryCommit Condition="'$(RepositoryCommit)' == ''">$(SourceRevisionId)</RepositoryCommit>
+      <_HeadlessNuspecDescription>$([MSBuild]::Escape('$(Description)'))</_HeadlessNuspecDescription>
+      <_HeadlessNuspecPackageTags>$([MSBuild]::Escape('$(PackageTags)'))</_HeadlessNuspecPackageTags>
+      <NuspecProperties>PackageId=$(PackageId);PackageVersion=$(PackageVersion);Title=$(Title);Authors=$(Authors);Description=$(_HeadlessNuspecDescription);PackageIcon=$(PackageIcon);PackageReadmeFile=$(PackageReadmeFile);PackageProjectUrl=$(PackageProjectUrl);PackageReleaseNotes=$(PackageReleaseNotes);PackageTags=$(_HeadlessNuspecPackageTags);PackageProjectDirectory=$(MSBuildProjectDirectory);BaseSdkDirectory=$(MSBuildThisFileDirectory)src/Headless.NET.Sdk;RepositoryRoot=$(MSBuildThisFileDirectory);RepositoryUrl=$(RepositoryUrl);RepositoryType=$(RepositoryType);RepositoryBranch=$(RepositoryBranch);RepositoryCommit=$(RepositoryCommit);Copyright=$(Copyright);MeziantouAnalyzerVersion=$(_HeadlessMeziantouAnalyzerVersion);BannedApiAnalyzersVersion=$(_HeadlessBannedApiAnalyzersVersion);AsyncFixerVersion=$(_HeadlessAsyncFixerVersion);AsyncifyVersion=$(_HeadlessAsyncifyVersion);VisualStudioThreadingAnalyzersVersion=$(_HeadlessVisualStudioThreadingAnalyzersVersion);MultithreadingAnalyzerVersion=$(_HeadlessMultithreadingAnalyzerVersion);RoslynatorAnalyzersVersion=$(_HeadlessRoslynatorAnalyzersVersion);ReflectionAnalyzersVersion=$(_HeadlessReflectionAnalyzersVersion);ErrorProneAnalyzersVersion=$(_HeadlessErrorProneAnalyzersVersion);SbomTargetsVersion=$(_HeadlessMicrosoftSbomTargetsVersion)</NuspecProperties>
+      <NuspecProperties Condition="'$(PackageId)' == 'Headless.NET.Sdk.Test'">$(NuspecProperties);MtpCrashDumpVersion=$(_HeadlessMtpCrashDumpVersion);MtpCodeCoverageVersion=$(_HeadlessMtpCodeCoverageVersion);MtpHangDumpVersion=$(_HeadlessMtpHangDumpVersion);MtpHotReloadVersion=$(_HeadlessMtpHotReloadVersion);MtpRetryVersion=$(_HeadlessMtpRetryVersion);MtpTrxReportVersion=$(_HeadlessMtpTrxReportVersion)</NuspecProperties>
+    </PropertyGroup>
+  </Target>
 </Project>

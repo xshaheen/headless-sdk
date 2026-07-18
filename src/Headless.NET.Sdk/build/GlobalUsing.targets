@@ -1,13 +1,13 @@
 <Project>
   <!--
     Evaluate after the consumer project body so an explicit ImplicitUsings value is authoritative
-    in every consumption mode. .NET 10 is the sole supported consumer target, so every namespace
-    below is available whenever the Microsoft implicit-usings feature is enabled.
+    in every consumption mode. These additional namespaces require .NET 8 or later; older and
+    custom target frameworks remain valid Headless consumers without receiving incompatible usings.
   -->
   <ItemGroup
     Condition=" ('$(ImplicitUsings)' == 'enable' or '$(ImplicitUsings)' == 'true')
       and '$(TargetFramework)' != ''
-      and $(TargetFramework.StartsWith('net10.0')) "
+      and $([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net8.0')) == 'true' "
   >
     <Using Include="System.Diagnostics.CodeAnalysis" />
     <Using Include="System.Globalization" />

@@ -12,16 +12,21 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- The package family now supports .NET 10 only. MSBuild projects must declare a target framework explicitly; Headless no longer infers one.
+- The package family is built with the repository-pinned .NET 10 SDK but no longer imposes a consumer target-framework restriction. MSBuild projects must still declare a target framework explicitly; compatibility is determined by the selected Microsoft SDK and its targeting packs or workloads.
+- Package dependencies are framework-agnostic, so direct `PackageReference` consumers receive the mandatory analyzer, banned-API, and SBOM restore graph even when their TFM is not compatible with `netstandard2.0`.
 - Analyzer packages, analyzer configuration, banned API lists, deterministic output, CI warning escalation, and NuGet audit are authoritative quality policies rather than optional convenience defaults.
 - CI now treats compiler, analyzer, nullable, MSBuild, and confirmed vulnerability warnings (`NU1901`-`NU1904`) as errors. `NU1900` and `NU1905` remain warnings because they indicate missing audit data, not a confirmed vulnerability.
+- The Microsoft `NETSDK1138` end-of-life target-framework diagnostic remains visible but non-fatal on CI so Headless does not turn an otherwise targetable TFM into a framework restriction.
 - CI locked restore is enabled only when `packages.lock.json` exists or `NuGetLockFilePath` identifies an existing lock file.
 - `Headless.NET.Sdk.Test` is now Microsoft Testing Platform only. MTP extensions are restore-visible in every consumption mode; consumers continue to choose their test framework.
+- .NET 10 command hosts must select `Microsoft.Testing.Platform` through the repository `global.json`; this host setting is independent of the test project's target framework.
 - SBOM generation remains opt-in through `GenerateSBOM=true`, while the required `Microsoft.Sbom.Targets` dependency is available consistently before the opt-in is evaluated.
 - Headless follows the Microsoft SDK default for `EmbedUntrackedSources` instead of forcing it.
-- File-based apps always receive the dedicated analyzer profile, and Headless extra global usings are added only when implicit usings are enabled.
-- Package publishing is internal to GitHub Packages. Actions are SHA-pinned, duplicate versions fail, and the publish job verifies artifact hashes before upload.
-- Documentation now describes the internal distribution and no-license status instead of presenting the packages as a public NuGet contract.
+- File-based apps always receive the dedicated analyzer profile. Headless extra global usings are added only when implicit usings are enabled and the consumer TFM is compatible with `net8.0`, so older or custom TFMs are not given unavailable namespaces.
+- In-project strict System.Text.Json opt-ins are evaluated after the consumer project body in every consumption mode and apply only to inner builds compatible with `net9.0`.
+- Package publishing uses GitHub Packages. Actions are SHA-pinned, duplicate versions fail, and the publish job verifies artifact hashes before upload.
+- Package release runs queue behind the family-wide publish lock instead of replacing an older pending release, every lock-holding job has a bounded timeout, and the tested postflight verifies private visibility plus the exact published versions without retrying a package push.
+- Documentation now describes the GitHub Packages distribution and no-license status without limiting the SDK family to Headless Framework consumers.
 - Direct PackageReference documentation now calls out NuGet's first-clean-restore import boundary and the required repository-owned restore-policy bootstrap.
 
 ### Removed

@@ -21,6 +21,7 @@
     <LangVersion>latest</LangVersion>
     <IsPackable>true</IsPackable>
     <PackageType>MSBuildSdk</PackageType>
+    <NuspecFile Condition="'$(NuspecFile)' == ''">$(MSBuildThisFileDirectory)Headless.NET.Sdk.Satellite.nuspec</NuspecFile>
     <IsBuildTaskProject>true</IsBuildTaskProject>
     <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -36,29 +37,4 @@
     />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="sdk/Sdk.props;sdk/Sdk.targets" Pack="true" PackagePath="sdk/%(Filename)%(Extension)" />
-    <None Include="build\$(PackageId).props" Pack="true" PackagePath="build\$(PackageId).props" />
-    <None Include="build\$(PackageId).targets" Pack="true" PackagePath="build\$(PackageId).targets" />
-    <!-- Packs the shared base SDK build tree so every satellite is self-contained. -->
-    <None
-      Include="..\Headless.NET.Sdk\build\**\*.*"
-      Pack="true"
-      PackagePath="build/%(RecursiveDir)%(Filename)%(Extension)"
-    />
-    <None
-      Include="buildMultiTargeting\$(PackageId).props"
-      Pack="true"
-      PackagePath="buildMultiTargeting\$(PackageId).props"
-    />
-    <None
-      Include="buildMultiTargeting\$(PackageId).targets"
-      Pack="true"
-      PackagePath="buildMultiTargeting\$(PackageId).targets"
-    />
-    <None Include="..\Headless.NET.Sdk\configurations\**" Pack="true" PackagePath="configurations/" />
-    <None Include="../../logo.png" Pack="true" PackagePath="" />
-    <!-- README.md is resolved and packed by SupportPackageInformation.targets from each satellite's own README.md -->
-    <None Include="..\Headless.NET.Sdk\_._" Pack="true" PackagePath="lib\$(TargetFramework)" Visible="false" />
-  </ItemGroup>
 </Project>

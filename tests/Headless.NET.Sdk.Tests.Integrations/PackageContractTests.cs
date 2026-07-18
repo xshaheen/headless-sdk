@@ -12,7 +12,7 @@ namespace Headless.NET.Sdk.Tests.Integrations;
 public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
 {
     private const string PackageDescription =
-        "An opinionated .NET 10 MSBuild SDK family for consistent project evaluation, mandatory analyzer and banned-API policy, CI quality gates, packaging defaults, and Microsoft Testing Platform support. Distributed through GitHub Packages; no license is currently granted.";
+        "An opinionated MSBuild SDK family for consistent project evaluation, mandatory analyzer and banned-API policy, CI quality gates, packaging defaults, and Microsoft Testing Platform support across compatible .NET projects. Distributed through GitHub Packages; no license is currently granted.";
 
     private static readonly string[] SharedPackageEntries =
     [
@@ -23,6 +23,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
         "build/Headless.NET.Sdk.props",
         "build/Headless.NET.Sdk.targets",
         "build/RuntimeHostConfigurationOption.props",
+        "build/RuntimeHostConfigurationOption.targets",
         "build/SupportAdditionalFiles.targets",
         "build/SupportAnalyzerEditorConfigs.props",
         "build/SupportAnalyzerHygiene.targets",
@@ -58,7 +59,6 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
         "configurations/template.csharpierignore",
         "configurations/template.gitattributes",
         "configurations/template.gitignore",
-        "lib/netstandard2.0/_._",
         "logo.png",
         "package/services/metadata/core-properties/*.psmdcp",
         "README.md",
@@ -144,10 +144,23 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
                 actualDependencies.OrderBy(pair => pair.Key, StringComparer.Ordinal)
             );
             Assert.Equal(packageId, MetadataValue(metadata, "id"));
+            Assert.Equal(packageId, MetadataValue(metadata, "title"));
             Assert.Equal("Mahmoud Shaheen", MetadataValue(metadata, "authors"));
             Assert.Equal(PackageDescription, MetadataValue(metadata, "description"));
             Assert.Equal("README.md", MetadataValue(metadata, "readme"));
             Assert.Equal("logo.png", MetadataValue(metadata, "icon"));
+            Assert.Equal("https://github.com/xshaheen/headless-sdk", MetadataValue(metadata, "projectUrl"));
+            Assert.Equal("https://github.com/xshaheen/headless-sdk/releases", MetadataValue(metadata, "releaseNotes"));
+            Assert.Equal(
+                $"Copyright © Mahmoud Shaheen 2024 - {DateTime.UtcNow.Year}",
+                MetadataValue(metadata, "copyright")
+            );
+            Assert.Equal(
+                "xshaheen;sdk;msbuild-sdk;msbuild;editorconfig;configuration;settings;props;targets",
+                MetadataValue(metadata, "tags")
+            );
+            Assert.Equal("true", MetadataValue(metadata, "developmentDependency"));
+            Assert.Equal("false", MetadataValue(metadata, "requireLicenseAcceptance"));
             Assert.Null(metadata.Elements().SingleOrDefault(element => element.Name.LocalName == "license"));
             Assert.Contains(
                 metadata.Descendants(),
@@ -160,6 +173,29 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
             Assert.Equal("https://github.com/xshaheen/headless-sdk.git", repository.Attribute("url")?.Value);
             Assert.False(string.IsNullOrWhiteSpace(repository.Attribute("branch")?.Value));
             Assert.False(string.IsNullOrWhiteSpace(repository.Attribute("commit")?.Value));
+        }
+    }
+
+    [Fact]
+    public void should_publish_framework_agnostic_dependency_groups()
+    {
+        foreach (var packageId in HeadlessSdkPackageFixture.PackageIds)
+        {
+            using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
+            var nuspec = ReadNuspec(package, packageId);
+            var dependencies = nuspec.Descendants().Single(element => element.Name.LocalName == "dependencies");
+            var groups = dependencies.Elements().ToArray();
+
+            Assert.NotEmpty(groups);
+            Assert.All(
+                groups,
+                group =>
+                {
+                    Assert.Equal("group", group.Name.LocalName);
+                    Assert.Null(group.Attribute("targetFramework"));
+                    Assert.Contains(group.Elements(), element => element.Name.LocalName == "dependency");
+                }
+            );
         }
     }
 
@@ -195,6 +231,39 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
             Assert.Contains(package.Entries, entry => entry.FullName == $"build/{packageId}.targets");
             Assert.Contains(package.Entries, entry => entry.FullName == $"buildMultiTargeting/{packageId}.props");
             Assert.Contains(package.Entries, entry => entry.FullName == $"buildMultiTargeting/{packageId}.targets");
+        }
+    }
+
+    [Fact]
+    public void should_not_ship_a_headless_target_framework_restriction()
+    {
+        foreach (var packageId in HeadlessSdkPackageFixture.PackageIds)
+        {
+            using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
+            var msbuildAssets = package
+                .Entries.Where(entry =>
+                    (
+                        entry.FullName.EndsWith(".props", StringComparison.Ordinal)
+                        || entry.FullName.EndsWith(".targets", StringComparison.Ordinal)
+                    )
+                    && (
+                        entry.FullName.StartsWith("build/", StringComparison.Ordinal)
+                        || entry.FullName.StartsWith("buildMultiTargeting/", StringComparison.Ordinal)
+                        || entry.FullName.StartsWith("sdk/", StringComparison.Ordinal)
+                    )
+                )
+                .ToArray();
+            Assert.NotEmpty(msbuildAssets);
+
+            foreach (var asset in msbuildAssets)
+            {
+                using var reader = new StreamReader(asset.Open());
+                var content = reader.ReadToEnd();
+
+                Assert.DoesNotContain("HeadlessValidateTargetFramework", content, StringComparison.Ordinal);
+                Assert.DoesNotContain("supports only", content, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain("TargetFramework.StartsWith('net10.0')", content, StringComparison.Ordinal);
+            }
         }
     }
 

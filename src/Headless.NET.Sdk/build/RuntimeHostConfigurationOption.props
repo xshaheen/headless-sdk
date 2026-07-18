@@ -7,18 +7,4 @@
     >
   </PropertyGroup>
 
-  <ItemGroup
-    Label="Json Config"
-    Condition="'$(HeadlessEnableStrictSystemTextJsonRuntimeDefaults)' == 'true'
-      and $([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net9.0')) == 'true'"
-  >
-    <RuntimeHostConfigurationOption
-      Include="System.Text.Json.Serialization.RespectRequiredConstructorParametersDefault"
-      Value="true"
-    />
-    <RuntimeHostConfigurationOption
-      Include="System.Text.Json.Serialization.RespectNullableAnnotationsDefault"
-      Value="true"
-    />
-  </ItemGroup>
 </Project>

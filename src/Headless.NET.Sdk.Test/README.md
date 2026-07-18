@@ -1,18 +1,20 @@
 # Headless.NET.Sdk.Test
 
-The .NET 10 Microsoft Testing Platform wrapper: `Microsoft.NET.Sdk` plus the complete Headless build baseline and test classification.
+The Microsoft Testing Platform wrapper: `Microsoft.NET.Sdk` plus the complete Headless build baseline and test classification.
 
 > [!IMPORTANT]
 > This package is currently distributed through the `xshaheen` GitHub Packages feed and is not published to NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
 
 ## Use
 
+Headless does not restrict `TargetFramework`; the Microsoft SDK, Microsoft Testing Platform, and the consumer-selected test framework determine compatibility.
+
 The SDK supplies the MTP host extensions; the consumer chooses its test framework:
 
 ```xml
 <Project Sdk="Headless.NET.Sdk.Test/x.y.z">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2" />
@@ -25,7 +27,7 @@ Direct PackageReference consumption uses `Microsoft.NET.Sdk`:
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Headless.NET.Sdk.Test" Version="x.y.z" PrivateAssets="all" />
@@ -33,6 +35,20 @@ Direct PackageReference consumption uses `Microsoft.NET.Sdk`:
   </ItemGroup>
 </Project>
 ```
+
+When `dotnet test` runs under the .NET 10 SDK, the repository must select Microsoft Testing
+Platform in `global.json`. Add this top-level entry alongside the existing `sdk` configuration:
+
+```json
+{
+  "test": {
+    "runner": "Microsoft.Testing.Platform"
+  }
+}
+```
+
+Without it, .NET 10 routes `dotnet test` through VSTest and the MTP project rejects the command.
+This is a command-host requirement, not a restriction on the test project's `TargetFramework`.
 
 Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headless.NET.Sdk.Test@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
 
