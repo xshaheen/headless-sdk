@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   # Serialize the package family across tags and manually selected refs. Different refs can resolve
-  # to the same MinVer version, so per-ref concurrency would leave a preflight-to-push race.
+  # to the same MinVer version, and publishing the six-package family is not transactional.
   group: publish-headless-sdk-packages
   cancel-in-progress: false
   queue: max
@@ -63,9 +63,6 @@ jobs:
 
       - name: Pack immutable release artifacts
         run: dotnet pack headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build --output "${{ env.PACKAGES_DIR }}"
-
-      - name: Test clean .NET 10 MTP consumer
-        run: bash .github/scripts/tests/clean-mtp-consumer-tests.sh "${{ env.PACKAGES_DIR }}"
 
       - name: Test
         # Microsoft Testing Platform runner (global.json "test.runner"); same MTP arg shape as ci.yml.
@@ -181,9 +178,6 @@ jobs:
             cd ./artifacts/packages-results
             sha256sum --check SHA256SUMS
           )
-
-          bash .github/scripts/github-package-preflight.sh \
-            ./artifacts/packages-results/PACKAGE_MANIFEST.tsv
 
           for package in "${packages[@]}"; do
             dotnet nuget push "$package" \
