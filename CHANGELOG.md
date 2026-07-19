@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-07-19
+
+### Breaking Changes
+
+- Headless SDK behavior is now direct opt-in: `buildTransitive` assets are no longer shipped, so a project reference no longer propagates Headless policy to downstream projects. Add the appropriate Headless SDK directly to every project that should receive it.
+- Projects must declare `TargetFramework` or `TargetFrameworks`; the removed inference switches no longer select a framework implicitly.
+- `Headless.NET.Sdk.Test` is Microsoft Testing Platform-only. Migrate VSTest projects and removed VSTest properties to the MTP runner and extensions documented below.
+- Analyzer, editorconfig, NuGet audit, and SBOM infrastructure is authoritative. The removed infrastructure opt-outs no longer disable it; the three documented banned-symbol controls remain available.
+- Legacy CI, single-file, SponsorLink alias, and generic xUnit/TUnit detection inputs were removed. Use `ContinuousIntegrationBuild`, `FileBasedProgram`, `DisableSponsorLink`, and the explicit MTP/xUnit v3 configuration described below.
+
 ### Added
 
 - Added first-class contract coverage for all five supported consumption modes: direct `PackageReference`, versioned project SDK, additional SDK, versionless `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk` file-based apps. All six SDK family members support every mode.
