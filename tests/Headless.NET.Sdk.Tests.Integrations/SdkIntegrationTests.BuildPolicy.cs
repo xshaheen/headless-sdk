@@ -394,12 +394,13 @@ public static class JsonConsumer
         );
 
         var properties = await project.EvaluateHeadlessPropertiesAsync(
-            "-p:GITHUB_ACTIONS=true -p:GITHUB_REPOSITORY=xshaheen/headless-sdk"
+            "-p:GITHUB_ACTIONS=true -p:GITHUB_REPOSITORY=xshaheen/headless-sdk -p:GITHUB_REF=refs/heads/main -p:GITHUB_RUN_NUMBER=123"
         );
 
         Assert.Equal("true", properties["EnableSdkContainerSupport"]);
         Assert.Equal("ghcr.io", properties["ContainerRegistry"]);
         Assert.Equal("xshaheen/headless-sdk", properties["ContainerRepository"]);
+        Assert.Equal("1.0.123;latest", properties["ContainerImageTags"]);
     }
 
     [Fact]
