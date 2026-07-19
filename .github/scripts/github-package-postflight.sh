@@ -28,20 +28,11 @@ while IFS=$'\t' read -r package_id version; do
       echo "GitHub Packages observation failed for ${package_id} ${version} (${attempt}/${attempts})." >&2
     else
       case $state in
-        $'private\tversion-present' | $'public\tversion-present')
+        version-present)
           verified=true
           break
           ;;
-        absent | $'private\tversion-absent' | $'public\tversion-absent')
-          ;;
-        invalid-visibility)
-          echo "GitHub Packages returned invalid visibility for ${package_id}."
-          exit 1
-          ;;
-        $'unsupported-visibility\t'*)
-          visibility=${state#*$'\t'}
-          echo "${package_id} has unsupported visibility '${visibility}'; expected private or public."
-          exit 1
+        absent | version-absent)
           ;;
         *)
           echo "GitHub Packages returned unexpected state '${state}' for ${package_id}."

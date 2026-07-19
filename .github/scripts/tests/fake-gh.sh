@@ -26,36 +26,23 @@ if [[ $arguments == *" --include "* ]]; then
       echo "gh: Resource not accessible. (HTTP 403)"
       exit 1
       ;;
-    public | public-duplicate | postflight-public-present)
-      printf 'HTTP/2.0 200 OK\n\n{"visibility":"public"}\n'
-      ;;
-    missing-visibility)
+    version-absent | duplicate | duplicate-early | postflight-present | postflight-delayed | postflight-version-failure | postflight-version-transient)
       printf 'HTTP/2.0 200 OK\n\n{}\n'
-      ;;
-    unknown-visibility)
-      printf 'HTTP/2.0 200 OK\n\n{"visibility":"internal"}\n'
-      ;;
-    private-duplicate | private-duplicate-early | postflight-private-present | postflight-delayed | postflight-version-failure | postflight-version-transient)
-      printf 'HTTP/2.0 200 OK\n\n{"visibility":"private"}\n'
       ;;
     *)
       echo "Unknown fake GitHub scenario: ${scenario}"
       exit 2
       ;;
   esac
-elif [[ $scenario == private-duplicate && $arguments == *"/second.package/versions"* ]]; then
+elif [[ $scenario == duplicate && $arguments == *"/second.package/versions"* ]]; then
   echo "1.0.0"
-elif [[ $scenario == public-duplicate && $arguments == *"/first.package/versions"* ]]; then
+elif [[ $scenario == postflight-present && $arguments == *"/first.package/versions"* ]]; then
   echo "1.0.0"
-elif [[ $scenario == postflight-public-present && $arguments == *"/first.package/versions"* ]]; then
-  echo "1.0.0"
-elif [[ $scenario == private-duplicate-early && $arguments == *"/first.package/versions"* ]]; then
+elif [[ $scenario == duplicate-early && $arguments == *"/first.package/versions"* ]]; then
   echo "1.0.0"
   for version in {1..10000}; do
     echo "0.0.${version}"
   done
-elif [[ $scenario == postflight-private-present && $arguments == *"/first.package/versions"* ]]; then
-  echo "1.0.0"
 elif [[ $scenario == postflight-delayed && $arguments == *"/first.package/versions"* ]]; then
   state_dir=${GH_FAKE_STATE_DIR:?Fake GitHub state directory is required.}
   version_calls_file="$state_dir/version-calls"

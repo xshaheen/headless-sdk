@@ -10,11 +10,7 @@ trap 'rm -rf "$test_root"' EXIT
 
 printf 'First.Package\t1.0.0\n' > "$test_root/one-package.tsv"
 
-GH_BIN="$fake_gh" GH_FAKE_SCENARIO=postflight-private-present \
-  GITHUB_PACKAGE_POSTFLIGHT_ATTEMPTS=3 GITHUB_PACKAGE_POSTFLIGHT_DELAY_SECONDS=0 \
-  bash "$postflight" "$test_root/one-package.tsv"
-
-GH_BIN="$fake_gh" GH_FAKE_SCENARIO=postflight-public-present \
+GH_BIN="$fake_gh" GH_FAKE_SCENARIO=postflight-present \
   GITHUB_PACKAGE_POSTFLIGHT_ATTEMPTS=3 GITHUB_PACKAGE_POSTFLIGHT_DELAY_SECONDS=0 \
   bash "$postflight" "$test_root/one-package.tsv"
 
@@ -23,26 +19,6 @@ GH_BIN="$fake_gh" GH_FAKE_SCENARIO=postflight-delayed GH_FAKE_STATE_DIR="$test_r
   GITHUB_PACKAGE_POSTFLIGHT_ATTEMPTS=3 GITHUB_PACKAGE_POSTFLIGHT_DELAY_SECONDS=0 \
   bash "$postflight" "$test_root/one-package.tsv"
 [[ $(<"$test_root/delayed/version-calls") == 2 ]]
-
-if output=$(
-  GH_BIN="$fake_gh" GH_FAKE_SCENARIO=missing-visibility \
-    GITHUB_PACKAGE_POSTFLIGHT_ATTEMPTS=3 GITHUB_PACKAGE_POSTFLIGHT_DELAY_SECONDS=0 \
-    bash "$postflight" "$test_root/one-package.tsv" 2>&1
-); then
-  echo "Expected malformed visibility to fail postflight."
-  exit 1
-fi
-grep -Fq "invalid visibility" <<<"$output"
-
-if output=$(
-  GH_BIN="$fake_gh" GH_FAKE_SCENARIO=unknown-visibility \
-    GITHUB_PACKAGE_POSTFLIGHT_ATTEMPTS=3 GITHUB_PACKAGE_POSTFLIGHT_DELAY_SECONDS=0 \
-    bash "$postflight" "$test_root/one-package.tsv" 2>&1
-); then
-  echo "Expected unsupported visibility to fail postflight."
-  exit 1
-fi
-grep -Fq "expected private or public" <<<"$output"
 
 mkdir "$test_root/transient"
 GH_BIN="$fake_gh" GH_FAKE_SCENARIO=postflight-version-transient GH_FAKE_STATE_DIR="$test_root/transient" \

@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file.
 - Added consumer tests against newly packed packages for restore, build, run, pack, static-graph evaluation, design-time evaluation, mixed and duplicate imports, multi-targeting outer and inner builds, target-framework compatibility, analyzer enforcement and opt-outs, CI warnings, locked restore, NuGet audit, SBOM generation, Microsoft Testing Platform execution, packaging defaults, and explicit consumer overrides.
 - Added Windows validation for packed Windows Desktop WPF and Windows Forms consumers and macOS validation for a packed base-SDK consumer. Linux, Windows, and macOS validation must all pass before publication.
 - Added `System.Collections.ArrayList` and `Assembly.GetAssembly(Type)` to the general banned-symbol list.
-- Added tested GitHub Packages preflight and postflight checks for duplicate versions, supported public or private package visibility, and exact published versions.
+- Added tested GitHub Packages preflight and postflight checks for duplicate versions and exact published versions. Package visibility is not part of the release gate.
 - Added SHA-256 package hashes and a six-package ID/version manifest so publication promotes and verifies the exact artifacts produced by the build job.
 
 ### Changed
@@ -38,7 +38,7 @@ All notable changes to this project will be documented in this file.
 - `Microsoft.Sbom.Targets` is now an exact, private, restore-visible dependency in every consumption mode. Headless owns its single targets import, generation remains opt-in through `GenerateSBOM=true`, and requesting generation without restored tooling produces a targeted pack error.
 - Headless follows the Microsoft SDK default for `EmbedUntrackedSources` instead of forcing source embedding.
 - Package metadata now uses the general-purpose, consumer-facing SDK-family description, the repository README and logo, exact repository branch/commit provenance, and no license metadata. The family is not limited to Headless Framework consumers and is distributed through GitHub Packages and NuGet.org.
-- Tag and manual workflow runs publish only to GitHub Packages after hash verification and duplicate/visibility-state preflight; postflight accepts public or private package visibility and verifies the exact published family without retrying a package push.
+- Tag and manual workflow runs publish only to GitHub Packages after hash verification and duplicate-version preflight; postflight verifies the exact published family without retrying a package push. Public and private packages are both supported.
 - Published GitHub Releases publish only to NuGet.org after the complete build/test/platform gate, SHA-256 verification, an exact release-tag/package-version match, and approval in the protected `NuGet Release` environment. The release artifact set must contain exactly six `.nupkg` files and no `.snupkg` files; duplicate versions fail.
 - Publication is serialized across the package family with queued runs and bounded job timeouts. A partial feed publication is not retried automatically.
 - CI now builds and packs once, tests the immutable packed artifact set, retains warnings in final logs, isolates clean-consumer NuGet caches outside source globs, and exposes a single Linux/Windows/macOS final status.

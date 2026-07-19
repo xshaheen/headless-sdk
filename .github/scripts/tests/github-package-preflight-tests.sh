@@ -12,6 +12,7 @@ printf 'First.Package\t1.0.0\n' > "$test_root/one-package.tsv"
 printf 'First.Package\t1.0.0\nSecond.Package\t1.0.0\n' > "$test_root/two-packages.tsv"
 
 GH_BIN="$fake_gh" GH_FAKE_SCENARIO=absent bash "$preflight" "$test_root/one-package.tsv"
+GH_BIN="$fake_gh" GH_FAKE_SCENARIO=version-absent bash "$preflight" "$test_root/one-package.tsv"
 
 if output=$(GH_BIN="$fake_gh" GH_FAKE_SCENARIO=forbidden bash "$preflight" "$test_root/one-package.tsv" 2>&1); then
   echo "Expected a forbidden API response to fail preflight."
@@ -19,28 +20,8 @@ if output=$(GH_BIN="$fake_gh" GH_FAKE_SCENARIO=forbidden bash "$preflight" "$tes
 fi
 grep -Fq "preflight failed" <<<"$output"
 
-GH_BIN="$fake_gh" GH_FAKE_SCENARIO=public bash "$preflight" "$test_root/one-package.tsv"
-
-if output=$(GH_BIN="$fake_gh" GH_FAKE_SCENARIO=public-duplicate bash "$preflight" "$test_root/one-package.tsv" 2>&1); then
-  echo "Expected a duplicate public package version to fail preflight."
-  exit 1
-fi
-grep -Fq "First.Package 1.0.0 already exists" <<<"$output"
-
-if output=$(GH_BIN="$fake_gh" GH_FAKE_SCENARIO=missing-visibility bash "$preflight" "$test_root/one-package.tsv" 2>&1); then
-  echo "Expected missing package visibility to fail preflight."
-  exit 1
-fi
-grep -Fq "invalid visibility" <<<"$output"
-
-if output=$(GH_BIN="$fake_gh" GH_FAKE_SCENARIO=unknown-visibility bash "$preflight" "$test_root/one-package.tsv" 2>&1); then
-  echo "Expected unsupported package visibility to fail preflight."
-  exit 1
-fi
-grep -Fq "expected private or public" <<<"$output"
-
 if output=$(
-  GH_BIN="$fake_gh" GH_FAKE_SCENARIO=private-duplicate \
+  GH_BIN="$fake_gh" GH_FAKE_SCENARIO=duplicate \
     bash "$preflight" "$test_root/two-packages.tsv" 2>&1
 ); then
   echo "Expected a later duplicate version to fail preflight."
@@ -49,7 +30,7 @@ fi
 grep -Fq "Second.Package 1.0.0 already exists" <<<"$output"
 
 if output=$(
-  GH_BIN="$fake_gh" GH_FAKE_SCENARIO=private-duplicate-early \
+  GH_BIN="$fake_gh" GH_FAKE_SCENARIO=duplicate-early \
     bash "$preflight" "$test_root/one-package.tsv" 2>&1
 ); then
   echo "Expected an early duplicate in a long version list to fail preflight."
