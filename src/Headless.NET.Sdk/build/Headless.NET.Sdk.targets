@@ -34,7 +34,10 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
     Condition=" '$(DisableSupportCopyright)' != 'true' "
   />
   <Import Project="$(MSBuildThisFileDirectory)SupportNuGetAudit.targets" />
-  <Import Project="$(MSBuildThisFileDirectory)SupportBannedSymbols.targets" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)SupportBannedSymbols.targets"
+    Condition=" '$(DisableSupportBannedSymbols)' != 'true' "
+  />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportWebContainer.targets"
     Condition=" '$(DisableSupportWebContainer)' != 'true' "

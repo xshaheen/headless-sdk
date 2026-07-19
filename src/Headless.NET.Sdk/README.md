@@ -3,7 +3,7 @@
 The base Headless MSBuild SDK for libraries, console applications, and shared build policy. It wraps `Microsoft.NET.Sdk`; every satellite package carries this same baseline.
 
 > [!IMPORTANT]
-> This package is currently distributed through the `xshaheen` GitHub Packages feed and is not published to NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
+> This package is distributed through GitHub Packages and, after protected release approval, NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
 
 ## Use
 
@@ -52,7 +52,7 @@ See the repository [consumption-mode reference](https://github.com/xshaheen/head
 
 - Direct opt-in only: no `buildTransitive` assets are shipped.
 - Explicit target frameworks only; Headless does not infer a TFM.
-- Mandatory nine-package analyzer baseline plus bundled general and Newtonsoft.Json banned APIs.
+- Mandatory nine-package analyzer baseline plus default-on, consumer-configurable general and Newtonsoft.Json banned APIs.
 - CI-only compiler, analyzer, nullable, MSBuild, and vulnerability warning escalation.
 - CI locked restore only when an existing lock file opts the project in.
 - Direct and transitive NuGet audit; `NU1901`-`NU1904` fail CI while `NU1900` and `NU1905` remain warnings.

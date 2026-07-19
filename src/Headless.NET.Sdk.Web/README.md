@@ -3,7 +3,7 @@
 The ASP.NET Core and Web API wrapper: `Microsoft.NET.Sdk.Web` plus the complete Headless build baseline.
 
 > [!IMPORTANT]
-> This package is currently distributed through the `xshaheen` GitHub Packages feed and is not published to NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
+> This package is distributed through GitHub Packages and, after protected release approval, NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
 
 ## Use
 
@@ -36,7 +36,7 @@ Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headles
 
 ## Web contract
 
-The package sets `HeadlessSdkProjectType=Web`, defaults `IsPackable=false`, and preserves the mandatory Headless analyzer, banned-API, audit, CI, symbol, and direct-opt-in policies.
+The package sets `HeadlessSdkProjectType=Web`, defaults `IsPackable=false`, and preserves the mandatory Headless analyzer infrastructure, configurable banned-API policy, audit, CI, symbol, and direct-opt-in policies.
 
 On GitHub Actions, Web projects default to SDK container publishing through `ghcr.io`. The repository and tags are derived from GitHub metadata; `main` receives the configured version prefix and `latest`, while other refs receive preview tags. Set `DisableSupportWebContainer=true` only when the project owns its container policy.
 

@@ -3,7 +3,7 @@
 The Microsoft Testing Platform wrapper: `Microsoft.NET.Sdk` plus the complete Headless build baseline and test classification.
 
 > [!IMPORTANT]
-> This package is currently distributed through the `xshaheen` GitHub Packages feed and is not published to NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
+> This package is distributed through GitHub Packages and, after protected release approval, NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
 
 ## Use
 
@@ -59,7 +59,7 @@ Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headles
 - Restore-visible crash dump, hang dump, hot reload, retry, TRX, and coverage extensions.
 - Default TRX output, crash and hang dumps, and a minimum expected test count.
 - Coverage enabled on CI and analyzer work skipped during the test-build phase unless explicitly retained.
-- Mandatory Headless analyzer, banned-API, audit, and CI policies with narrow test-code severity relaxations.
+- Mandatory Headless analyzer infrastructure, configurable banned-API policy, and mandatory audit and CI policies with narrow test-code severity relaxations.
 
 The package is self-contained and ships no `buildTransitive` assets. Shared harness libraries can instead use `IsTestHarnessProject=true` with the base SDK to receive test analysis defaults without becoming executable test hosts.
 

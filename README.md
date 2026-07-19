@@ -3,7 +3,7 @@
 `Headless.NET.Sdk` is an opinionated MSBuild SDK family for .NET projects. It is consumer-facing build infrastructure that standardizes evaluation order, restore policy, analyzers, packaging, and test execution across any compatible .NET repository.
 
 > [!IMPORTANT]
-> The packages are currently distributed through the `xshaheen` GitHub Packages feed and are not published to NuGet.org. The SDK family is not specific to Headless Framework. This repository currently has no license; source availability does not itself grant legal rights to use, modify, or redistribute its contents.
+> The packages are distributed through GitHub Packages and NuGet.org. NuGet.org publication requires a published GitHub Release plus approval in the protected `NuGet Release` environment. The SDK family is not specific to Headless Framework. This repository currently has no license; source availability does not itself grant legal rights to use, modify, or redistribute its contents.
 
 ## Support contract
 
@@ -13,7 +13,7 @@
   is identical; the documented first-clean-restore bootstrap is required for PackageReference mode.
 - Package assets apply only to the project that opts in. The packages do not ship `buildTransitive` assets.
 - Multi-targeting outer builds remain supported through `buildMultiTargeting`; inner builds receive the normal `build` contract exactly once.
-- Named quality policies are authoritative. In particular, the analyzer/banned-API baseline and CI quality gates are not consumer opt-outs.
+- Named quality policies are authoritative. The analyzer infrastructure and CI quality gates are not consumer opt-outs; the two shipped banned-symbol lists retain the documented whole-policy and per-list opt-outs.
 
 ## Package family
 
@@ -30,7 +30,7 @@ Satellite packages are self-contained: each carries the shared base assets plus 
 
 ## Feed setup
 
-Authenticate to GitHub Packages with an account or token that can read the package, then add the account feed to the consumer's `nuget.config`:
+Stable releases on NuGet.org require no additional package source. To consume a GitHub Packages build, authenticate with an account or token that can read the package, then add the account feed to the consumer's `nuget.config`:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -208,7 +208,7 @@ The sole self-reference exception is a project whose evaluated `PackageId` is
 the SDK without depending on itself. The other eight analyzer references and all mandatory policy
 still apply.
 
-The bundled general and Newtonsoft.Json banned-symbol lists are also mandatory. This is a deliberate house policy, not a convenience default. Rule severities and narrow project-type relaxations remain defined by the shipped analyzer configurations.
+The bundled general and Newtonsoft.Json banned-symbol lists are enabled by default. Consumers can disable the complete banned-symbol policy with `DisableSupportBannedSymbols=true`, or disable either list independently through `IncludeDefaultBannedSymbols=false` and `BannedNewtonsoftJsonSymbols=false`. The `Microsoft.CodeAnalysis.BannedApiAnalyzers` package remains part of the analyzer infrastructure.
 
 The SDK owns the versions of all nine implicit analyzer references. Central Package Management
 consumers must not add `PackageVersion` entries for those analyzer IDs. SDK-form consumption rejects
@@ -227,6 +227,9 @@ the listed default; explicit values win unless the behavior is identified as man
 | `DisableDocumentationWarnings` | `true` | Set `false` to report CS1573 and CS1591 while keeping XML documentation generation enabled. |
 | `HeadlessEnforceConfigureAwait` | `false` | Set `true` to enable CA2007 through the shipped analyzer profile. |
 | `DisableSponsorLink` | enabled unless `false` | Set `false` to retain SponsorLink and Moq analyzers that Headless removes by default. |
+| `DisableSupportBannedSymbols` | `false` | Set `true` to omit both shipped banned-symbol lists. The banned-API analyzer package remains available. |
+| `IncludeDefaultBannedSymbols` | `true` | Set `false` to omit the general .NET banned-symbol list. |
+| `BannedNewtonsoftJsonSymbols` | `true` | Set `false` to permit Newtonsoft.Json APIs while retaining the general list. |
 | `HeadlessEmitInternalsVisibleToAttributes` | `true` | Set `false` when the project owns its friend-assembly list. |
 | `HeadlessEmitClsCompliantAttribute` | `true` | Set `false` when the project supplies its own `CLSCompliant` attribute. |
 | `HeadlessEnableStrictSystemTextJsonRuntimeDefaults` | `false` | Enables the two process-wide strict System.Text.Json runtime switches for TFMs compatible with `net9.0`. |
@@ -259,8 +262,8 @@ the listed default; explicit values win unless the behavior is identified as man
 | `HeadlessCopyGitAttributesToSolutionDir` | master selector | Selects only `.gitattributes`. |
 | `HeadlessOverwriteConfigFiles` | `false` | Allows the explicit scaffold target to replace existing files. |
 
-The explicit target framework, nine analyzer packages, analyzer and banned-symbol configuration,
-CI warning gate, NuGet audit policy, and SDK-owned MTP extension
+The explicit target framework, nine analyzer packages, analyzer configuration, CI warning gate,
+NuGet audit policy, and SDK-owned MTP extension
 versions are mandatory policy. Legacy analyzer/configuration opt-out names do not disable them.
 
 ## CI, restore, and vulnerability policy
@@ -387,7 +390,7 @@ HEADLESS_PACKAGES_DIR="$PWD/artifacts/packages-results" \
   dotnet test headless-sdk.slnx --configuration Release --no-restore --no-build
 ```
 
-The publish workflow promotes the exact packages produced by its build job, verifies SHA-256 hashes before upload, requires Linux, Windows, and macOS validation, and fails on duplicate package versions. Publishing targets GitHub Packages only. GitHub Packages does not provide an atomic multi-package transaction: if a release stops after publishing only part of the family, abandon that version, fix the cause, and publish a new version. Never retry the same partial version or bypass the duplicate-version preflight.
+The publish workflow promotes the exact packages produced by its build job, verifies SHA-256 hashes before upload, requires Linux, Windows, and macOS validation, and fails on duplicate package versions. Tag and manual runs publish to GitHub Packages. A published GitHub Release builds the same validated package family for NuGet.org, then pauses for approval in the protected `NuGet Release` environment before any push. Neither feed provides an atomic multi-package transaction: if a release stops after publishing only part of the family, abandon that version, fix the cause, and publish a new version. Never retry the same partial version or bypass a publication gate.
 
 ## Repository layout
 

@@ -13,8 +13,8 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - The package family is built with the repository-pinned .NET 10 SDK but no longer imposes a consumer target-framework restriction. MSBuild projects must still declare a target framework explicitly; compatibility is determined by the selected Microsoft SDK and its targeting packs or workloads.
-- Package dependencies are framework-agnostic, so direct `PackageReference` consumers receive the mandatory analyzer, banned-API, and SBOM restore graph even when their TFM is not compatible with `netstandard2.0`.
-- Analyzer packages, analyzer configuration, banned API lists, deterministic output, CI warning escalation, and NuGet audit are authoritative quality policies rather than optional convenience defaults.
+- Package dependencies are framework-agnostic, so direct `PackageReference` consumers receive the analyzer, banned-API, and SBOM restore graph even when their TFM is not compatible with `netstandard2.0`.
+- Analyzer packages, analyzer configuration, deterministic output, CI warning escalation, and NuGet audit are authoritative quality policies. The general and Newtonsoft.Json banned-symbol lists remain enabled by default with whole-policy and per-list opt-outs.
 - CI now treats compiler, analyzer, nullable, MSBuild, and confirmed vulnerability warnings (`NU1901`-`NU1904`) as errors. `NU1900` and `NU1905` remain warnings because they indicate missing audit data, not a confirmed vulnerability.
 - The Microsoft `NETSDK1138` end-of-life target-framework diagnostic remains visible but non-fatal on CI so Headless does not turn an otherwise targetable TFM into a framework restriction.
 - CI locked restore is enabled only when `packages.lock.json` exists or `NuGetLockFilePath` identifies an existing lock file.
@@ -26,13 +26,14 @@ All notable changes to this project will be documented in this file.
 - In-project strict System.Text.Json opt-ins are evaluated after the consumer project body in every consumption mode and apply only to inner builds compatible with `net9.0`.
 - Package publishing uses GitHub Packages. Actions are SHA-pinned, duplicate versions fail, and the publish job verifies artifact hashes before upload.
 - Package release runs queue behind the family-wide publish lock instead of replacing an older pending release, every lock-holding job has a bounded timeout, and the tested postflight verifies private visibility plus the exact published versions without retrying a package push.
+- NuGet.org publication is restored for published GitHub Releases and pauses for approval in the protected `NuGet Release` environment before pushing the validated package family.
 - Documentation now describes the GitHub Packages distribution and no-license status without limiting the SDK family to Headless Framework consumers.
 - Direct PackageReference documentation now calls out NuGet's first-clean-restore import boundary and the required repository-owned restore-policy bootstrap.
 
 ### Removed
 
 - Removed all `buildTransitive` package assets. Each project must opt in directly; `buildMultiTargeting` remains for multi-targeting outer builds.
-- Removed target-framework inference, VSTest defaults, conditional test-runner classification, public NuGet.org publishing, ineffective package API validation, and obsolete quality-policy opt-out switches.
+- Removed target-framework inference, VSTest defaults, conditional test-runner classification, ineffective package API validation, and obsolete quality-policy opt-out switches.
 - Removed build-time test-tool version generation. Shipped MTP extension pins are checked against `Directory.Packages.props` by package contract tests.
 
 ## [0.0.129] - 2026-07-14

@@ -3,7 +3,7 @@
 The Blazor WebAssembly wrapper: `Microsoft.NET.Sdk.BlazorWebAssembly` plus the complete Headless build baseline.
 
 > [!IMPORTANT]
-> This package is currently distributed through the `xshaheen` GitHub Packages feed and is not published to NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
+> This package is distributed through GitHub Packages and, after protected release approval, NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
 
 ## Use
 
@@ -34,4 +34,4 @@ Blazor WebAssembly projects retain their specialized Microsoft SDK behavior.
 
 The package sets `HeadlessSdkProjectType=BlazorWebAssembly` and defaults `IsPackable=false`. `HeadlessSymbolFormat` defaults to `none`: embedded PDBs would otherwise survive into the browser `_framework` payload, increasing download size and exposing debug data.
 
-The package preserves the mandatory Headless analyzer, banned-API, audit, CI, SBOM, and direct-opt-in policies. It is self-contained and ships no `buildTransitive` assets.
+The package preserves the mandatory Headless analyzer infrastructure, configurable banned-API policy, audit, CI, SBOM, and direct-opt-in policies. It is self-contained and ships no `buildTransitive` assets.

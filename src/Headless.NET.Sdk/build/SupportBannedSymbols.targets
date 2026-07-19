@@ -1,15 +1,17 @@
 <Project>
   <!--
     Wires the shipped BannedSymbols.txt files into BannedApiAnalyzers as AdditionalFiles.
-    Both the core .NET and Newtonsoft.Json bans are mandatory parts of the Headless quality policy.
+    Consumers can disable the complete policy or either list independently.
   -->
   <ItemGroup>
     <AdditionalFiles
       Include="$(MSBuildThisFileDirectory)..\configurations\BannedSymbols.txt"
+      Condition="'$(IncludeDefaultBannedSymbols)' != 'false'"
       Visible="false"
     />
     <AdditionalFiles
       Include="$(MSBuildThisFileDirectory)..\configurations\BannedSymbols.NewtonsoftJson.txt"
+      Condition="'$(BannedNewtonsoftJsonSymbols)' != 'false'"
       Visible="false"
     />
   </ItemGroup>

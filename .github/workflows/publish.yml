@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - "*.*.*"
+  release:
+    types:
+      - published
   workflow_dispatch:
 
 permissions:
@@ -131,6 +134,7 @@ jobs:
 
   publish-github-packages:
     name: Publish GitHub Packages
+    if: github.event_name != 'release'
     needs:
       - build
       - platform-smoke
@@ -190,3 +194,71 @@ jobs:
 
           bash .github/scripts/github-package-postflight.sh \
             ./artifacts/packages-results/PACKAGE_MANIFEST.tsv
+
+  publish-nuget-packages:
+    name: Publish NuGet.org Packages
+    if: github.event_name == 'release' && github.event.action == 'published'
+    needs:
+      - build
+      - platform-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    environment:
+      name: NuGet Release
+      url: https://www.nuget.org/packages?q=Headless.NET.Sdk
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          global-json-file: ./global.json
+
+      - name: Download packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: packages
+          path: ./artifacts/packages-results
+
+      - name: Verify release artifacts
+        env:
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+
+          (
+            cd ./artifacts/packages-results
+            sha256sum --check SHA256SUMS
+          )
+
+          while IFS=$'\t' read -r package_id version; do
+            if [[ "$version" != "$RELEASE_VERSION" ]]; then
+              echo "${package_id} version '${version}' does not match release tag '${RELEASE_VERSION}'."
+              exit 1
+            fi
+          done < ./artifacts/packages-results/PACKAGE_MANIFEST.tsv
+
+      - name: Publish packages to NuGet.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          packages=(./artifacts/packages-results/*.nupkg)
+          if [ ${#packages[@]} -ne 6 ]; then
+            echo "Expected exactly six .nupkg files; found ${#packages[@]}."
+            exit 1
+          fi
+
+          for package in "${packages[@]}"; do
+            dotnet nuget push "$package" \
+              --source "https://api.nuget.org/v3/index.json" \
+              --api-key "$NUGET_API_KEY"
+          done

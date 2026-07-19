@@ -3,7 +3,7 @@
 The WPF and Windows Forms wrapper: `Microsoft.NET.Sdk.WindowsDesktop` plus the complete Headless build baseline.
 
 > [!IMPORTANT]
-> This package is currently distributed through the `xshaheen` GitHub Packages feed and is not published to NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
+> This package is distributed through GitHub Packages and, after protected release approval, NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
 
 ## Use
 
@@ -35,4 +35,4 @@ projects continue to use `Microsoft.NET.Sdk.WindowsDesktop` with `UseWPF` or `Us
 
 The package sets `HeadlessSdkProjectType=WindowsDesktop` and defaults `IsPackable=true`. Consumers still select `UseWPF` or `UseWindowsForms` and a compatible Windows TFM. Use `HeadlessEnforceConfigureAwait=true` when a library must surface `CA2007` for synchronization-context correctness.
 
-The package preserves the mandatory Headless analyzer, banned-API, audit, CI, symbol, SBOM, and direct-opt-in policies. It is self-contained and ships no `buildTransitive` assets.
+The package preserves the mandatory Headless analyzer infrastructure, configurable banned-API policy, audit, CI, symbol, SBOM, and direct-opt-in policies. It is self-contained and ships no `buildTransitive` assets.

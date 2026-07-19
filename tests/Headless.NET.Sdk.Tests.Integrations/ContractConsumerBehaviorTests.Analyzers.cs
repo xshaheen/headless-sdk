@@ -42,6 +42,50 @@ public sealed partial class ContractConsumerBehaviorTests
         }
     }
 
+    [Theory]
+    [InlineData("IncludeDefaultBannedSymbols", "false", false, true, false)]
+    [InlineData("IncludeDefaultBannedSymbols", "false", false, true, true)]
+    [InlineData("BannedNewtonsoftJsonSymbols", "false", true, false, false)]
+    [InlineData("BannedNewtonsoftJsonSymbols", "false", true, false, true)]
+    [InlineData("DisableSupportBannedSymbols", "true", false, false, false)]
+    [InlineData("DisableSupportBannedSymbols", "true", false, false, true)]
+    public async Task should_honor_banned_symbol_opt_outs_in_package_and_sdk_consumption(
+        string propertyName,
+        string propertyValue,
+        bool expectDefaultSymbols,
+        bool expectNewtonsoftSymbols,
+        bool useSdkConsumption
+    )
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: useSdkConsumption ? $"Headless.NET.Sdk/{fixture.PackageVersion}" : "Microsoft.NET.Sdk",
+            targetFramework: "net10.0",
+            includePackageReference: !useSdkConsumption,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal) { [propertyName] = propertyValue }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+        var additionalFiles = properties["AdditionalFiles"].Split('|', StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Equal(
+            expectDefaultSymbols,
+            additionalFiles.Any(path => path.EndsWith("BannedSymbols.txt", StringComparison.OrdinalIgnoreCase))
+        );
+        Assert.Equal(
+            expectNewtonsoftSymbols,
+            additionalFiles.Any(path =>
+                path.EndsWith("BannedSymbols.NewtonsoftJson.txt", StringComparison.OrdinalIgnoreCase)
+            )
+        );
+        Assert.Contains(
+            "Microsoft.CodeAnalysis.BannedApiAnalyzers",
+            properties["PackageReferences"],
+            StringComparison.Ordinal
+        );
+    }
+
     [Fact]
     public async Task should_reassert_mandatory_analyzers_after_consumer_override_attempts()
     {

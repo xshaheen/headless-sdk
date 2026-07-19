@@ -12,7 +12,7 @@ namespace Headless.NET.Sdk.Tests.Integrations;
 public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
 {
     private const string PackageDescription =
-        "An opinionated MSBuild SDK family for consistent project evaluation, mandatory analyzer and banned-API policy, CI quality gates, packaging defaults, and Microsoft Testing Platform support across compatible .NET projects. Distributed through GitHub Packages; no license is currently granted.";
+        "An opinionated MSBuild SDK family for consistent project evaluation, mandatory analyzer infrastructure, configurable banned-API policy, CI quality gates, packaging defaults, and Microsoft Testing Platform support across compatible .NET projects. Distributed through GitHub Packages and NuGet.org; no license is currently granted.";
 
     private static readonly string[] SharedPackageEntries =
     [
@@ -339,6 +339,25 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
         Assert.Null(bindingUpdate.Attribute("Include"));
         Assert.Equal("Microsoft.Sbom.Targets", bindingUpdate.Attribute("Update")?.Value);
         Assert.Equal("none", bindingUpdate.Attribute("IncludeAssets")?.Value);
+    }
+
+    [Fact]
+    public void should_gate_nuget_publication_on_a_published_release_and_protected_environment()
+    {
+        var repositoryRoot = TestRepository.FindRoot("NuGet publication workflow contract");
+        var workflow = File.ReadAllText(Path.Combine(repositoryRoot, ".github", "workflows", "publish.yml"));
+
+        Assert.Contains("release:", workflow, StringComparison.Ordinal);
+        Assert.Contains("- published", workflow, StringComparison.Ordinal);
+        Assert.Contains(
+            "if: github.event_name == 'release' && github.event.action == 'published'",
+            workflow,
+            StringComparison.Ordinal
+        );
+        Assert.Contains("name: NuGet Release", workflow, StringComparison.Ordinal);
+        Assert.Contains("${{ secrets.NUGET_API_KEY }}", workflow, StringComparison.Ordinal);
+        Assert.Contains("https://api.nuget.org/v3/index.json", workflow, StringComparison.Ordinal);
+        Assert.DoesNotContain("--skip-duplicate", workflow, StringComparison.Ordinal);
     }
 
     private static HashSet<string> ReadDependencies(ZipArchive package, string packageId)

@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup Label="Package settings">
     <Title>$(MSBuildProjectName)</Title>
-    <Description>An opinionated MSBuild SDK family for consistent project evaluation, mandatory analyzer and banned-API policy, CI quality gates, packaging defaults, and Microsoft Testing Platform support across compatible .NET projects. Distributed through GitHub Packages; no license is currently granted.</Description>
+    <Description>An opinionated MSBuild SDK family for consistent project evaluation, mandatory analyzer infrastructure, configurable banned-API policy, CI quality gates, packaging defaults, and Microsoft Testing Platform support across compatible .NET projects. Distributed through GitHub Packages and NuGet.org; no license is currently granted.</Description>
     <Authors>Mahmoud Shaheen</Authors>
     <Company>Mahmoud Shaheen</Company>
     <RepositoryUrl>https://github.com/xshaheen/headless-sdk.git</RepositoryUrl>
