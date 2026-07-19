@@ -21,14 +21,8 @@
       the feature it ships. xunit.v3 build props set OutputType=Exe automatically.
     -->
     <PackageReference Include="xunit.v3.mtp-v2" />
-    <!--
-      MTP report/coverage extensions. This project consumes the plain Microsoft.NET.Sdk (not the
-      Headless SDK), so it does NOT get the extension injection SupportTestProjects.targets gives
-      consumer test projects. Reference them directly so the report-trx / coverage CLI flags
-      used by the CI and publish workflows are recognized by the MTP runner.
-    -->
+    <!-- This plain Microsoft.NET.Sdk test harness needs the TRX extension used by CI and publish. -->
     <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
-    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
     <PackageReference Include="MSBuild.StructuredLogger" />
   </ItemGroup>
 </Project>

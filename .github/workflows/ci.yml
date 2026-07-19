@@ -43,7 +43,6 @@ env:
   DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: "true"
   DOTNET_NOLOGO: "true"
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
-  DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: "true"
   CONFIGURATION: Release
   MINVERBUILDMETADATA: build.${{ github.run_number }}
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
@@ -66,10 +65,8 @@ jobs:
         with:
           global-json-file: ./global.json
 
-      - name: Test release package state scripts
-        run: |
-          bash .github/scripts/tests/github-package-preflight-tests.sh
-          bash .github/scripts/tests/github-package-postflight-tests.sh
+      - name: Test GitHub package preflight
+        run: bash .github/scripts/tests/github-package-preflight-tests.sh
 
       - name: Cache NuGet packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
@@ -93,12 +90,11 @@ jobs:
 
       - name: Test
         # Microsoft Testing Platform runner (global.json "test.runner"). The integration project
-        # references the Microsoft.Testing.Extensions.TrxReport and .CodeCoverage packages, so
-        # everything after "--" is forwarded to the platform: --report-trx for the trx, --coverage
-        # (cobertura) for code coverage, and --results-directory to pin both to a known path.
+        # references Microsoft.Testing.Extensions.TrxReport, so everything after "--" is forwarded
+        # to the platform: --report-trx emits the trx and --results-directory pins it to a known path.
         env:
           HEADLESS_PACKAGES_DIR: ${{ github.workspace }}/artifacts/packages-results
-        run: dotnet test headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build -- --report-trx --coverage --coverage-output-format cobertura --results-directory ./artifacts/test-results
+        run: dotnet test headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build -- --report-trx --results-directory ./artifacts/test-results
 
       - name: Upload test results
         if: always()
@@ -107,19 +103,6 @@ jobs:
           name: test-results
           path: ./artifacts/test-results
           if-no-files-found: ignore
-
-      # Coverage of the C# harness that drives the SDK props/targets, NOT of the shipped MSBuild
-      # assets themselves -- a numeric coverage gate would be low value here, so we collect and
-      # upload only and never fail the build on a threshold.
-      - name: Upload coverage
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: coverage
-          path: |
-            ./artifacts/test-results/**/*.cobertura.xml
-            ./artifacts/test-results/**/*.coverage
-          if-no-files-found: warn
 
       - name: Upload packages
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

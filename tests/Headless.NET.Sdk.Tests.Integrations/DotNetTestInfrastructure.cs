@@ -62,7 +62,6 @@ internal static class DotNetCommandEnvironment
             ["DOTNET_CLI_HOME"] = Path.Combine(tempRoot, "dotnet-cli-home"),
             ["DOTNET_NOLOGO"] = "1",
             ["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1",
-            ["DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK"] = "true",
             ["NUGET_PACKAGES"] = Path.Combine(tempRoot, ".nuget-packages"),
             ["NUGET_HTTP_CACHE_PATH"] = Path.Combine(tempRoot, ".nuget-http-cache"),
         };

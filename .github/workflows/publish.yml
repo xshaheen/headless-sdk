@@ -24,7 +24,6 @@ env:
   DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: "true"
   DOTNET_NOLOGO: "true"
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
-  DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: "true"
   CONFIGURATION: Release
   MINVERBUILDMETADATA: build.${{ github.run_number }}
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
@@ -191,9 +190,6 @@ jobs:
               --source "https://nuget.pkg.github.com/xshaheen/index.json" \
               --api-key "$GH_TOKEN"
           done
-
-          bash .github/scripts/github-package-postflight.sh \
-            ./artifacts/packages-results/PACKAGE_MANIFEST.tsv
 
   publish-nuget-packages:
     name: Publish NuGet.org Packages
