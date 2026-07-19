@@ -6,35 +6,56 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Added contract coverage for all five supported consumption modes: direct `PackageReference`, project SDK, additional SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk` file-based apps.
-- Added package-content and clean-consumer validation for exact import behavior, multi-targeting outer builds, mandatory dependencies, and explicit consumer overrides.
-- Added SHA-256 package manifests so the publish workflow promotes and verifies the exact artifacts produced by its build job.
+- Added first-class contract coverage for all five supported consumption modes: direct `PackageReference`, versioned project SDK, additional SDK, versionless `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk` file-based apps. All six SDK family members support every mode.
+- Added consumer tests against newly packed packages for restore, build, run, pack, static-graph evaluation, design-time evaluation, mixed and duplicate imports, multi-targeting outer and inner builds, target-framework compatibility, analyzer enforcement and opt-outs, CI warnings, locked restore, NuGet audit, SBOM generation, Microsoft Testing Platform execution, packaging defaults, and explicit consumer overrides.
+- Added Windows validation for packed Windows Desktop WPF and Windows Forms consumers and macOS validation for a packed base-SDK consumer. Linux, Windows, and macOS validation must all pass before publication.
+- Added `System.Collections.ArrayList` and `Assembly.GetAssembly(Type)` to the general banned-symbol list.
+- Added tested GitHub Packages preflight and postflight checks for duplicate versions, private package visibility, and exact published versions.
+- Added SHA-256 package hashes and a six-package ID/version manifest so publication promotes and verifies the exact artifacts produced by the build job.
 
 ### Changed
 
-- The package family is built with the repository-pinned .NET 10 SDK but no longer imposes a consumer target-framework restriction. MSBuild projects must still declare a target framework explicitly; compatibility is determined by the selected Microsoft SDK and its targeting packs or workloads.
-- Package dependencies are framework-agnostic, so direct `PackageReference` consumers receive the analyzer, banned-API, and SBOM restore graph even when their TFM is not compatible with `netstandard2.0`.
-- Analyzer packages, analyzer configuration, deterministic output, CI warning escalation, and NuGet audit are authoritative quality policies. The general and Newtonsoft.Json banned-symbol lists remain enabled by default with whole-policy and per-list opt-outs.
-- CI now treats compiler, analyzer, nullable, MSBuild, and confirmed vulnerability warnings (`NU1901`-`NU1904`) as errors. `NU1900` and `NU1905` remain warnings because they indicate missing audit data, not a confirmed vulnerability.
-- The Microsoft `NETSDK1138` end-of-life target-framework diagnostic remains visible but non-fatal on CI so Headless does not turn an otherwise targetable TFM into a framework restriction.
-- CI locked restore is enabled only when `packages.lock.json` exists or `NuGetLockFilePath` identifies an existing lock file.
-- `Headless.NET.Sdk.Test` is now Microsoft Testing Platform only. MTP extensions are restore-visible in every consumption mode; consumers continue to choose their test framework.
-- .NET 10 command hosts must select `Microsoft.Testing.Platform` through the repository `global.json`; this host setting is independent of the test project's target framework.
-- SBOM generation remains opt-in through `GenerateSBOM=true`, while the required `Microsoft.Sbom.Targets` dependency is available consistently before the opt-in is evaluated.
-- Headless follows the Microsoft SDK default for `EmbedUntrackedSources` instead of forcing it.
-- File-based apps always receive the dedicated analyzer profile. Headless extra global usings are added only when implicit usings are enabled and the consumer TFM is compatible with `net8.0`, so older or custom TFMs are not given unavailable namespaces.
-- In-project strict System.Text.Json opt-ins are evaluated after the consumer project body in every consumption mode and apply only to inner builds compatible with `net9.0`.
-- Package publishing uses GitHub Packages. Actions are SHA-pinned, duplicate versions fail, and the publish job verifies artifact hashes before upload.
-- Package release runs queue behind the family-wide publish lock instead of replacing an older pending release, every lock-holding job has a bounded timeout, and the tested postflight verifies private visibility plus the exact published versions without retrying a package push.
-- NuGet.org publication is restored for published GitHub Releases and pauses for approval in the protected `NuGet Release` environment before pushing the validated package family.
-- Documentation now describes the GitHub Packages distribution and no-license status without limiting the SDK family to Headless Framework consumers.
-- Direct PackageReference documentation now calls out NuGet's first-clean-restore import boundary and the required repository-owned restore-policy bootstrap.
+- All base and satellite `sdk`, `build`, and `buildMultiTargeting` imports are sentinel-guarded and evaluate exactly once across project-SDK, additional-SDK, mixed SDK plus `PackageReference`, static-graph, design-time, and multi-targeting outer/inner builds. Wrapper identity and pre-`Directory.Build.props`/pre-Microsoft-target ordering are preserved.
+- Satellite packages are self-contained: each carries its project-type wrapper plus the shared base build and configuration assets and no longer depends on resolving a separate `Headless.NET.Sdk` package version.
+- All six packages use explicit, content-only MSBuild SDK nuspec contracts. Package assets are limited to `sdk`, `build`, `buildMultiTargeting`, `configurations`, README, and logo content; dependencies use framework-agnostic groups, and the former `lib/netstandard2.0/_._` compatibility marker is gone.
+- The repository is built with exactly .NET SDK `10.0.301` (`rollForward=disable`), but Headless no longer restricts consumer target frameworks. Normal MSBuild projects must declare `TargetFramework` or `TargetFrameworks`; compatibility is determined by the selected Microsoft SDK and installed targeting packs or workloads. .NET 10 is required only for repository tooling and the file-app host.
+- Blazor WebAssembly and Windows Desktop file apps use the base `Microsoft.NET.Sdk` while retaining their Headless satellite identity; normal projects continue to wrap `Microsoft.NET.Sdk.BlazorWebAssembly` and `Microsoft.NET.Sdk.WindowsDesktop`.
+- File-based apps always receive the dedicated analyzer profile. Headless extra global usings now evaluate after the project body and are added only when `ImplicitUsings` is `enable`/`true` and the consumer TFM is compatible with `net8.0`.
+- In-project `HeadlessEnableStrictSystemTextJsonRuntimeDefaults=true` now evaluates after the consumer project body and adds the strict runtime switches only to inner builds compatible with `net9.0`.
+- The nine analyzer packages are mandatory, private, SDK-owned dependencies. Their versions and asset metadata are reasserted after consumer item evaluation; duplicate consumer references cannot weaken or leak them, and conflicting Central Package Management entries are rejected instead of replacing the baseline. `Meziantou.Analyzer` package projects retain the self-reference exception.
+- Analyzer execution, .NET analyzers, code-style enforcement, and the base, ConfigureAwait, file-app, and test editorconfig inputs are reasserted after the project body and included exactly once.
+- The general and Newtonsoft.Json banned-symbol lists remain enabled by default but are independently configurable. `DisableSupportBannedSymbols=true` disables both lists, `IncludeDefaultBannedSymbols=false` disables the general list, and `BannedNewtonsoftJsonSymbols=false` disables only the Newtonsoft.Json list. The `Microsoft.CodeAnalysis.BannedApiAnalyzers` package remains mandatory analyzer infrastructure.
+- SponsorLink and Moq analyzer cleanup remains enabled by default. `DisableSponsorLink=false` is the sole supported opt-out that retains those analyzers.
+- CI provider variables are authoritative and `ContinuousIntegrationBuild=true` is the only manual activation input. CI now treats compiler, analyzer, nullable, and MSBuild warnings plus confirmed vulnerabilities (`NU1901`-`NU1904`) as errors; local Debug no longer defaults compiler warnings to errors, and Release alone no longer activates warning or vulnerability escalation.
+- NuGet restore, pack, signing, and feed diagnostics remain warnings under the CI compiler/MSBuild gate. `NU1900` and `NU1905` remain warnings because they indicate unavailable audit data, while the visible `NETSDK1138` end-of-life diagnostic remains non-fatal so Headless does not turn an otherwise targetable TFM into a framework restriction.
+- `Deterministic=true` is authoritative. Explicit consumer values are now preserved for `RootNamespace`, `AssemblyName`, `ImplicitUsings`, `GenerateDocumentationFile`, non-CI `CodeAnalysisTreatWarningsAsErrors`, `AccelerateBuildsInVisualStudio`, `NeutralLanguage`, `PreferredUILang`, `IsPackable`, and the Test SDK's `IsPublishable` default.
+- CI locked restore is enabled only when `packages.lock.json` exists or a late `NuGetLockFilePath` identifies an existing lock file. Repositories without a lock file restore normally.
+- NuGet audit is authoritative at `NuGetAudit=true`, `NuGetAuditMode=all`, and `NuGetAuditLevel=low`. Direct `PackageReference` consumers must bootstrap first-clean-restore audit, lock, and warning policy in repository props or CLI arguments because NuGet cannot import package build assets before that initial restore.
+- `Headless.NET.Sdk.Test` is Microsoft Testing Platform only. It defaults library output to an executable MTP host and supplies restore-visible, private, SDK-owned crash dump, code coverage, hang dump, hot reload, retry, and TRX extensions in every consumption mode; consumers continue to choose and version their test framework.
+- Base-SDK projects using `IsTestProject=true` or `IsTestHarnessProject=true` now receive test analysis, editorconfig, warning-relaxation, and non-packable defaults only. The complete MTP host, extension dependencies, and command-line defaults require `Headless.NET.Sdk.Test`.
+- Test execution retains default TRX output, crash and hang dumps, a ten-minute hang timeout, a minimum-one-test guard, and CI coverage arguments. Analyzer suppression is now MTP-only and controlled by `OptimizeTestRun`; xUnit global-using injection now applies only to `xunit.v3.mtp-v2`.
+- .NET 10 command hosts must select `Microsoft.Testing.Platform` through `global.json`; this command-host setting is independent of the test project's target framework.
+- `Microsoft.Sbom.Targets` is now an exact, private, restore-visible dependency in every consumption mode. Headless owns its single targets import, generation remains opt-in through `GenerateSBOM=true`, and requesting generation without restored tooling produces a targeted pack error.
+- Headless follows the Microsoft SDK default for `EmbedUntrackedSources` instead of forcing source embedding.
+- Package metadata now uses the general-purpose, consumer-facing SDK-family description, the repository README and logo, exact repository branch/commit provenance, and no license metadata. The family is not limited to Headless Framework consumers and is distributed through GitHub Packages and NuGet.org.
+- Tag and manual workflow runs publish only to GitHub Packages after hash verification and duplicate/private-state preflight; postflight verifies private visibility and the exact published family without retrying a package push.
+- Published GitHub Releases publish only to NuGet.org after the complete build/test/platform gate, SHA-256 verification, an exact release-tag/package-version match, and approval in the protected `NuGet Release` environment. The release artifact set must contain exactly six `.nupkg` files and no `.snupkg` files; duplicate versions fail.
+- Publication is serialized across the package family with queued runs and bounded job timeouts. A partial feed publication is not retried automatically.
+- CI now builds and packs once, tests the immutable packed artifact set, retains warnings in final logs, isolates clean-consumer NuGet caches outside source globs, and exposes a single Linux/Windows/macOS final status.
+- Repository restore now clears inherited sources, uses NuGet.org as its only package and audit source, and no longer authenticates to GitHub Packages. Dependabot applies a seven-day cooldown to NuGet, .NET SDK, and GitHub Actions updates.
+- GitHub Actions are commit-SHA pinned, checkout credentials are not persisted, workload update notifications are disabled, and workload integrity checking is skipped for repository CI and publication jobs.
+- Shipped MTP extension versions are checked against `Directory.Packages.props` and the package nuspec contracts instead of being regenerated during build.
 
 ### Removed
 
-- Removed all `buildTransitive` package assets. Each project must opt in directly; `buildMultiTargeting` remains for multi-targeting outer builds.
-- Removed target-framework inference, VSTest defaults, conditional test-runner classification, ineffective package API validation, and obsolete quality-policy opt-out switches.
-- Removed build-time test-tool version generation. Shipped MTP extension pins are checked against `Directory.Packages.props` by package contract tests.
+- Removed all `buildTransitive` package assets. Each project must opt in directly; project references no longer propagate Headless policy, while `buildMultiTargeting` remains for multi-targeting outer builds.
+- Removed target-framework inference and the `HeadlessInferTargetFramework` and `DisableSupportTargetFrameworkInference` inputs. Missing target frameworks now fail through the selected Microsoft SDK.
+- Removed the `HeadlessSingleFileApp` and `DisableSupportSingleFileApp` inputs. `FileBasedProgram=true` now selects the mandatory file-app profile automatically.
+- Removed the `IsContinuousIntegration` input. Use a recognized CI provider environment or `ContinuousIntegrationBuild=true`.
+- Removed the `DisableSupportImplicitAnalyzers`, `DisableSupportAnalyzerEditorConfigs`, `DisableSupportAnalyzerHygiene`, `DisableSupportNuGetAudit`, and `DisableSupportSbom` opt-outs. These named quality infrastructures are authoritative; the three banned-symbol controls remain supported.
+- Removed the legacy `Disable_SponsorLink` alias. Use `DisableSponsorLink=false` to retain SponsorLink and Moq analyzers.
+- Removed VSTest auto-detection and defaults, `UseMicrosoftTestingPlatform`, `OptimizeVsTestRun`, implicit `Microsoft.NET.Test.Sdk`, `GitHubActionsTestLogger`, VSTest blame/logger/coverage defaults, and xUnit v2/generic xUnit v3/TUnit implicit-using detection.
+- Removed build-time test-tool version generation. The checked-in MTP extension pins are now verified against `Directory.Packages.props` and package dependency metadata.
 
 ## [0.0.129] - 2026-07-14
 
