@@ -1,17 +1,19 @@
 <Project>
   <!--
-    TFM-gated usings. Item conditions are evaluated in MSBuild's item pass, which runs after the
-    property pass that sets the consumer's TargetFramework, so these resolve against the final TFM
-    even though the value comes from the project body. They live in .targets alongside the SDK's
-    other TFM-gated item logic; functionally they would also work from .props.
+    Evaluate after the consumer project body so an explicit ImplicitUsings value is authoritative
+    in every consumption mode. These additional namespaces require .NET 8 or later; older and
+    custom target frameworks remain valid Headless consumers without receiving incompatible usings.
   -->
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0')) == 'true'">
+  <ItemGroup
+    Condition=" ('$(ImplicitUsings)' == 'enable' or '$(ImplicitUsings)' == 'true')
+      and '$(TargetFramework)' != ''
+      and $([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net8.0')) == 'true' "
+  >
+    <Using Include="System.Diagnostics.CodeAnalysis" />
+    <Using Include="System.Globalization" />
     <Using Include="System.Text" />
     <Using Include="System.Text.Json" />
     <Using Include="System.Text.Json.Serialization" />
-  </ItemGroup>
-
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net8.0')) == 'true'">
     <Using Include="System.Collections.Frozen" />
     <Using Include="System.Collections.Immutable" />
   </ItemGroup>

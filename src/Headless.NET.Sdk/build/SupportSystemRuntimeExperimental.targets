@@ -1,4 +1,10 @@
 <Project>
+  <!--
+    System.Runtime.Experimental carries its own System.Runtime facade. When the reference-pack
+    facade remains in @(Reference), ResolvePackageFileConflicts can select the wrong compile-time
+    assembly. Remove only the Microsoft.NETCore.App.Ref facade when the experimental package is
+    present; the package-provided assembly remains available to the compiler.
+  -->
   <Target
     Name="RemoveSystemRuntimeFromRefPack"
     BeforeTargets="_HandlePackageFileConflicts"

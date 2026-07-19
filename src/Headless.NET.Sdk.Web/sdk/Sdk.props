@@ -5,12 +5,12 @@
     <_HeadlessMustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'"
       >true</_HeadlessMustImportMicrosoftNETSdk
     >
-    <_HeadlessDeferTargetFrameworkInference Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
-      >true</_HeadlessDeferTargetFrameworkInference
+    <CustomBeforeDirectoryBuildProps Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
+      >$(CustomBeforeDirectoryBuildProps);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.Web.props</CustomBeforeDirectoryBuildProps
     >
-
-    <CustomBeforeDirectoryBuildProps>$(CustomBeforeDirectoryBuildProps);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.Web.props</CustomBeforeDirectoryBuildProps>
-    <BeforeMicrosoftNETSdkTargets>$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.Web.targets</BeforeMicrosoftNETSdkTargets>
+    <BeforeMicrosoftNETSdkTargets
+      >$(BeforeMicrosoftNETSdkTargets);$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.Web.targets</BeforeMicrosoftNETSdkTargets
+    >
   </PropertyGroup>
 
   <Import
@@ -19,11 +19,7 @@
     Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
   />
   <Import
-    Project="$(MSBuildThisFileDirectory)../build/SupportTargetFrameworkInference.props"
-    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true' and '$(DisableSupportTargetFrameworkInference)' != 'true'"
-  />
-  <Import
-    Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.Web.props"
-    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true'"
+    Project="$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.Web.props"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true' and '$(_HeadlessWebSdkBuildPropsImported)' != 'true'"
   />
 </Project>

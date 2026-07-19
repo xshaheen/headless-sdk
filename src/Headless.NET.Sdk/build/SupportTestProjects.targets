@@ -1,58 +1,95 @@
 <Project>
-  <!-- Injected test-tool versions, generated from Directory.Packages.props (see VersionConsistencyTests). -->
-  <Import Project="$(MSBuildThisFileDirectory)SupportTestProjects.Versions.props" />
-
   <PropertyGroup>
-    <IsTestProject Condition="'$(IsTestHarnessProject)' != 'true'">true</IsTestProject>
-    <IsTestProject Condition="'$(IsTestHarnessProject)' == 'true'">false</IsTestProject>
-    <IsTestingPlatformApplication Condition="'$(IsTestHarnessProject)' == 'true'">false</IsTestingPlatformApplication>
-    <GenerateRuntimeConfigurationFiles Condition="'$(IsTestHarnessProject)' == 'true'"
+    <!-- Headless.NET.Sdk.Test is MTP-only; xUnit uses this when generating its entry point. -->
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <IsTestProject Condition="'$(IsTestProject)' == '' AND '$(IsTestHarnessProject)' != 'true'">true</IsTestProject>
+    <IsTestProject Condition="'$(IsTestProject)' == '' AND '$(IsTestHarnessProject)' == 'true'">false</IsTestProject>
+    <IsTestingPlatformApplication
+      Condition="'$(IsTestingPlatformApplication)' == '' AND '$(IsTestHarnessProject)' == 'true'"
+      >false</IsTestingPlatformApplication
+    >
+    <GenerateRuntimeConfigurationFiles
+      Condition="'$(GenerateRuntimeConfigurationFiles)' == '' AND '$(IsTestHarnessProject)' == 'true'"
       >true</GenerateRuntimeConfigurationFiles
     >
-    <IsPublishable>false</IsPublishable>
-    <IsPackable>false</IsPackable>
+    <OutputType Condition="'$(IsTestHarnessProject)' == 'true'">Library</OutputType>
+    <IsPublishable Condition="'$(IsPublishable)' == ''">false</IsPublishable>
+    <IsPackable Condition="'$(IsPackable)' == ''">false</IsPackable>
 
     <!-- Auto-enable code coverage on CI; explicit toggle wins. -->
-    <EnableCodeCoverage
-      Condition="'$(EnableCodeCoverage)' == '' AND ('$(IsContinuousIntegration)' == 'true' OR '$(ContinuousIntegrationBuild)' == 'true')"
+    <EnableCodeCoverage Condition="'$(EnableCodeCoverage)' == '' AND '$(ContinuousIntegrationBuild)' == 'true'"
       >true</EnableCodeCoverage
     >
-
-    <!--
-      Microsoft Testing Platform (MTP) detection happens in ItemGroup/Target conditions below
-      because MSBuild item functions are not valid inside property conditions.
-    -->
   </PropertyGroup>
 
+  <!-- The Test SDK owns these exact extension bindings, including direct consumer duplicates. -->
+  <ItemGroup Condition="'$(HeadlessSdkProjectType)' == 'Test'">
+    <PackageReference
+      Remove="Microsoft.Testing.Extensions.CrashDump;Microsoft.Testing.Extensions.CodeCoverage;Microsoft.Testing.Extensions.HangDump;Microsoft.Testing.Extensions.HotReload;Microsoft.Testing.Extensions.Retry;Microsoft.Testing.Extensions.TrxReport"
+    />
+    <PackageReference
+      Include="Microsoft.Testing.Extensions.CrashDump"
+      Version="$(_HeadlessMtpCrashDumpVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="all"
+      ExcludeAssets=""
+    />
+    <PackageReference
+      Include="Microsoft.Testing.Extensions.CodeCoverage"
+      Version="$(_HeadlessMtpCodeCoverageVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="all"
+      ExcludeAssets=""
+    />
+    <PackageReference
+      Include="Microsoft.Testing.Extensions.HangDump"
+      Version="$(_HeadlessMtpHangDumpVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="all"
+      ExcludeAssets=""
+    />
+    <PackageReference
+      Include="Microsoft.Testing.Extensions.HotReload"
+      Version="$(_HeadlessMtpHotReloadVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="all"
+      ExcludeAssets=""
+    />
+    <PackageReference
+      Include="Microsoft.Testing.Extensions.Retry"
+      Version="$(_HeadlessMtpRetryVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="all"
+      ExcludeAssets=""
+    />
+    <PackageReference
+      Include="Microsoft.Testing.Extensions.TrxReport"
+      Version="$(_HeadlessMtpTrxReportVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="all"
+      ExcludeAssets=""
+    />
+  </ItemGroup>
+
   <!--
-    Disable analyzers during dotnet test (VSTest / MTP build). Most CI pipelines run `dotnet build`
-    and `dotnet test` separately; analyzers are validated in the build step, so re-running them
-    during test materially slows feedback. Override with OptimizeVsTestRun=false.
+    Most CI pipelines run `dotnet build` and `dotnet test` separately. Avoid repeating analyzer
+    work in MTP's test-build phase unless the consumer explicitly opts out of this optimization.
   -->
   <Target
     Name="DisableAnalyzersWhenRunningTests"
-    BeforeTargets="VSTest;_MTPBuild"
-    Condition="'$(OptimizeVsTestRun)' != 'false'"
+    BeforeTargets="_MTPBuild"
+    Condition="'$(OptimizeTestRun)' != 'false'"
   >
     <PropertyGroup>
       <RunAnalyzers>false</RunAnalyzers>
     </PropertyGroup>
   </Target>
-
-  <!-- Microsoft Testing Platform (MTP) implicit references; selection via _HeadlessUseMicrosoftTestingPlatform. -->
-  <ItemGroup
-    Condition="'$(UseMicrosoftTestingPlatform)' == 'true' OR (
-      '$(UseMicrosoftTestingPlatform)' == '' AND (
-        @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) == 'true' OR
-        @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) == 'true'))"
-  >
-    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" Version="$(_HeadlessMtpCrashDumpVersion)" IsImplicitlyDefined="true" />
-    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="$(_HeadlessMtpCodeCoverageVersion)" IsImplicitlyDefined="true" />
-    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="$(_HeadlessMtpHangDumpVersion)" IsImplicitlyDefined="true" />
-    <PackageReference Include="Microsoft.Testing.Extensions.HotReload" Version="$(_HeadlessMtpHotReloadVersion)" IsImplicitlyDefined="true" />
-    <PackageReference Include="Microsoft.Testing.Extensions.Retry" Version="$(_HeadlessMtpRetryVersion)" IsImplicitlyDefined="true" />
-    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="$(_HeadlessMtpTrxReportVersion)" IsImplicitlyDefined="true" />
-  </ItemGroup>
 
   <!--
     Default Microsoft Testing Platform (MTP) arguments.
@@ -61,10 +98,8 @@
     The new "dotnet test" experience (global.json "runner": "Microsoft.Testing.Platform")
     reads TestingPlatformCommandLineArguments during project evaluation and does NOT run the
     legacy _MTPBuild target, so a target-based assignment never takes effect (the args get
-    silently dropped: no coverage, trx, or dumps). A non-MTP (VSTest) project simply ignores
-    this property, so no MTP-detection gate is needed here. Coverage settings use MTP's
-    "coverage-settings" runner flag; the "settings" dotnet test CLI option is rejected by the
-    MTP runner as unknown.
+    silently dropped: no coverage, TRX, or dumps). Coverage settings use MTP's
+    "coverage-settings" runner flag.
   -->
   <PropertyGroup Condition="'$(EnableDefaultTestSettings)' != 'false'">
     <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --report-trx</TestingPlatformCommandLineArguments>
@@ -79,81 +114,11 @@
     <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --minimum-expected-tests 1</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 
-  <!-- VSTest path (xUnit v2, MSTest, NUnit, etc.) -->
+  <!-- xUnit MTP implicit using. The test framework remains consumer-selected. -->
   <ItemGroup
-    Condition="'$(UseMicrosoftTestingPlatform)' != 'true' AND (
-      '$(UseMicrosoftTestingPlatform)' != '' OR (
-        @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) != 'true' AND
-        @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) != 'true'))"
-  >
-    <!--
-      Hardcoded pin: this version is injected into consumer test projects and is NOT governed
-      by the consumer's Central Package Management. Keep it in sync with the repo's own
-      Directory.Packages.props Microsoft.NET.Test.Sdk version whenever bumping.
-    -->
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(_HeadlessMicrosoftNetTestSdkVersion)" IsImplicitlyDefined="true" />
-  </ItemGroup>
-
-  <PropertyGroup Condition="'$(EnableDefaultTestSettings)' != 'false'">
-    <VSTestBlame>true</VSTestBlame>
-
-    <VSTestBlameCrash>true</VSTestBlameCrash>
-    <VSTestBlameCrashDumpType>mini</VSTestBlameCrashDumpType>
-
-    <VSTestBlameHang>true</VSTestBlameHang>
-    <VSTestBlameHangDumpType>mini</VSTestBlameHangDumpType>
-    <VSTestBlameHangTimeout>10min</VSTestBlameHangTimeout>
-
-    <VSTestCollect Condition="'$(EnableCodeCoverage)' == 'true'">Code Coverage</VSTestCollect>
-    <VSTestSetting Condition="'$(EnableCodeCoverage)' == 'true'"
-      >$(MSBuildThisFileDirectory)../configurations/default.runsettings</VSTestSetting
-    >
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <VSTestLogger Condition="'$(VSTestLogger)' != ''">$(VSTestLogger);</VSTestLogger>
-    <VSTestLogger>$(VSTestLogger)trx;console%3bverbosity=normal</VSTestLogger>
-  </PropertyGroup>
-
-  <!-- xUnit (v2 + v3) implicit using -->
-  <ItemGroup
-    Condition="'$(ImplicitUsings)' == 'enable' AND (
-      @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit')) == 'true' OR
-      @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3')) == 'true' OR
-      @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v1')) == 'true' OR
-      @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) == 'true'
-    )"
+    Condition="'$(ImplicitUsings)' == 'enable' AND
+      @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) == 'true'"
   >
     <Using Include="Xunit" />
-  </ItemGroup>
-
-  <!--
-    GitHub Actions test logger.
-
-    The PackageReference is unconditional with respect to GITHUB_ACTIONS so the restore graph -
-    and therefore consumer packages.lock.json files - never depend on CI environment variables.
-    Gating it on GITHUB_ACTIONS made lock files committed from CI restores differ from local
-    restores, producing recurring dirty-lock-file churn. The package is dev-time only
-    (PrivateAssets=all) and the logger activates only on GitHub Actions via the VSTestLogger
-    property below.
-
-    The package is only needed for the VSTest path; MTP emits its own annotations. Keep the
-    package off MTP projects because GitHubActionsTestLogger 3.x self-registers an MTP hook but
-    ships no net10.0 compile asset, so Microsoft.Testing.Platform can generate an unresolved
-    GitHubActionsTestLogger.MtpIntegration reference in CI builds.
-  -->
-  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
-    <VSTestLogger>$(VSTestLogger);GitHubActions</VSTestLogger>
-  </PropertyGroup>
-  <ItemGroup
-    Condition="'$(UseMicrosoftTestingPlatform)' != 'true' AND (
-      '$(UseMicrosoftTestingPlatform)' != '' OR (
-        @(PackageReference->AnyHaveMetadataValue('Identity', 'xunit.v3.mtp-v2')) != 'true' AND
-        @(PackageReference->AnyHaveMetadataValue('Identity', 'TUnit')) != 'true'))"
-  >
-    <PackageReference Include="GitHubActionsTestLogger" Version="$(_HeadlessGitHubActionsTestLoggerVersion)" IsImplicitlyDefined="true">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 </Project>

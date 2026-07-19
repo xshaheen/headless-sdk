@@ -1,34 +1,66 @@
 # Headless.NET.Sdk.Test
 
-The Test project-type wrapper in the Headless family — `Microsoft.NET.Sdk` plus the Headless defaults, with test classification forced on. Use it for test projects.
+The Microsoft Testing Platform wrapper: `Microsoft.NET.Sdk` plus the complete Headless build baseline and test classification.
 
-## Install
+> [!IMPORTANT]
+> This package is distributed through GitHub Packages and, after protected release approval, NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
 
-As an MSBuild SDK:
+## Use
+
+Headless does not restrict `TargetFramework`; the Microsoft SDK, Microsoft Testing Platform, and the consumer-selected test framework determine compatibility.
+
+The SDK supplies the MTP host extensions; the consumer chooses its test framework:
 
 ```xml
 <Project Sdk="Headless.NET.Sdk.Test/x.y.z">
-</Project>
-```
-
-Or as a package reference alongside the Microsoft SDK:
-
-```xml
-<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Headless.NET.Sdk.Test" Version="x.y.z" PrivateAssets="all" />
+    <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2" />
   </ItemGroup>
 </Project>
 ```
 
-## What it adds over the core SDK
+Direct PackageReference consumption uses `Microsoft.NET.Sdk`:
 
-Sets `HeadlessSdkProjectType=Test` and forces `IsTestProject=true`, so the project receives the full test toolchain without name-based guessing. (Name inference like `MyApp.Tests` is intentionally not supported — too many false positives for a public SDK. If you don't want the Test SDK, set `<IsTestProject>true</IsTestProject>` yourself; for shared harness projects that should get test defaults without executing as test hosts, set `<IsTestHarnessProject>true</IsTestHarnessProject>` instead.) Test projects force `IsPackable=false` and `IsPublishable=false`, add crash/hang dumps, TRX output and loggers, enable code coverage on CI, switch to Microsoft Testing Platform when `xunit.v3.mtp-v2` or `TUnit` is referenced, disable analyzers during `dotnet test`, and relax a few test-noise warnings (`CA1849`, `MA0042`, `MA0166`, `CA1861`, `CA1859`, `CA1720`).
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Headless.NET.Sdk.Test" Version="x.y.z" PrivateAssets="all" />
+    <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2" />
+  </ItemGroup>
+</Project>
+```
 
-## Opinionated defaults (overridable)
+When `dotnet test` runs under the .NET 10 SDK, the repository must select Microsoft Testing
+Platform in `global.json`. Add this top-level entry alongside the existing `sdk` configuration:
 
-Inherits the full strict Headless baseline. Every default is overridable via the `Disable*` and `Headless*` properties. See the [Configuration Reference in the main repo README](https://github.com/xshaheen/headless-sdk#configuration-reference) for the complete list, including the full Test Projects section.
+```json
+{
+  "test": {
+    "runner": "Microsoft.Testing.Platform"
+  }
+}
+```
 
-## License
+Without it, .NET 10 routes `dotnet test` through VSTest and the MTP project rejects the command.
+This is a command-host requirement, not a restriction on the test project's `TargetFramework`.
 
-See [LICENSE](https://github.com/xshaheen/headless-sdk/blob/main/LICENSE).
+Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headless.NET.Sdk.Test@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
+
+## Test contract
+
+- Executable MTP host by default, with `IsTestProject=true`, `IsPackable=false`, and `IsPublishable=false`.
+- Microsoft Testing Platform only; VSTest and `Microsoft.NET.Test.Sdk` are not injected.
+- Restore-visible crash dump, hang dump, hot reload, retry, TRX, and coverage extensions.
+- Default TRX output, crash and hang dumps, and a minimum expected test count.
+- Coverage enabled on CI and analyzer work skipped during the test-build phase unless explicitly retained.
+- Mandatory Headless analyzer infrastructure, configurable banned-API policy, and mandatory audit and CI policies with narrow test-code severity relaxations.
+
+The package is self-contained and ships no `buildTransitive` assets. Shared harness libraries can instead use `IsTestHarnessProject=true` with the base SDK to receive test analysis defaults without becoming executable test hosts.
+
+The SDK owns the versions of its six implicit MTP extensions. Central Package Management consumers must not declare `PackageVersion` entries for those extension IDs; test-framework versions remain consumer-owned and centrally manageable.

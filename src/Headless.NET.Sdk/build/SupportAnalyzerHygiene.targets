@@ -3,7 +3,7 @@
   <Target
     Name="HeadlessDisableSponsorLinkAnalyzers"
     BeforeTargets="CoreCompile"
-    Condition="'$(DisableSponsorLink)' != 'false' and '$(Disable_SponsorLink)' != 'false'"
+    Condition="'$(DisableSponsorLink)' != 'false'"
   >
     <ItemGroup>
       <Analyzer Remove="@(Analyzer)" Condition="'%(FileName)' == 'DevLooped.SponsorLink'" />

@@ -19,20 +19,21 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
     <_HeadlessSdkBuildTargetsImported>true</_HeadlessSdkBuildTargetsImported>
   </PropertyGroup>
 
-  <Import Project="$(MSBuildThisFileDirectory)SupportGeneral.targets" />
-  <Import Project="$(MSBuildThisFileDirectory)GlobalUsing.targets" />
+  <!-- Package metadata defaults must evaluate before CI fills provider-specific repository values. -->
   <Import
     Project="$(MSBuildThisFileDirectory)SupportPackageInformation.targets"
     Condition=" '$(DisableSupportPackageInformation)' != 'true' "
   />
+  <Import Project="$(MSBuildThisFileDirectory)SupportDetectContinuousIntegration.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)SupportGeneral.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)RuntimeHostConfigurationOption.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)SupportMandatoryAnalyzers.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)GlobalUsing.targets" />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportCopyright.targets"
     Condition=" '$(DisableSupportCopyright)' != 'true' "
   />
-  <Import
-    Project="$(MSBuildThisFileDirectory)SupportNuGetAudit.targets"
-    Condition=" '$(DisableSupportNuGetAudit)' != 'true' "
-  />
+  <Import Project="$(MSBuildThisFileDirectory)SupportNuGetAudit.targets" />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportBannedSymbols.targets"
     Condition=" '$(DisableSupportBannedSymbols)' != 'true' "
@@ -43,17 +44,13 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
   />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportTestProjects.targets"
-    Condition=" '$(IsTestProject)' == 'true' or '$(IsTestHarnessProject)' == 'true' "
+    Condition=" '$(HeadlessSdkProjectType)' == 'Test' and '$(IsBuildTaskProject)' != 'true' "
   />
   <Import Project="$(MSBuildThisFileDirectory)SupportAdditionalFiles.targets" />
   <Import Project="$(MSBuildThisFileDirectory)SupportSystemRuntimeExperimental.targets" />
-  <Import Project="$(MSBuildThisFileDirectory)SupportDetectContinuousIntegration.targets" />
   <Import Project="$(MSBuildThisFileDirectory)SupportAssemblyAttributes.targets" />
-  <Import
-    Project="$(MSBuildThisFileDirectory)SupportAnalyzerHygiene.targets"
-    Condition=" '$(DisableSupportAnalyzerHygiene)' != 'true' "
-  />
-  <Import Project="$(MSBuildThisFileDirectory)SupportSbom.targets" Condition=" '$(DisableSupportSbom)' != 'true' " />
+  <Import Project="$(MSBuildThisFileDirectory)SupportAnalyzerHygiene.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)SupportSbom.targets" />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportEmbedBinlog.targets"
     Condition=" '$(DisableSupportEmbedBinlog)' != 'true' "

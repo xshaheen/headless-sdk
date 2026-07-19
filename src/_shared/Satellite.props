@@ -10,6 +10,8 @@
   parent-relative paths work from each of the five satellite locations.
 -->
 <Project>
+  <Import Project="$(MSBuildThisFileDirectory)ExactAnalyzerDependencies.props" />
+
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -19,6 +21,7 @@
     <LangVersion>latest</LangVersion>
     <IsPackable>true</IsPackable>
     <PackageType>MSBuildSdk</PackageType>
+    <NuspecFile Condition="'$(NuspecFile)' == ''">$(MSBuildThisFileDirectory)Headless.NET.Sdk.Satellite.nuspec</NuspecFile>
     <IsBuildTaskProject>true</IsBuildTaskProject>
     <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -27,48 +30,11 @@
 
   <ItemGroup>
     <PackageReference
-      Update="Meziantou.Analyzer;Microsoft.CodeAnalysis.BannedApiAnalyzers;AsyncFixer;Asyncify;Microsoft.VisualStudio.Threading.Analyzers;SmartAnalyzers.MultithreadingAnalyzer;Roslynator.Analyzers;ReflectionAnalyzers;ErrorProne.NET.CoreAnalyzers"
+      Include="Microsoft.Sbom.Targets"
+      VersionOverride="[4.1.5]"
       PrivateAssets="none"
       IncludeAssets="all"
     />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="sdk/Sdk.props;sdk/Sdk.targets" Pack="true" PackagePath="sdk/%(Filename)%(Extension)" />
-    <None Include="build\$(PackageId).props" Pack="true" PackagePath="build\$(PackageId).props" />
-    <None Include="build\$(PackageId).targets" Pack="true" PackagePath="build\$(PackageId).targets" />
-    <!--
-      Packs the base SDK's entire build/ tree (Support* modules + the generated
-      SupportTestProjects.Versions.props) into this satellite package. NOTE: that versions file is
-      produced by the GenerateHeadlessTestToolVersions target on the BASE project only, so the base
-      must build before a satellite is packed or the satellite ships a stale copy. The full-solution
-      build (`dotnet build headless-sdk.slnx`) and CI both build the base first, so this holds in
-      practice; avoid packing a satellite in isolation without first building Headless.NET.Sdk.
-      VersionConsistencyTests guards the committed file's freshness.
-    -->
-    <None
-      Include="..\Headless.NET.Sdk\build\**\*.*"
-      Pack="true"
-      PackagePath="build/%(RecursiveDir)%(Filename)%(Extension)"
-    />
-    <None
-      Include="buildMultiTargeting\$(PackageId).props"
-      Pack="true"
-      PackagePath="buildMultiTargeting\$(PackageId).props"
-    />
-    <None
-      Include="buildMultiTargeting\$(PackageId).targets"
-      Pack="true"
-      PackagePath="buildMultiTargeting\$(PackageId).targets"
-    />
-    <None Include="buildTransitive\$(PackageId).props" Pack="true" PackagePath="buildTransitive\$(PackageId).props" />
-    <None
-      Include="buildTransitive\$(PackageId).targets"
-      Pack="true"
-      PackagePath="buildTransitive\$(PackageId).targets"
-    />
-    <None Include="..\Headless.NET.Sdk\configurations\**" Pack="true" PackagePath="configurations/" />
-    <!-- README.md is resolved and packed by SupportPackageInformation.targets from each satellite's own README.md -->
-    <None Include="..\Headless.NET.Sdk\_._" Pack="true" PackagePath="lib\$(TargetFramework)" Visible="false" />
-  </ItemGroup>
 </Project>

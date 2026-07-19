@@ -1,4 +1,34 @@
 <Project>
+  <Import Project="$(MSBuildThisFileDirectory)SupportNuGetWarningPolicy.props" />
+
+  <!--
+    Re-apply the CI quality gate after the consumer project body. Named quality policy is
+    intentionally authoritative; local builds retain consumer-selected warning behavior.
+  -->
+  <PropertyGroup
+    Label="CI Quality Gate"
+    Condition=" '$(_HeadlessIsKnownCiEnvironment)' == 'true' or '$(ContinuousIntegrationBuild)' == 'true' "
+  >
+    <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
+    <MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NETSDK1138;$(_HeadlessNuGetWarningsNotAsErrors)</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <!--
+    NuGet restore consumes TreatWarningsAsErrors during evaluation. Set it only immediately before
+    compilation so compiler and analyzer diagnostics become errors without changing restore.
+  -->
+  <Target
+    Name="HeadlessEnableCompilerWarningsAsErrors"
+    BeforeTargets="CoreCompile"
+    Condition=" '$(_HeadlessIsKnownCiEnvironment)' == 'true' or '$(ContinuousIntegrationBuild)' == 'true' "
+  >
+    <PropertyGroup>
+      <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+  </Target>
+
   <PropertyGroup Label="Conventional Test Friend Assemblies">
     <HeadlessEmitInternalsVisibleToAttributes Condition=" '$(HeadlessEmitInternalsVisibleToAttributes)' == '' "
       >true</HeadlessEmitInternalsVisibleToAttributes
@@ -32,12 +62,16 @@
       rationale: test projects use Headless.NET.Sdk.Test or set IsTestProject explicitly.
     -->
     <IsTestProject Condition=" '$(IsTestProject)' == '' ">false</IsTestProject>
-    <IsPackable Condition=" '$(IsPackable)' != 'true' or '$(IsTestProject)' == 'true' ">false</IsPackable>
+    <IsPackable
+      Condition=" '$(IsPackable)' == '' and ('$(IsTestProject)' == 'true' or '$(IsTestHarnessProject)' == 'true') "
+      >false</IsPackable
+    >
     <HeadlessSuppressNonPackablePackWarning Condition=" '$(HeadlessSuppressNonPackablePackWarning)' == '' "
       >true</HeadlessSuppressNonPackablePackWarning
     >
     <WarnOnPackingNonPackableProject
-      Condition=" '$(IsPackable)' == 'false' and '$(HeadlessSuppressNonPackablePackWarning)' == 'true' "
+      Condition=" '$(IsPackable)' == 'false'
+        and '$(HeadlessSuppressNonPackablePackWarning)' == 'true' "
       >false</WarnOnPackingNonPackableProject
     >
   </PropertyGroup>
@@ -80,13 +114,6 @@
     >
     <NoWarn Condition="'$(IsAspireHost)' == 'true'">$(NoWarn);CA1707</NoWarn>
   </PropertyGroup>
-
-  <ItemGroup
-    Label="Test Analyzer EditorConfigs"
-    Condition="('$(IsTestProject)' == 'true' or '$(IsTestHarnessProject)' == 'true') and '$(DisableSupportAnalyzerEditorConfigs)' != 'true'"
-  >
-    <EditorConfigFiles Include="$(MSBuildThisFileDirectory)..\configurations\Headless.NET.Sdk.Tests.editorconfig" />
-  </ItemGroup>
 
   <!--
     Allow apps to run on a newer major .NET runtime if their pinned major isn't installed.

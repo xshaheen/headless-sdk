@@ -1,85 +1,47 @@
 <Project>
   <PropertyGroup>
-    <IsContinuousIntegration>false</IsContinuousIntegration>
-    <!-- Detect CI -->
-    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(CI)' == 'true'"
-      >true</IsContinuousIntegration
-    >
-    <!-- Detect Azure DevOps / TFS -->
-    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(TF_BUILD)' == 'true'"
-      >true</IsContinuousIntegration
-    >
-    <!-- Detect GitHub Actions -->
-    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(GITHUB_ACTIONS)' == 'true'"
-      >true</IsContinuousIntegration
-    >
-    <!-- Detect GitLab CI -->
-    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(GITLAB_CI)' == 'true'"
-      >true</IsContinuousIntegration
-    >
     <!--
-      Detect TeamCity
-      https://www.jetbrains.com/help/teamcity/predefined-build-parameters.html#Server+Build+Properties
+      CI provider variables are authoritative quality signals. ContinuousIntegrationBuild is the
+      only consumer-facing manual activation property; the private marker keeps provider detection
+      effective even when an immutable global property attempts to set it to false.
     -->
-    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(TEAMCITY_VERSION)' != ''"
-      >true</IsContinuousIntegration
+    <_HeadlessIsKnownCiEnvironment
+      Condition=" '$(CI)' == 'true'
+        or '$(TF_BUILD)' == 'true'
+        or '$(GITHUB_ACTIONS)' == 'true'
+        or '$(GITLAB_CI)' == 'true'
+        or '$(TEAMCITY_VERSION)' != ''
+        or '$(BUILD_COMMAND)' != ''
+        or '$(APPVEYOR)' != ''
+        or '$(TRAVIS)' == 'true'
+        or '$(CIRCLECI)' == 'true'
+        or ('$(CODEBUILD_BUILD_ID)' != '' and '$(AWS_REGION)' != '')
+        or '$(JENKINS_URL)' != ''
+        or ('$(BUILD_ID)' != '' and '$(BUILD_URL)' != '')
+        or ('$(BUILD_ID)' != '' and '$(PROJECT_ID)' != '')
+        or '$(JB_SPACE_API_URL)' != '' "
+      >true</_HeadlessIsKnownCiEnvironment
     >
-    <!-- Detect Wrench -->
-    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(BUILD_COMMAND)' != ''"
-      >true</IsContinuousIntegration
+    <ContinuousIntegrationBuild Condition="'$(_HeadlessIsKnownCiEnvironment)' == 'true'"
+      >true</ContinuousIntegrationBuild
     >
-    <!-- Detect AppVeyor -->
-    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(APPVEYOR)' != ''"
-      >true</IsContinuousIntegration
+
+    <_HeadlessPackageLockFile
+      Condition="'$(NuGetLockFilePath)' != ''"
+      >$([System.IO.Path]::GetFullPath('$(NuGetLockFilePath)', '$(MSBuildProjectDirectory)'))</_HeadlessPackageLockFile
     >
-    <!-- Detect Travis -->
-    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(TRAVIS)' == 'true'"
-      >true</IsContinuousIntegration
-    >
-    <!-- Detect Circle CI -->
-    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(CIRCLECI)' == 'true'"
-      >true</IsContinuousIntegration
-    >
-    <!-- Detect AWS CodeBuild -->
-    <IsContinuousIntegration
-      Condition="'$(IsContinuousIntegration)' == 'false' and '$(CODEBUILD_BUILD_ID)' != '' and '$(AWS_REGION)' != ''"
-      >true</IsContinuousIntegration
-    >
-    <!--
-      Detect Jenkins
-      https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-    -->
-    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(JENKINS_URL)' != ''"
-      >true</IsContinuousIntegration
-    >
-    <IsContinuousIntegration
-      Condition="'$(IsContinuousIntegration)' == 'false' and '$(BUILD_ID)' != '' and '$(BUILD_URL)' != ''"
-      >true</IsContinuousIntegration
-    >
-    <!--
-      Google Cloud Build
-      https://cloud.google.com/build/docs/configuring-builds/substitute-variable-values
-    -->
-    <IsContinuousIntegration
-      Condition="'$(IsContinuousIntegration)' == 'false' and '$(BUILD_ID)' != '' and '$(PROJECT_ID)' != ''"
-      >true</IsContinuousIntegration
-    >
-    <!--
-      JetBrains Space
-      https://www.jetbrains.com/help/space/automation-environment-variables.html#general
-    -->
-    <IsContinuousIntegration Condition="'$(IsContinuousIntegration)' == 'false' and '$(JB_SPACE_API_URL)' != ''"
-      >true</IsContinuousIntegration
+    <_HeadlessPackageLockFile
+      Condition="'$(NuGetLockFilePath)' == ''"
+      >$([System.IO.Path]::GetFullPath('packages.lock.json', '$(MSBuildProjectDirectory)'))</_HeadlessPackageLockFile
     >
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(IsContinuousIntegration)' == 'true' ">
-    <!-- Ensures consistent, reproducible builds. -->
-    <Deterministic>true</Deterministic>
-    <!-- Generate and enforce package lock files on CI. -->
+  <!-- A repository opts into locked restore by committing a lock file; CI only enforces that choice. -->
+  <PropertyGroup
+    Condition=" ('$(_HeadlessIsKnownCiEnvironment)' == 'true' or '$(ContinuousIntegrationBuild)' == 'true')
+      and Exists('$(_HeadlessPackageLockFile)') "
+  >
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode>true</RestoreLockedMode>
-    <!-- Set CI build to true. -->
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 </Project>

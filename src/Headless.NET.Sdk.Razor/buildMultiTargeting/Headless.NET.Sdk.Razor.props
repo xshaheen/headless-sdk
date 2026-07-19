@@ -1,3 +1,6 @@
 <Project>
-  <Import Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.Razor.props" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.Razor.props"
+    Condition="'$(_HeadlessRazorSdkBuildPropsImported)' != 'true'"
+  />
 </Project>

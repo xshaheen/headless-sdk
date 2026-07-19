@@ -1,3 +1,6 @@
-<Project>
+<Project Condition="'$(_HeadlessRazorSdkBuildTargetsImported)' != 'true'">
+  <PropertyGroup>
+    <_HeadlessRazorSdkBuildTargetsImported>true</_HeadlessRazorSdkBuildTargetsImported>
+  </PropertyGroup>
   <Import Project="$(MSBuildThisFileDirectory)Headless.NET.Sdk.targets" />
 </Project>

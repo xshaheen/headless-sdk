@@ -5,7 +5,7 @@
     Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
   />
   <Import
-    Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.Razor.targets"
-    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true'"
+    Project="$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.Razor.targets"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true' and '$(_HeadlessRazorSdkBuildTargetsImported)' != 'true'"
   />
 </Project>

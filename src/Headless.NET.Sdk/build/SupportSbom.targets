@@ -1,16 +1,55 @@
 <Project>
   <!--
     Software Bill of Materials (SBOM) generation via Microsoft.Sbom.Targets.
-    Opt in with GenerateSBOM=true. Disable the support import with DisableSupportSbom=true.
+    SupportSbom.props restores Microsoft.Sbom.Targets as an exact private dependency while
+    excluding its automatic build import. Import it here so Headless owns one predictable import
+    in every consumption mode. Opt in with GenerateSBOM=true.
   -->
   <PropertyGroup>
     <GenerateSBOM Condition="'$(GenerateSBOM)' == ''">false</GenerateSBOM>
+    <_HeadlessMicrosoftSbomTargetsVersionNormalized
+      >$(_HeadlessMicrosoftSbomTargetsVersion.Replace('[', '').Replace(']', ''))</_HeadlessMicrosoftSbomTargetsVersionNormalized
+    >
+    <_HeadlessMicrosoftSbomTargetsRoot
+      >$([MSBuild]::EnsureTrailingSlash('$(NuGetPackageRoot)'))microsoft.sbom.targets/$(_HeadlessMicrosoftSbomTargetsVersionNormalized)/</_HeadlessMicrosoftSbomTargetsRoot
+    >
+    <_HeadlessMicrosoftSbomTargetsPath
+      Condition="'$(TargetFramework)' == ''"
+      >$(_HeadlessMicrosoftSbomTargetsRoot)buildMultiTargeting/Microsoft.Sbom.Targets.targets</_HeadlessMicrosoftSbomTargetsPath
+    >
+    <_HeadlessMicrosoftSbomTargetsPath
+      Condition="'$(TargetFramework)' != ''"
+      >$(_HeadlessMicrosoftSbomTargetsRoot)build/Microsoft.Sbom.Targets.targets</_HeadlessMicrosoftSbomTargetsPath
+    >
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(GenerateSBOM)' == 'true'">
-    <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.5" IsImplicitlyDefined="true">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
+  <!--
+    Keep Headless as the sole import owner even if a consumer also declares this package. The
+    reference remains in the restore graph, but NuGet must not generate a second targets import.
+  -->
+  <ItemGroup Condition="'$(IsBuildTaskProject)' != 'true'">
+    <PackageReference
+      Update="Microsoft.Sbom.Targets"
+      Version="$(_HeadlessMicrosoftSbomTargetsVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="none"
+      ExcludeAssets=""
+    />
   </ItemGroup>
+
+  <Import
+    Project="$(_HeadlessMicrosoftSbomTargetsPath)"
+    Condition=" '$(GenerateSBOM)' == 'true'
+      and '$(GenerateSbomTaskAssemblyFilePath)' == ''
+      and Exists('$(_HeadlessMicrosoftSbomTargetsPath)') "
+  />
+
+  <Target
+    Name="HeadlessValidateSbomTooling"
+    BeforeTargets="GenerateNuspec"
+    Condition="'$(GenerateSBOM)' == 'true' and !Exists('$(_HeadlessMicrosoftSbomTargetsPath)')"
+  >
+    <Error Text="Microsoft.Sbom.Targets $(_HeadlessMicrosoftSbomTargetsVersionNormalized) was not restored. Restore the project before packing with GenerateSBOM=true." />
+  </Target>
 </Project>

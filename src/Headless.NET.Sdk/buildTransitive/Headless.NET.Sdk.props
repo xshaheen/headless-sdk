@@ -1,3 +1,0 @@
-<Project>
-  <Import Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.props" />
-</Project>

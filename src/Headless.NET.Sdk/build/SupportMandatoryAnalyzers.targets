@@ -1,0 +1,120 @@
+<Project>
+  <!-- The named Headless quality baseline is authoritative after the consumer project body. -->
+  <PropertyGroup Condition="'$(IsBuildTaskProject)' != 'true'">
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <RunAnalyzers>true</RunAnalyzers>
+    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>true</RunAnalyzersDuringLiveAnalysis>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <!--
+    A consumer-authored reference with the same package ID replaces an implicit SDK reference.
+    Reassert the binding metadata so ordinary PackageReference overrides cannot disable or leak
+    the required analyzers.
+  -->
+  <ItemGroup Condition="'$(IsBuildTaskProject)' != 'true'">
+    <PackageReference
+      Remove="Meziantou.Analyzer;Microsoft.CodeAnalysis.BannedApiAnalyzers;AsyncFixer;Asyncify;Microsoft.VisualStudio.Threading.Analyzers;SmartAnalyzers.MultithreadingAnalyzer;Roslynator.Analyzers;ReflectionAnalyzers;ErrorProne.NET.CoreAnalyzers"
+    />
+    <PackageReference
+      Include="Meziantou.Analyzer"
+      Condition="'$(PackageId)' != 'Meziantou.Analyzer'"
+      Version="$(_HeadlessMeziantouAnalyzerVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="runtime; build; native; contentfiles; analyzers"
+      ExcludeAssets=""
+    />
+    <PackageReference
+      Include="Microsoft.CodeAnalysis.BannedApiAnalyzers"
+      Version="$(_HeadlessBannedApiAnalyzersVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="runtime; build; native; contentfiles; analyzers"
+      ExcludeAssets=""
+    />
+    <PackageReference
+      Include="AsyncFixer"
+      Version="$(_HeadlessAsyncFixerVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="runtime; build; native; contentfiles; analyzers"
+      ExcludeAssets=""
+    />
+    <PackageReference
+      Include="Asyncify"
+      Version="$(_HeadlessAsyncifyVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="runtime; build; native; contentfiles; analyzers"
+      ExcludeAssets=""
+    />
+    <PackageReference
+      Include="Microsoft.VisualStudio.Threading.Analyzers"
+      Version="$(_HeadlessVisualStudioThreadingAnalyzersVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="runtime; build; native; contentfiles; analyzers"
+      ExcludeAssets=""
+    />
+    <PackageReference
+      Include="SmartAnalyzers.MultithreadingAnalyzer"
+      Version="$(_HeadlessMultithreadingAnalyzerVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="runtime; build; native; contentfiles; analyzers"
+      ExcludeAssets=""
+    />
+    <PackageReference
+      Include="Roslynator.Analyzers"
+      Version="$(_HeadlessRoslynatorAnalyzersVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="runtime; build; native; contentfiles; analyzers"
+      ExcludeAssets=""
+    />
+    <PackageReference
+      Include="ReflectionAnalyzers"
+      Version="$(_HeadlessReflectionAnalyzersVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="runtime; build; native; contentfiles; analyzers"
+      ExcludeAssets=""
+    />
+    <PackageReference
+      Include="ErrorProne.NET.CoreAnalyzers"
+      Version="$(_HeadlessErrorProneAnalyzersVersion)"
+      IsImplicitlyDefined="true"
+      PrivateAssets="all"
+      IncludeAssets="runtime; build; native; contentfiles; analyzers"
+      ExcludeAssets=""
+    />
+  </ItemGroup>
+
+  <!-- Remove and re-add authoritative editorconfigs exactly once after consumer item evaluation. -->
+  <ItemGroup Condition="'$(IsBuildTaskProject)' != 'true'">
+    <EditorConfigFiles Remove="$(MSBuildThisFileDirectory)../configurations/Headless.NET.Sdk.Analyzers.editorconfig" />
+    <EditorConfigFiles Include="$(MSBuildThisFileDirectory)../configurations/Headless.NET.Sdk.Analyzers.editorconfig" />
+
+    <EditorConfigFiles
+      Remove="$(MSBuildThisFileDirectory)../configurations/Headless.NET.Sdk.EnforceConfigureAwait.editorconfig"
+    />
+    <EditorConfigFiles
+      Include="$(MSBuildThisFileDirectory)../configurations/Headless.NET.Sdk.EnforceConfigureAwait.editorconfig"
+      Condition="'$(HeadlessEnforceConfigureAwait)' == 'true'"
+    />
+
+    <EditorConfigFiles Remove="$(MSBuildThisFileDirectory)../configurations/Headless.NET.Sdk.SingleFileApp.editorconfig" />
+    <EditorConfigFiles
+      Include="$(MSBuildThisFileDirectory)../configurations/Headless.NET.Sdk.SingleFileApp.editorconfig"
+      Condition="'$(FileBasedProgram)' == 'true'"
+    />
+
+    <EditorConfigFiles Remove="$(MSBuildThisFileDirectory)../configurations/Headless.NET.Sdk.Tests.editorconfig" />
+    <EditorConfigFiles
+      Include="$(MSBuildThisFileDirectory)../configurations/Headless.NET.Sdk.Tests.editorconfig"
+      Condition="'$(IsTestProject)' == 'true' or '$(IsTestHarnessProject)' == 'true'"
+    />
+  </ItemGroup>
+</Project>

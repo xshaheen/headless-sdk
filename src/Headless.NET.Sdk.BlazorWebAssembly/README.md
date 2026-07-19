@@ -1,34 +1,37 @@
 # Headless.NET.Sdk.BlazorWebAssembly
 
-The Blazor WebAssembly project-type wrapper in the Headless family — `Microsoft.NET.Sdk.BlazorWebAssembly` plus the same opinionated Headless defaults. Use it for Blazor WebAssembly client apps.
+The Blazor WebAssembly wrapper: `Microsoft.NET.Sdk.BlazorWebAssembly` plus the complete Headless build baseline.
 
-## Install
+> [!IMPORTANT]
+> This package is distributed through GitHub Packages and, after protected release approval, NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
 
-As an MSBuild SDK:
+## Use
+
+Headless does not restrict `TargetFramework`; `Microsoft.NET.Sdk.BlazorWebAssembly` and the installed targeting packs or workloads determine compatibility.
 
 ```xml
 <Project Sdk="Headless.NET.Sdk.BlazorWebAssembly/x.y.z">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
 </Project>
 ```
 
-Or as a package reference alongside the Microsoft Blazor WebAssembly SDK:
+Direct PackageReference consumption uses `Microsoft.NET.Sdk.BlazorWebAssembly`:
 
 ```xml
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
-  <ItemGroup>
-    <PackageReference Include="Headless.NET.Sdk.BlazorWebAssembly" Version="x.y.z" PrivateAssets="all" />
-  </ItemGroup>
-</Project>
+<PackageReference Include="Headless.NET.Sdk.BlazorWebAssembly" Version="x.y.z" PrivateAssets="all" />
 ```
 
-## What it adds over the core SDK
+Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headless.NET.Sdk.BlazorWebAssembly@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
 
-Sets `HeadlessSdkProjectType=BlazorWebAssembly` and wraps `Microsoft.NET.Sdk.BlazorWebAssembly` so the WASM client app compiles and publishes correctly, while applying the full Headless baseline. `IsPackable` defaults to `false`, since Blazor WebAssembly apps are published, not packed. `HeadlessSymbolFormat` defaults to `none` instead of `embedded`: WASM apps ship their assemblies to the browser, and an embedded PDB would leak into the published `_framework` payload.
+For a .NET 10 file app, this wrapper preserves the Headless Blazor identity over the base Microsoft
+SDK. A single source file cannot author Blazor project items, and the specialized SDK assumes browser
+workload references and Native AOT behavior that the generated file project cannot satisfy. Normal
+Blazor WebAssembly projects retain their specialized Microsoft SDK behavior.
 
-## Opinionated defaults (overridable)
+## Blazor WebAssembly contract
 
-Inherits the full strict Headless baseline (banned `Newtonsoft.Json`, `latest-all` analyzers, warnings as errors on CI, and more). Every default is overridable via the `Disable*` and `Headless*` properties. See the [Configuration Reference in the main repo README](https://github.com/xshaheen/headless-sdk#configuration-reference) for the complete list.
+The package sets `HeadlessSdkProjectType=BlazorWebAssembly` and defaults `IsPackable=false`. `HeadlessSymbolFormat` defaults to `none`: embedded PDBs would otherwise survive into the browser `_framework` payload, increasing download size and exposing debug data.
 
-## License
-
-See [LICENSE](https://github.com/xshaheen/headless-sdk/blob/main/LICENSE).
+The package preserves the mandatory Headless analyzer infrastructure, configurable banned-API policy, audit, CI, SBOM, and direct-opt-in policies. It is self-contained and ships no `buildTransitive` assets.

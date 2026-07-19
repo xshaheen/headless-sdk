@@ -1,34 +1,38 @@
 # Headless.NET.Sdk.WindowsDesktop
 
-The Windows Desktop project-type wrapper in the Headless family — `Microsoft.NET.Sdk.WindowsDesktop` plus the same opinionated Headless defaults. Use it for WPF and Windows Forms apps.
+The WPF and Windows Forms wrapper: `Microsoft.NET.Sdk.WindowsDesktop` plus the complete Headless build baseline.
 
-## Install
+> [!IMPORTANT]
+> This package is distributed through GitHub Packages and, after protected release approval, NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
 
-As an MSBuild SDK:
+## Use
+
+Headless does not restrict `TargetFramework`; `Microsoft.NET.Sdk.WindowsDesktop` and the installed Windows targeting packs determine compatibility.
 
 ```xml
 <Project Sdk="Headless.NET.Sdk.WindowsDesktop/x.y.z">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
 </Project>
 ```
 
-Or as a package reference alongside the Microsoft Windows Desktop SDK:
+Direct PackageReference consumption uses `Microsoft.NET.Sdk.WindowsDesktop`:
 
 ```xml
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
-  <ItemGroup>
-    <PackageReference Include="Headless.NET.Sdk.WindowsDesktop" Version="x.y.z" PrivateAssets="all" />
-  </ItemGroup>
-</Project>
+<PackageReference Include="Headless.NET.Sdk.WindowsDesktop" Version="x.y.z" PrivateAssets="all" />
 ```
 
-## What it adds over the core SDK
+Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headless.NET.Sdk.WindowsDesktop@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
 
-Sets `HeadlessSdkProjectType=WindowsDesktop` and wraps `Microsoft.NET.Sdk.WindowsDesktop` so WPF and Windows Forms projects compile correctly (you still set `UseWPF` / `UseWindowsForms` as needed), while applying the full Headless baseline. `IsPackable` defaults to `true` for Windows Desktop projects.
+For a .NET 10 file app, this wrapper preserves the Headless Windows Desktop identity over the base
+Microsoft SDK. A single source file cannot author WPF or Windows Forms project items, and importing
+the legacy Windows Desktop wrapper there would only produce NETSDK1137 and NETSDK1106. Normal
+projects continue to use `Microsoft.NET.Sdk.WindowsDesktop` with `UseWPF` or `UseWindowsForms`.
 
-## Opinionated defaults (overridable)
+## Windows Desktop contract
 
-Inherits the full strict Headless baseline (banned `Newtonsoft.Json`, `latest-all` analyzers, warnings as errors on CI, and more). Every default is overridable via the `Disable*` and `Headless*` properties. See the [Configuration Reference in the main repo README](https://github.com/xshaheen/headless-sdk#configuration-reference) for the complete list.
+The package sets `HeadlessSdkProjectType=WindowsDesktop` and defaults `IsPackable=true`. Consumers still select `UseWPF` or `UseWindowsForms` and a compatible Windows TFM. Use `HeadlessEnforceConfigureAwait=true` when a library must surface `CA2007` for synchronization-context correctness.
 
-## License
-
-See [LICENSE](https://github.com/xshaheen/headless-sdk/blob/main/LICENSE).
+The package preserves the mandatory Headless analyzer infrastructure, configurable banned-API policy, audit, CI, symbol, SBOM, and direct-opt-in policies. It is self-contained and ships no `buildTransitive` assets.

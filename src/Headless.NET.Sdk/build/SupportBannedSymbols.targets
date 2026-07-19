@@ -1,9 +1,7 @@
 <Project>
   <!--
     Wires the shipped BannedSymbols.txt files into BannedApiAnalyzers as AdditionalFiles.
-    Toggles:
-      IncludeDefaultBannedSymbols    (default: true)  - core .NET banned APIs (DateTime.Now, Tuple, non-UTC IO, etc.)
-      BannedNewtonsoftJsonSymbols    (default: true)  - bans Newtonsoft.Json types in favor of System.Text.Json
+    Consumers can disable the complete policy or either list independently.
   -->
   <ItemGroup>
     <AdditionalFiles

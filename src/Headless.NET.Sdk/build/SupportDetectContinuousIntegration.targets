@@ -1,5 +1,36 @@
 <Project>
-  <PropertyGroup Condition="'$(RepositoryBranch)' == '' and '$(PublishRepositoryUrl)' == 'true' and '$(IsContinuousIntegration)' == 'true'">
+  <!--
+    Re-apply provider detection after the consumer project body. This makes a project-body
+    ContinuousIntegrationBuild value and lock-file override behave like early Directory.Build.props
+    values while keeping CI provider detection authoritative.
+  -->
+  <PropertyGroup>
+    <ContinuousIntegrationBuild Condition="'$(_HeadlessIsKnownCiEnvironment)' == 'true'"
+      >true</ContinuousIntegrationBuild
+    >
+    <_HeadlessPackageLockFile
+      Condition="'$(NuGetLockFilePath)' != ''"
+      >$([System.IO.Path]::GetFullPath('$(NuGetLockFilePath)', '$(MSBuildProjectDirectory)'))</_HeadlessPackageLockFile
+    >
+    <_HeadlessPackageLockFile
+      Condition="'$(NuGetLockFilePath)' == ''"
+      >$([System.IO.Path]::GetFullPath('packages.lock.json', '$(MSBuildProjectDirectory)'))</_HeadlessPackageLockFile
+    >
+  </PropertyGroup>
+
+  <PropertyGroup
+    Condition=" ('$(_HeadlessIsKnownCiEnvironment)' == 'true' or '$(ContinuousIntegrationBuild)' == 'true')
+      and Exists('$(_HeadlessPackageLockFile)') "
+  >
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode>true</RestoreLockedMode>
+  </PropertyGroup>
+
+  <PropertyGroup
+    Condition=" '$(RepositoryBranch)' == ''
+      and '$(PublishRepositoryUrl)' == 'true'
+      and ('$(_HeadlessIsKnownCiEnvironment)' == 'true' or '$(ContinuousIntegrationBuild)' == 'true') "
+  >
     <!-- GitHub Actions: https://docs.github.com/en/actions/reference/environment-variables#default-environment-variables -->
     <RepositoryBranch
       Condition="'$(RepositoryBranch)' == '' and '$(GITHUB_REF)' != '' and $(GITHUB_REF.Contains('refs/pull/'))"

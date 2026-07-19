@@ -26,28 +26,9 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
 
   <Import Project="$(MSBuildThisFileDirectory)SupportDetectContinuousIntegration.props" />
   <Import Project="$(MSBuildThisFileDirectory)SupportGeneral.props" />
-  <Import
-    Project="$(MSBuildThisFileDirectory)SupportTargetFrameworkInference.props"
-    Condition=" '$(DisableSupportTargetFrameworkInference)' != 'true'
-      and '$(_HeadlessSupportTargetFrameworkInferenceImported)' != 'true'
-      and '$(_HeadlessDeferTargetFrameworkInference)' != 'true' "
-  />
   <Import Project="$(MSBuildThisFileDirectory)RuntimeHostConfigurationOption.props" />
-  <Import
-    Project="$(MSBuildThisFileDirectory)SupportSingleFileApp.props"
-    Condition=" '$(DisableSupportSingleFileApp)' != 'true' "
-  />
-  <Import
-    Project="$(MSBuildThisFileDirectory)SupportPackageInformation.props"
-    Condition=" '$(DisableSupportPackageInformation)' != 'true' "
-  />
-  <Import Project="$(MSBuildThisFileDirectory)GlobalUsing.props" />
-  <Import
-    Project="$(MSBuildThisFileDirectory)SupportImplicitAnalyzers.props"
-    Condition=" '$(DisableSupportImplicitAnalyzers)' != 'true' "
-  />
-  <Import
-    Project="$(MSBuildThisFileDirectory)SupportAnalyzerEditorConfigs.props"
-    Condition=" '$(DisableSupportAnalyzerEditorConfigs)' != 'true' "
-  />
+  <Import Project="$(MSBuildThisFileDirectory)SupportSingleFileApp.props" />
+  <Import Project="$(MSBuildThisFileDirectory)SupportSbom.props" />
+  <Import Project="$(MSBuildThisFileDirectory)SupportImplicitAnalyzers.props" />
+  <Import Project="$(MSBuildThisFileDirectory)SupportAnalyzerEditorConfigs.props" />
 </Project>

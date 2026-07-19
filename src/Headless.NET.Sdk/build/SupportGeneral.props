@@ -20,42 +20,41 @@
   </PropertyGroup>
 
   <PropertyGroup Label="General Configurations">
-    <RootNamespace>$(MSBuildProjectName)</RootNamespace>
-    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace Condition="'$(RootNamespace)' == ''">$(MSBuildProjectName)</RootNamespace>
+    <AssemblyName Condition="'$(AssemblyName)' == ''">$(MSBuildProjectName)</AssemblyName>
 
     <DefaultItemExcludes>$(DefaultItemExcludes);**/*.lscache</DefaultItemExcludes>
 
     <LangVersion Condition="'$(LangVersion)' == ''">latest</LangVersion>
     <WarningLevel>9999</WarningLevel>
     <Nullable Condition="'$(Nullable)' == ''">enable</Nullable>
-    <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <ImplicitUsings Condition="'$(ImplicitUsings)' == ''">enable</ImplicitUsings>
 
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GenerateDocumentationFile Condition="'$(GenerateDocumentationFile)' == ''">true</GenerateDocumentationFile>
 
     <Features>strict</Features>
 
     <AnalysisLevel>latest-all</AnalysisLevel>
     <AnalysisMode>All</AnalysisMode>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <CodeAnalysisTreatWarningsAsErrors>false</CodeAnalysisTreatWarningsAsErrors>
+    <CodeAnalysisTreatWarningsAsErrors Condition="'$(CodeAnalysisTreatWarningsAsErrors)' == ''"
+      >false</CodeAnalysisTreatWarningsAsErrors
+    >
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <ReportAnalyzer>true</ReportAnalyzer>
     <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
     <RunAnalyzersDuringLiveAnalysis>true</RunAnalyzersDuringLiveAnalysis>
     <_SkipUpgradeNetAnalyzersNuGetWarning>true</_SkipUpgradeNetAnalyzersNuGetWarning>
-    <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+    <SuppressNETCoreSdkPreviewMessage>false</SuppressNETCoreSdkPreviewMessage>
+    <CheckEolTargetFramework>true</CheckEolTargetFramework>
+    <SuppressTfmSupportBuildWarnings>false</SuppressTfmSupportBuildWarnings>
 
-    <!-- Skip: The target framework is out of support warning on Relaese -->
-    <CheckEolTargetFramework Condition=" '$(Configuration)' == 'Release' ">false</CheckEolTargetFramework>
-    <SuppressTfmSupportBuildWarnings Condition=" '$(Configuration)' == 'Release' "
-      >true</SuppressTfmSupportBuildWarnings
+    <AccelerateBuildsInVisualStudio Condition="'$(AccelerateBuildsInVisualStudio)' == ''"
+      >true</AccelerateBuildsInVisualStudio
     >
 
-    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
-
-    <!-- Reproducible builds, regardless of CI. CI also pins lockfile via SupportDetectContinuousIntegration. -->
-    <Deterministic Condition="'$(Deterministic)' == ''">true</Deterministic>
+    <!-- Determinism is part of the mandatory quality baseline. -->
+    <Deterministic>true</Deterministic>
 
     <!-- Faster + more correct restore. -->
     <RestoreUseStaticGraphEvaluation Condition="'$(RestoreUseStaticGraphEvaluation)' == ''"
@@ -65,25 +64,19 @@
       >true</RestoreSerializeGlobalProperties
     >
 
-    <!-- Catch breaking API changes between package versions. -->
+    <!-- Run the Microsoft package-validation checks for packable projects by default. -->
     <EnablePackageValidation Condition="'$(EnablePackageValidation)' == ''">true</EnablePackageValidation>
-    <!--
-      Set the baseline AFTER the first stable (non-preview) publish so package validation compares
-      the current build against the last shipped version (not just internal structure). Leave it
-      unset until then: pointing it at a version that was never published fails the build.
-      Example: <PackageValidationBaselineVersion>1.0.0</PackageValidationBaselineVersion>
-    -->
 
   </PropertyGroup>
 
   <PropertyGroup
-    Label="MSBuild Warnings As Errors"
-    Condition=" '$(IsContinuousIntegration)' == 'true' OR '$(ContinuousIntegrationBuild)' == 'true' OR '$(Configuration)' == 'Release' "
+    Label="CI Quality Gate"
+    Condition=" '$(_HeadlessIsKnownCiEnvironment)' == 'true' or '$(ContinuousIntegrationBuild)' == 'true' "
   >
-    <!-- Compiler warnings (TreatWarningsAsErrors) are handled below; this catches MSBuild-level warnings. -->
-    <MSBuildTreatWarningsAsErrors Condition="'$(MSBuildTreatWarningsAsErrors)' == ''"
-      >true</MSBuildTreatWarningsAsErrors
-    >
+    <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
+    <MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NETSDK1138;$(_HeadlessNuGetWarningsNotAsErrors)</WarningsNotAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Label="NoWarn">
@@ -139,21 +132,8 @@
     -->
   </PropertyGroup>
 
-  <!--
-    Compiler warnings-as-errors policy (overridable: set <TreatWarningsAsErrors> in the consumer project to win).
-      - Local / Debug builds: warnings ARE errors, so issues surface during development.
-      - Release builds (CI and downstream consumers): warnings stay warnings so a publish/pack
-        is never blocked by analyzer churn.
-    Note: nullable warnings are always errors (see WarningsAsErrors in "General Configurations"
-    above), and MSBuild-level warnings are errored on CI/Release (see "MSBuild Warnings As Errors" above).
-  -->
-  <PropertyGroup Label="Compiler Warnings As Errors" Condition="'$(TreatWarningsAsErrors)' == ''">
-    <TreatWarningsAsErrors Condition="'$(Configuration)' != 'Release'">true</TreatWarningsAsErrors>
-    <TreatWarningsAsErrors Condition="'$(Configuration)' == 'Release'">false</TreatWarningsAsErrors>
-  </PropertyGroup>
-
   <PropertyGroup Label="Language Configuration">
-    <NeutralLanguage>en</NeutralLanguage>
-    <PreferredUILang>en</PreferredUILang>
+    <NeutralLanguage Condition="'$(NeutralLanguage)' == ''">en</NeutralLanguage>
+    <PreferredUILang Condition="'$(PreferredUILang)' == ''">en</PreferredUILang>
   </PropertyGroup>
 </Project>

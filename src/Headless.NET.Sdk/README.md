@@ -1,51 +1,69 @@
 # Headless.NET.Sdk
 
-The base SDK of the Headless family — an opinionated MSBuild SDK I built for my own .NET projects and the teams I work with. Use it for libraries and console apps; every other variant (Web, Test, Razor, BlazorWebAssembly, WindowsDesktop) wraps a matching Microsoft SDK and layers these same defaults on top. It wraps `Microsoft.NET.Sdk`.
+The base Headless MSBuild SDK for libraries, console applications, and shared build policy. It wraps `Microsoft.NET.Sdk`; every satellite package carries this same baseline.
 
-## Install
+> [!IMPORTANT]
+> This package is distributed through GitHub Packages and, after protected release approval, NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
 
-As an MSBuild SDK (defaults visible before your `Directory.Build.props`):
+## Use
+
+All five family consumption modes are supported. Every MSBuild project must set `TargetFramework` explicitly, but Headless does not restrict its value; the selected Microsoft SDK and targeting packs determine compatibility.
 
 ```xml
+<!-- Project SDK -->
 <Project Sdk="Headless.NET.Sdk/x.y.z">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
 </Project>
 ```
 
-Or as a normal package reference:
-
-```bash
-dotnet add package Headless.NET.Sdk --version x.y.z
+```xml
+<!-- Direct PackageReference -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Headless.NET.Sdk" Version="x.y.z" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
 ```
 
 ```xml
-<PackageReference Include="Headless.NET.Sdk" Version="x.y.z" PrivateAssets="all" />
-```
-
-Or layered on top of the .NET SDK:
-
-```xml
+<!-- Additional SDK -->
 <Project Sdk="Microsoft.NET.Sdk">
   <Sdk Name="Headless.NET.Sdk" Version="x.y.z" />
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
 </Project>
 ```
 
-.NET 10+ file-based apps can use the SDK directive:
+The version can instead be resolved from `global.json`. .NET 10 file-based apps use:
 
 ```csharp
 #:sdk Headless.NET.Sdk@x.y.z
-Console.WriteLine("Hello!");
 ```
 
-## What it adds
+See the repository [consumption-mode reference](https://github.com/xshaheen/headless-sdk#consumption-modes) for feed authentication and `global.json` configuration.
 
-This is the package that carries all the build assets the rest of the family re-packs. Sets `HeadlessSdkProjectType=Default`. The defaults reflect a strict house style: `Newtonsoft.Json` banned, `AnalysisLevel=latest-all`, MSBuild warnings as errors on CI, `RollForward=LatestMajor` for executables, nullable + implicit usings + latest C#, NuGet audit, opt-in SBOM generation, Source Link, embedded PDB symbols (`HeadlessSymbolFormat`), and a stack of implicit analyzers (Meziantou, AsyncFixer, Roslynator, and more).
+## Contract
 
-Set `<IsTestHarnessProject>true</IsTestHarnessProject>` on shared test harness projects that should receive test defaults without being discovered or executed as test hosts.
+- Direct opt-in only: no `buildTransitive` assets are shipped.
+- Explicit target frameworks only; Headless does not infer a TFM.
+- Mandatory nine-package analyzer baseline plus default-on, consumer-configurable general and Newtonsoft.Json banned APIs.
+- CI-only compiler, analyzer, nullable, MSBuild, and vulnerability warning escalation.
+- CI locked restore only when an existing lock file opts the project in.
+- Direct and transitive NuGet audit; `NU1901`-`NU1904` fail CI while `NU1900` and `NU1905` remain warnings.
+- Extra Headless global usings only when `ImplicitUsings` is enabled and the TFM is compatible with `net8.0`.
+- Automatic analyzer profile for .NET 10 file-based apps.
+- Opt-in SBOM generation with `GenerateSBOM=true`.
+- Embedded symbols by default through `HeadlessSymbolFormat=embedded`.
+- Targeted removal of the conflicting reference-pack `System.Runtime` facade when `System.Runtime.Experimental` supplies its own facade.
 
-## Opinionated defaults (overridable)
+Named quality policies are authoritative. Other supported customization properties are documented in the [main README](https://github.com/xshaheen/headless-sdk).
 
-The intent is simple: every project starts with the same strict baseline, then opts out only where the local project has a clear reason. Every default is overridable via the `Disable*` and `Headless*` properties. See the full [Configuration Reference in the main repo README](https://github.com/xshaheen/headless-sdk#configuration-reference) for the complete list.
-
-## License
-
-See [LICENSE](https://github.com/xshaheen/headless-sdk/blob/main/LICENSE).
+Direct PackageReference consumers must also follow the main README's first-clean-restore bootstrap.
+NuGet cannot load package `build` assets early enough for the package itself to govern that initial
+restore; this limitation does not affect build, pack, analyzer, or later restore behavior.

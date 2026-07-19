@@ -1,28 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
-    Dependabot anchor. The versions injected into consumer test projects by
-    build/SupportTestProjects.targets are single-sourced in Directory.Packages.props (see
-    GenerateHeadlessTestToolVersions). Dependabot only bumps a central PackageVersion that a real
-    project references, so this project references them all purely so Dependabot opens bump PRs.
+    Dependabot anchor. The MTP extension versions exposed by Headless.NET.Sdk.Test are
+    single-sourced in Directory.Packages.props. Dependabot only bumps a central PackageVersion
+    that a real project references, so this project references the extensions purely so
+    Dependabot opens bump PRs.
 
     IncludeAssets="none" keeps every asset out of the build: nothing here is compiled against or
-    run, and Microsoft.NET.Test.Sdk's targets never load (so they cannot clash with the MTP test
-    harness). Keep this list in sync with Directory.Packages.props and VersionConsistencyTests.
+    run. Keep this list in sync with Directory.Packages.props and package-contract tests.
   -->
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <IsPublishable>false</IsPublishable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" IncludeAssets="none" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" IncludeAssets="none" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Testing.Extensions.HangDump" IncludeAssets="none" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Testing.Extensions.HotReload" IncludeAssets="none" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Testing.Extensions.Retry" IncludeAssets="none" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" IncludeAssets="none" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" IncludeAssets="none" PrivateAssets="all" />
-    <PackageReference Include="GitHubActionsTestLogger" IncludeAssets="none" PrivateAssets="all" />
   </ItemGroup>
 </Project>

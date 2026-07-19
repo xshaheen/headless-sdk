@@ -2,10 +2,15 @@
   <Import
     Project="Sdk.targets"
     Sdk="Microsoft.NET.Sdk.WindowsDesktop"
-    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true'"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true' and '$(FileBasedProgram)' != 'true'"
   />
   <Import
-    Project="$(MSBuildThisFileDirectory)..\build\Headless.NET.Sdk.WindowsDesktop.targets"
-    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true'"
+    Project="Sdk.targets"
+    Sdk="Microsoft.NET.Sdk"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' == 'true' and '$(FileBasedProgram)' == 'true'"
+  />
+  <Import
+    Project="$(MSBuildThisFileDirectory)../build/Headless.NET.Sdk.WindowsDesktop.targets"
+    Condition="'$(_HeadlessMustImportMicrosoftNETSdk)' != 'true' and '$(_HeadlessWindowsDesktopSdkBuildTargetsImported)' != 'true'"
   />
 </Project>
