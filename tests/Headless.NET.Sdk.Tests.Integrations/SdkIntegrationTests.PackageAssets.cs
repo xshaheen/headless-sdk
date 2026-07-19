@@ -141,7 +141,7 @@ public sealed partial class SdkIntegrationTests
         var analyzerHygiene = ReadPackageEntry(package, "build/SupportAnalyzerHygiene.targets");
         Assert.Contains("HeadlessDisableSponsorLinkAnalyzers", analyzerHygiene, StringComparison.Ordinal);
         Assert.Contains("DisableSponsorLink", analyzerHygiene, StringComparison.Ordinal);
-        Assert.Contains("Disable_SponsorLink", analyzerHygiene, StringComparison.Ordinal);
+        Assert.DoesNotContain("Disable_SponsorLink", analyzerHygiene, StringComparison.Ordinal);
 
         var analyzerEditorConfigs = ReadPackageEntry(package, "build/SupportAnalyzerEditorConfigs.props");
         Assert.Contains("Headless.NET.Sdk.Analyzers.editorconfig", analyzerEditorConfigs, StringComparison.Ordinal);

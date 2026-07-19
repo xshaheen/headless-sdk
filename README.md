@@ -226,6 +226,7 @@ the listed default; explicit values win unless the behavior is identified as man
 | --- | --- | --- |
 | `DisableDocumentationWarnings` | `true` | Set `false` to report CS1573 and CS1591 while keeping XML documentation generation enabled. |
 | `HeadlessEnforceConfigureAwait` | `false` | Set `true` to enable CA2007 through the shipped analyzer profile. |
+| `DisableSponsorLink` | enabled unless `false` | Set `false` to retain SponsorLink and Moq analyzers that Headless removes by default. |
 | `HeadlessEmitInternalsVisibleToAttributes` | `true` | Set `false` when the project owns its friend-assembly list. |
 | `HeadlessEmitClsCompliantAttribute` | `true` | Set `false` when the project supplies its own `CLSCompliant` attribute. |
 | `HeadlessEnableStrictSystemTextJsonRuntimeDefaults` | `false` | Enables the two process-wide strict System.Text.Json runtime switches for TFMs compatible with `net9.0`. |
