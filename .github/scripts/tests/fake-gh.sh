@@ -26,7 +26,7 @@ if [[ $arguments == *" --include "* ]]; then
       echo "gh: Resource not accessible. (HTTP 403)"
       exit 1
       ;;
-    public)
+    public | public-duplicate | postflight-public-present)
       printf 'HTTP/2.0 200 OK\n\n{"visibility":"public"}\n'
       ;;
     missing-visibility)
@@ -44,6 +44,10 @@ if [[ $arguments == *" --include "* ]]; then
       ;;
   esac
 elif [[ $scenario == private-duplicate && $arguments == *"/second.package/versions"* ]]; then
+  echo "1.0.0"
+elif [[ $scenario == public-duplicate && $arguments == *"/first.package/versions"* ]]; then
+  echo "1.0.0"
+elif [[ $scenario == postflight-public-present && $arguments == *"/first.package/versions"* ]]; then
   echo "1.0.0"
 elif [[ $scenario == private-duplicate-early && $arguments == *"/first.package/versions"* ]]; then
   echo "1.0.0"

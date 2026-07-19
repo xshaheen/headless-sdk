@@ -14,6 +14,10 @@ GH_BIN="$fake_gh" GH_FAKE_SCENARIO=postflight-private-present \
   GITHUB_PACKAGE_POSTFLIGHT_ATTEMPTS=3 GITHUB_PACKAGE_POSTFLIGHT_DELAY_SECONDS=0 \
   bash "$postflight" "$test_root/one-package.tsv"
 
+GH_BIN="$fake_gh" GH_FAKE_SCENARIO=postflight-public-present \
+  GITHUB_PACKAGE_POSTFLIGHT_ATTEMPTS=3 GITHUB_PACKAGE_POSTFLIGHT_DELAY_SECONDS=0 \
+  bash "$postflight" "$test_root/one-package.tsv"
+
 mkdir "$test_root/delayed"
 GH_BIN="$fake_gh" GH_FAKE_SCENARIO=postflight-delayed GH_FAKE_STATE_DIR="$test_root/delayed" \
   GITHUB_PACKAGE_POSTFLIGHT_ATTEMPTS=3 GITHUB_PACKAGE_POSTFLIGHT_DELAY_SECONDS=0 \
@@ -31,14 +35,14 @@ fi
 grep -Fq "invalid visibility" <<<"$output"
 
 if output=$(
-  GH_BIN="$fake_gh" GH_FAKE_SCENARIO=public \
+  GH_BIN="$fake_gh" GH_FAKE_SCENARIO=unknown-visibility \
     GITHUB_PACKAGE_POSTFLIGHT_ATTEMPTS=3 GITHUB_PACKAGE_POSTFLIGHT_DELAY_SECONDS=0 \
     bash "$postflight" "$test_root/one-package.tsv" 2>&1
 ); then
-  echo "Expected non-private visibility to fail postflight."
+  echo "Expected unsupported visibility to fail postflight."
   exit 1
 fi
-grep -Fq "visibility is 'public', not private" <<<"$output"
+grep -Fq "expected private or public" <<<"$output"
 
 mkdir "$test_root/transient"
 GH_BIN="$fake_gh" GH_FAKE_SCENARIO=postflight-version-transient GH_FAKE_STATE_DIR="$test_root/transient" \

@@ -19,11 +19,13 @@ if output=$(GH_BIN="$fake_gh" GH_FAKE_SCENARIO=forbidden bash "$preflight" "$tes
 fi
 grep -Fq "preflight failed" <<<"$output"
 
-if output=$(GH_BIN="$fake_gh" GH_FAKE_SCENARIO=public bash "$preflight" "$test_root/one-package.tsv" 2>&1); then
-  echo "Expected a public package to fail preflight."
+GH_BIN="$fake_gh" GH_FAKE_SCENARIO=public bash "$preflight" "$test_root/one-package.tsv"
+
+if output=$(GH_BIN="$fake_gh" GH_FAKE_SCENARIO=public-duplicate bash "$preflight" "$test_root/one-package.tsv" 2>&1); then
+  echo "Expected a duplicate public package version to fail preflight."
   exit 1
 fi
-grep -Fq "already public" <<<"$output"
+grep -Fq "First.Package 1.0.0 already exists" <<<"$output"
 
 if output=$(GH_BIN="$fake_gh" GH_FAKE_SCENARIO=missing-visibility bash "$preflight" "$test_root/one-package.tsv" 2>&1); then
   echo "Expected missing package visibility to fail preflight."
@@ -35,7 +37,7 @@ if output=$(GH_BIN="$fake_gh" GH_FAKE_SCENARIO=unknown-visibility bash "$preflig
   echo "Expected unsupported package visibility to fail preflight."
   exit 1
 fi
-grep -Fq "expected private" <<<"$output"
+grep -Fq "expected private or public" <<<"$output"
 
 if output=$(
   GH_BIN="$fake_gh" GH_FAKE_SCENARIO=private-duplicate \

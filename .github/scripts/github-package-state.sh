@@ -25,10 +25,14 @@ if ! visibility=$(jq -er '.visibility | select(type == "string")' <<<"$metadata"
   exit 0
 fi
 
-if [[ $visibility != private ]]; then
-  printf 'non-private\t%s\n' "$visibility"
-  exit 0
-fi
+case $visibility in
+  private | public)
+    ;;
+  *)
+    printf 'unsupported-visibility\t%s\n' "$visibility"
+    exit 0
+    ;;
+esac
 
 # Keep the jq program constant and match the requested version locally. This avoids embedding a
 # package version in jq source and avoids SIGPIPE by capturing the complete paginated response.
@@ -40,7 +44,7 @@ if ! versions=$("$gh_bin" api --paginate "/user/packages/nuget/${api_name}/versi
 fi
 
 if grep -Fxq "$version" <<<"$versions"; then
-  printf 'private\tversion-present\n'
+  printf '%s\tversion-present\n' "$visibility"
 else
-  printf 'private\tversion-absent\n'
+  printf '%s\tversion-absent\n' "$visibility"
 fi
