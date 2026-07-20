@@ -2,9 +2,6 @@
 
 The Microsoft Testing Platform wrapper: `Microsoft.NET.Sdk` plus the complete Headless build baseline and test classification.
 
-> [!IMPORTANT]
-> This package is distributed through GitHub Packages and, after protected release approval, NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
-
 ## Use
 
 Headless does not restrict `TargetFramework`; the Microsoft SDK, Microsoft Testing Platform, and the consumer-selected test framework determine compatibility.

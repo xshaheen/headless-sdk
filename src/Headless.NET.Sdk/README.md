@@ -2,9 +2,6 @@
 
 The base Headless MSBuild SDK for libraries, console applications, and shared build policy. It wraps `Microsoft.NET.Sdk`; every satellite package carries this same baseline.
 
-> [!IMPORTANT]
-> This package is distributed through GitHub Packages and, after protected release approval, NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
-
 ## Use
 
 All five family consumption modes are supported. Every MSBuild project must set `TargetFramework` explicitly, but Headless does not restrict its value; the selected Microsoft SDK and targeting packs determine compatibility.

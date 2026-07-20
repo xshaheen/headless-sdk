@@ -2,9 +2,6 @@
 
 The WPF and Windows Forms wrapper: `Microsoft.NET.Sdk.WindowsDesktop` plus the complete Headless build baseline.
 
-> [!IMPORTANT]
-> This package is distributed through GitHub Packages and, after protected release approval, NuGet.org. It can be consumed by any compatible .NET project; it is not limited to Headless Framework. The repository currently has no license, so source availability does not itself grant legal rights to use, modify, or redistribute it.
-
 ## Use
 
 Headless does not restrict `TargetFramework`; `Microsoft.NET.Sdk.WindowsDesktop` and the installed Windows targeting packs determine compatibility.
