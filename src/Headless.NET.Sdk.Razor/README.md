@@ -1,6 +1,6 @@
 # Headless.NET.Sdk.Razor
 
-The Razor class-library wrapper: `Microsoft.NET.Sdk.Razor` plus the complete Headless build baseline.
+The Razor class-library wrapper: `Microsoft.NET.Sdk.Razor` plus the complete Headless build baseline. It is available to any compatible .NET project and is not specific to Headless Framework.
 
 ## Use
 

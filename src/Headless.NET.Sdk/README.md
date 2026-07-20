@@ -1,6 +1,6 @@
 # Headless.NET.Sdk
 
-The base Headless MSBuild SDK for libraries, console applications, and shared build policy. It wraps `Microsoft.NET.Sdk`; every satellite package carries this same baseline.
+The base Headless MSBuild SDK for libraries, console applications, and shared build policy. It wraps `Microsoft.NET.Sdk`; every satellite package carries this same baseline. It is available to any compatible .NET project and is not specific to Headless Framework.
 
 ## Use
 

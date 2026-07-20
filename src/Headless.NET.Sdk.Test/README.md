@@ -1,6 +1,6 @@
 # Headless.NET.Sdk.Test
 
-The Microsoft Testing Platform wrapper: `Microsoft.NET.Sdk` plus the complete Headless build baseline and test classification.
+The Microsoft Testing Platform wrapper: `Microsoft.NET.Sdk` plus the complete Headless build baseline and test classification. It is available to any compatible .NET project and is not specific to Headless Framework.
 
 ## Use
 

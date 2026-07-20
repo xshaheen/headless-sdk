@@ -1,6 +1,6 @@
 # Headless.NET.Sdk.Web
 
-The ASP.NET Core and Web API wrapper: `Microsoft.NET.Sdk.Web` plus the complete Headless build baseline.
+The ASP.NET Core and Web API wrapper: `Microsoft.NET.Sdk.Web` plus the complete Headless build baseline. It is available to any compatible .NET project and is not specific to Headless Framework.
 
 ## Use
 

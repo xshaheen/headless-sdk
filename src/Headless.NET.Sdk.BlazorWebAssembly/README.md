@@ -1,6 +1,6 @@
 # Headless.NET.Sdk.BlazorWebAssembly
 
-The Blazor WebAssembly wrapper: `Microsoft.NET.Sdk.BlazorWebAssembly` plus the complete Headless build baseline.
+The Blazor WebAssembly wrapper: `Microsoft.NET.Sdk.BlazorWebAssembly` plus the complete Headless build baseline. It is available to any compatible .NET project and is not specific to Headless Framework.
 
 ## Use
 

@@ -1,6 +1,6 @@
 # Headless.NET.Sdk.WindowsDesktop
 
-The WPF and Windows Forms wrapper: `Microsoft.NET.Sdk.WindowsDesktop` plus the complete Headless build baseline.
+The WPF and Windows Forms wrapper: `Microsoft.NET.Sdk.WindowsDesktop` plus the complete Headless build baseline. It is available to any compatible .NET project and is not specific to Headless Framework.
 
 ## Use
 

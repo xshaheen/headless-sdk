@@ -1,6 +1,6 @@
 # Headless.NET.Sdk
 
-`Headless.NET.Sdk` is an opinionated MSBuild SDK family for .NET projects. It is consumer-facing build infrastructure that standardizes evaluation order, restore policy, analyzers, packaging, and test execution across any compatible .NET repository.
+`Headless.NET.Sdk` is an opinionated MSBuild SDK family for .NET projects. It is consumer-facing build infrastructure that standardizes evaluation order, restore policy, analyzers, packaging, and test execution across any compatible .NET repository. The SDK family is available to any compatible .NET project and is not specific to Headless Framework.
 
 ## Support contract
 
