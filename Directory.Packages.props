@@ -35,7 +35,7 @@
       the MTP extensions above: keep these pins synchronized with the shipped version properties
       and nuspec dependency ranges; VersionConsistencyTests enforces the three-way contract.
     -->
-    <PackageVersion Include="Meziantou.Analyzer" Version="3.0.192" />
+    <PackageVersion Include="Meziantou.Analyzer" Version="3.0.195" />
     <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
     <PackageVersion Include="AsyncFixer" Version="2.1.0" />
     <PackageVersion Include="Asyncify" Version="0.9.7" />

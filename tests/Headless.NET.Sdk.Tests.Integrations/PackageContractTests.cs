@@ -74,7 +74,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
         ["AsyncFixer"] = "[2.1.0]",
         ["Asyncify"] = "[0.9.7]",
         ["ErrorProne.NET.CoreAnalyzers"] = "[0.1.2]",
-        ["Meziantou.Analyzer"] = "[3.0.192]",
+        ["Meziantou.Analyzer"] = "[3.0.195]",
         ["Microsoft.CodeAnalysis.BannedApiAnalyzers"] = "[5.6.0]",
         ["Microsoft.Sbom.Targets"] = "[4.1.5]",
         ["Microsoft.VisualStudio.Threading.Analyzers"] = "[18.7.23]",
