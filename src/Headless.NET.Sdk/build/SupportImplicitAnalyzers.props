@@ -4,7 +4,7 @@
     This quality baseline deliberately has no consumer opt-out.
   -->
   <PropertyGroup>
-    <_HeadlessMeziantouAnalyzerVersion>3.0.195</_HeadlessMeziantouAnalyzerVersion>
+    <_HeadlessMeziantouAnalyzerVersion>3.0.200</_HeadlessMeziantouAnalyzerVersion>
     <_HeadlessBannedApiAnalyzersVersion>5.6.0</_HeadlessBannedApiAnalyzersVersion>
     <_HeadlessAsyncFixerVersion>2.1.0</_HeadlessAsyncFixerVersion>
     <_HeadlessAsyncifyVersion>0.9.7</_HeadlessAsyncifyVersion>
