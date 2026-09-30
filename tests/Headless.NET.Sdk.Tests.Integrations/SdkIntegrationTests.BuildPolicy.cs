@@ -207,6 +207,47 @@ class Foo { }
     }
 
     [Fact]
+    public async Task should_report_analyzer_timings_only_when_ci_build()
+    {
+        // Analyzer profiling costs every compile, so local and agent builds must not pay for it;
+        // a project-body ContinuousIntegrationBuild must still activate it because the default
+        // lives in the .targets that evaluate after the consumer project.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            includePackageReference: false,
+            environmentOverrides: new Dictionary<string, string>(StringComparer.Ordinal) { ["CLAUDECODE"] = "1" }
+        );
+
+        var agent = await project.EvaluateHeadlessPropertiesAsync();
+        var ci = await project.EvaluateHeadlessPropertiesAsync("-p:ContinuousIntegrationBuild=true");
+        var ciOptOut = await project.EvaluateHeadlessPropertiesAsync(
+            "-p:ContinuousIntegrationBuild=true -p:ReportAnalyzer=false"
+        );
+        var localOptIn = await project.EvaluateHeadlessPropertiesAsync("-p:ReportAnalyzer=true");
+
+        Assert.Equal("true", agent["HeadlessIsLlmContext"]);
+        Assert.Empty(agent["ReportAnalyzer"]);
+        Assert.Equal("true", ci["ReportAnalyzer"]);
+        Assert.Equal("false", ciOptOut["ReportAnalyzer"]);
+        Assert.Equal("true", localOptIn["ReportAnalyzer"]);
+
+        await using var projectBodyCi = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            includePackageReference: false,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["ContinuousIntegrationBuild"] = "true",
+            }
+        );
+
+        Assert.Equal("true", (await projectBodyCi.EvaluateHeadlessPropertiesAsync())["ReportAnalyzer"]);
+    }
+
+    [Fact]
     public async Task should_respect_consumer_llm_context_opt_out()
     {
         await using var project = await ConsumerProject.CreateAsync(

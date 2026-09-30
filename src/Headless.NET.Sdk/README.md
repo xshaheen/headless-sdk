@@ -51,6 +51,7 @@ See the repository [consumption-mode reference](https://github.com/xshaheen/head
 - Explicit target frameworks only; Headless does not infer a TFM.
 - Mandatory nine-package analyzer baseline plus default-on, consumer-configurable general and Newtonsoft.Json banned APIs.
 - CI-only compiler, analyzer, nullable, MSBuild, and vulnerability warning escalation.
+- CI-only analyzer timing reports; profile a local build with `-p:ReportAnalyzer=true`.
 - CI locked restore only when an existing lock file opts the project in.
 - Direct and transitive NuGet audit; `NU1901`-`NU1904` fail CI while `NU1900` and `NU1905` remain warnings.
 - Extra Headless global usings only when `ImplicitUsings` is enabled and the TFM is compatible with `net8.0`.

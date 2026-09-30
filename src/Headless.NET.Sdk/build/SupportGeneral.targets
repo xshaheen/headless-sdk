@@ -39,6 +39,22 @@
   </Target>
 
   <!--
+    Analyzer profiling is CI-only diagnostics. ReportAnalyzer makes the compiler time every
+    analyzer callback and emit a per-analyzer report, which costs build time in every local and
+    agent build while changing nothing about the diagnostics produced. CI keeps it so the analyzer
+    budget stays observable where a regression is actually reviewed; a developer profiling
+    analyzers locally passes -p:ReportAnalyzer=true, which wins as a global property and is also
+    honored by the empty-value guard. The LLM-context trigger is deliberately NOT part of this
+    condition: agent builds are the ones the cost is being removed from.
+  -->
+  <PropertyGroup
+    Label="CI Analyzer Profiling"
+    Condition=" '$(_HeadlessIsKnownCiEnvironment)' == 'true' or '$(ContinuousIntegrationBuild)' == 'true' "
+  >
+    <ReportAnalyzer Condition="'$(ReportAnalyzer)' == ''">true</ReportAnalyzer>
+  </PropertyGroup>
+
+  <!--
     Mandatory quality baseline, re-asserted after the consumer project body so both consumption
     modes behave identically (analyzer execution properties get the same treatment in
     SupportMandatoryAnalyzers.targets). EffectiveAnalysisLevel is computed later, in

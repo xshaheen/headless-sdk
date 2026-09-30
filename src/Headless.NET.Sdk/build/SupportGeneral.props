@@ -40,7 +40,13 @@
     -->
     <WarningLevel Condition="'$(WarningLevel)' == ''">9999</WarningLevel>
     <Features Condition="'$(Features)' == ''">strict</Features>
-    <ReportAnalyzer Condition="'$(ReportAnalyzer)' == ''">true</ReportAnalyzer>
+    <!--
+      ReportAnalyzer is analyzer profiling, not a correctness feature: it makes the compiler time
+      every analyzer callback and print a per-analyzer table, on every build. Its default lives in
+      SupportGeneral.targets so a consumer ContinuousIntegrationBuild set in Directory.Build.props
+      or the project body also activates it - under MSBuild SDK consumption this .props file
+      evaluates before both. Profile a local build with `-p:ReportAnalyzer=true`.
+    -->
     <SuppressNETCoreSdkPreviewMessage Condition="'$(SuppressNETCoreSdkPreviewMessage)' == ''"
       >false</SuppressNETCoreSdkPreviewMessage>
     <CheckEolTargetFramework Condition="'$(CheckEolTargetFramework)' == ''">true</CheckEolTargetFramework>

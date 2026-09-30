@@ -243,6 +243,7 @@ the listed default; explicit values win unless the behavior is identified as man
 | `HeadlessSymbolFormat` | `embedded` (`none` for Blazor WebAssembly) | Accepts `embedded`, `snupkg`, or `none`. |
 | `EnablePackageValidation` | `true` (`false` for `PackAsTool`) | Enables Microsoft package validation for ordinary packages; Microsoft disables API compatibility validation for tool packages. Consumers may explicitly disable it. |
 | `GenerateSBOM` | `false` | Generates an SPDX SBOM inside the package when enabled. |
+| `ReportAnalyzer` | `true` on CI, otherwise unset | Compiler per-analyzer timing report. It is diagnostics only and costs build time on every compile, so local and AI-agent builds leave it off. Pass `-p:ReportAnalyzer=true` to profile analyzers locally, or `-p:ReportAnalyzer=false` to silence it on CI. |
 | `IsTestHarnessProject` | `false` | Applies test-library defaults without creating an executable test host. |
 | `EnableCodeCoverage` | `true` on CI, otherwise unset | Adds MTP coverage arguments when `true`. |
 | `HeadlessCoverageSettingsPath` | packaged Test SDK path | Absolute path to the SDK-owned `default.runsettings`; query this evaluated property when an external runner needs the canonical coverage denominator policy. |
@@ -285,6 +286,11 @@ On CI, the SDK authoritatively enables:
 - compiler, nullable, code-analysis, and MSBuild warnings as errors;
 - preview target-framework warnings;
 - `NU1901`, `NU1902`, `NU1903`, and `NU1904` as errors.
+
+CI also defaults `ReportAnalyzer=true`, which prints the compiler's per-analyzer timing table so the
+analyzer budget stays visible where regressions are reviewed. Unlike the warning gate this is
+diagnostics rather than policy: it measures every analyzer callback on every compile, so local and
+AI-agent builds leave it off, and an explicit `ReportAnalyzer` value wins in both directions.
 
 The Microsoft `NETSDK1138` warning remains visible but non-fatal on CI. End-of-life frameworks do
 not receive security fixes, but Headless does not reject them when the selected Microsoft SDK can
