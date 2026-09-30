@@ -16,7 +16,7 @@
     <PackageVersion Include="MSBuild.StructuredLogger" Version="2.3.246" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.12" />
-    <PackageVersion Include="MinVer" Version="7.0.0" />
+    <PackageVersion Include="MinVer" Version="8.0.0" />
     <PackageVersion Include="xunit.v3.mtp-v2" Version="4.0.1" />
     <!--
       MTP extension versions exposed by Headless.NET.Sdk.Test. A consumer's Central Package

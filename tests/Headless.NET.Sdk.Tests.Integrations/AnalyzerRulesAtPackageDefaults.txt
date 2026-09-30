@@ -4,7 +4,7 @@
 # deciding whether the default severity is right for the SDK baseline.
 # Format: one rule ID per line; '#' starts a comment.
 #
-# Baseline reviewed 2026-09-08 with: Meziantou.Analyzer 3.0.200,
+# Baseline reviewed 2026-10-01 with: Meziantou.Analyzer 3.0.266,
 # Microsoft.CodeAnalysis.BannedApiAnalyzers 5.6.0, AsyncFixer 2.1.0, Asyncify 0.9.7,
 # Microsoft.VisualStudio.Threading.Analyzers 18.7.23, SmartAnalyzers.MultithreadingAnalyzer
 # 1.1.31, Roslynator.Analyzers 5.0.0, Roslynator.Formatting.Analyzers 5.0.0,
@@ -211,6 +211,27 @@ MA0217 # disabled by default upstream; static-lambda enforcement remains opt-in
 MA0218 # informational empty XML-doc language attribute; accept the upstream default
 MA0219 # hidden upstream; XML-doc language annotation remains opt-in
 MA0220 # warn when an invalid configured regex would otherwise be ignored
+MA0221 # disabled by default upstream; TryGetValue nullability annotation remains opt-in
+MA0222 # disabled by default upstream; System.Text.Json strictness is an application choice
+MA0223 # disabled by default upstream; System.Text.Json strictness is an application choice
+MA0224 # disabled by default upstream; System.Text.Json strictness is an application choice
+MA0225 # disabled by default upstream; System.Text.Json strictness is an application choice
+MA0226 # disabled by default upstream; EventSource authoring rules remain opt-in
+MA0227 # disabled by default upstream; set-Contains performance hint remains opt-in
+MA0228 # disabled by default upstream; EventSource authoring rules remain opt-in
+MA0229 # disabled by default upstream; EventSource authoring rules remain opt-in
+MA0230 # disabled by default upstream; EventSource authoring rules remain opt-in
+MA0231 # disabled by default upstream; EventSource authoring rules remain opt-in
+MA0232 # disabled by default upstream; EventSource authoring rules remain opt-in
+MA0233 # disabled by default upstream; EventSource authoring rules remain opt-in
+MA0234 # disabled by default upstream; EventSource authoring rules remain opt-in
+MA0235 # disabled by default upstream; EventSource authoring rules remain opt-in
+MA0236 # disabled by default upstream; EventSource authoring rules remain opt-in
+MA0237 # disabled by default upstream; EventSource authoring rules remain opt-in
+MA0238 # disabled by default upstream; EventSource authoring rules remain opt-in
+MA0239 # disabled by default upstream; sealed-type typeof hint remains opt-in
+MA0240 # warns only when a consumer configures banned syntax, so the default is inert
+MA0241 # surfaces an invalid consumer banned-syntax entry instead of ignoring it
 
 # --- SmartAnalyzers.MultithreadingAnalyzer ---
 MT1000
