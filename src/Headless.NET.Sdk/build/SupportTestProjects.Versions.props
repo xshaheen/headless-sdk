@@ -2,11 +2,11 @@
 <!-- Keep synchronized with Directory.Packages.props; PackageContractTests enforce the contract. -->
 <Project>
   <PropertyGroup>
-    <_HeadlessMtpCrashDumpVersion>[2.3.3]</_HeadlessMtpCrashDumpVersion>
-    <_HeadlessMtpHangDumpVersion>[2.3.3]</_HeadlessMtpHangDumpVersion>
-    <_HeadlessMtpHotReloadVersion>[2.3.3]</_HeadlessMtpHotReloadVersion>
-    <_HeadlessMtpRetryVersion>[2.3.3]</_HeadlessMtpRetryVersion>
-    <_HeadlessMtpTrxReportVersion>[2.3.3]</_HeadlessMtpTrxReportVersion>
-    <_HeadlessMtpCodeCoverageVersion>[18.10.0]</_HeadlessMtpCodeCoverageVersion>
+    <_HeadlessMtpCrashDumpVersion>[2.4.1]</_HeadlessMtpCrashDumpVersion>
+    <_HeadlessMtpHangDumpVersion>[2.4.1]</_HeadlessMtpHangDumpVersion>
+    <_HeadlessMtpHotReloadVersion>[2.4.1]</_HeadlessMtpHotReloadVersion>
+    <_HeadlessMtpRetryVersion>[2.4.1]</_HeadlessMtpRetryVersion>
+    <_HeadlessMtpTrxReportVersion>[2.4.1]</_HeadlessMtpTrxReportVersion>
+    <_HeadlessMtpCodeCoverageVersion>[18.11.2]</_HeadlessMtpCodeCoverageVersion>
   </PropertyGroup>
 </Project>

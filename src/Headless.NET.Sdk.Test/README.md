@@ -14,7 +14,7 @@ The SDK supplies the MTP host extensions; the consumer chooses its test framewor
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.0" />
+    <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.1" />
   </ItemGroup>
 </Project>
 ```
@@ -28,7 +28,7 @@ Direct PackageReference consumption uses `Microsoft.NET.Sdk`:
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Headless.NET.Sdk.Test" Version="x.y.z" PrivateAssets="all" />
-    <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.0" />
+    <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.1" />
   </ItemGroup>
 </Project>
 ```

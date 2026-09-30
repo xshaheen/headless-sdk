@@ -6,7 +6,7 @@
     import through the generated NuGet targets file.
   -->
   <PropertyGroup>
-    <_HeadlessMicrosoftSbomTargetsVersion>[4.1.5]</_HeadlessMicrosoftSbomTargetsVersion>
+    <_HeadlessMicrosoftSbomTargetsVersion>[4.1.13]</_HeadlessMicrosoftSbomTargetsVersion>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(IsBuildTaskProject)' != 'true'">
