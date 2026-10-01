@@ -111,7 +111,12 @@
       >$(TestingPlatformCommandLineArguments) --minimum-expected-tests $(MinimumExpectedTests)</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 
-  <!-- PackageReference is an item list, so conditional constant configuration must run in a target. -->
+  <!--
+    xUnit v3 4.0.1+ wraps its generated entry point and AOT source in #pragma warning disable when
+    XUNIT_GENERATED_DISABLE_WARNINGS is defined, so analyzer warnings in code the consumer does not own
+    cannot fail a warnings-as-errors build. Earlier xUnit releases ignore the constant.
+    PackageReference is an item list, so conditional constant configuration must run in a target.
+  -->
   <PropertyGroup>
     <_HeadlessXunitEntryPointDisableWarningsTarget>_HeadlessConfigureXunitEntryPointDisableWarnings</_HeadlessXunitEntryPointDisableWarningsTarget>
   </PropertyGroup>
@@ -132,15 +137,15 @@
       <EnableXunitEntryPointDisableWarnings Condition="'$(EnableXunitEntryPointDisableWarnings)' == ''"
         >true</EnableXunitEntryPointDisableWarnings>
       <_HeadlessXunitEntryPointDisableWarningsAlreadyDefined Condition="'$(MSBuildProjectExtension)' == '.vbproj'"
-        >$([System.String]::Copy(',$(DefineConstants),').Contains(',XUNIT_ENTRYPOINT_DISABLE_WARNINGS=-1,'))</_HeadlessXunitEntryPointDisableWarningsAlreadyDefined>
+        >$([System.String]::Copy(',$(DefineConstants),').Contains(',XUNIT_GENERATED_DISABLE_WARNINGS=-1,'))</_HeadlessXunitEntryPointDisableWarningsAlreadyDefined>
       <_HeadlessXunitEntryPointDisableWarningsAlreadyDefined Condition="'$(MSBuildProjectExtension)' != '.vbproj'"
-        >$([System.String]::Copy(';$(DefineConstants);').Contains(';XUNIT_ENTRYPOINT_DISABLE_WARNINGS;'))</_HeadlessXunitEntryPointDisableWarningsAlreadyDefined>
+        >$([System.String]::Copy(';$(DefineConstants);').Contains(';XUNIT_GENERATED_DISABLE_WARNINGS;'))</_HeadlessXunitEntryPointDisableWarningsAlreadyDefined>
       <DefineConstants
         Condition="'$(_HeadlessXunitEntryPointDisableWarningsAlreadyDefined)' != 'true' AND '$(MSBuildProjectExtension)' == '.vbproj'"
-        >$(DefineConstants),XUNIT_ENTRYPOINT_DISABLE_WARNINGS=-1</DefineConstants>
+        >$(DefineConstants),XUNIT_GENERATED_DISABLE_WARNINGS=-1</DefineConstants>
       <DefineConstants
         Condition="'$(_HeadlessXunitEntryPointDisableWarningsAlreadyDefined)' != 'true' AND '$(MSBuildProjectExtension)' != '.vbproj'"
-        >$(DefineConstants);XUNIT_ENTRYPOINT_DISABLE_WARNINGS</DefineConstants>
+        >$(DefineConstants);XUNIT_GENERATED_DISABLE_WARNINGS</DefineConstants>
     </PropertyGroup>
   </Target>
 

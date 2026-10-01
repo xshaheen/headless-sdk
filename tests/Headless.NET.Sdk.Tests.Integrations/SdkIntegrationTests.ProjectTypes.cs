@@ -212,13 +212,13 @@ public sealed partial class SdkIntegrationTests
 
         Assert.Equal("true", properties["EnableXunitEntryPointDisableWarnings"]);
         Assert.Contains("UNRELATED_CONSTANT", constants);
-        Assert.Single(constants, constant => constant == "XUNIT_ENTRYPOINT_DISABLE_WARNINGS");
+        Assert.Single(constants, constant => constant == "XUNIT_GENERATED_DISABLE_WARNINGS");
     }
 
     [Theory]
     [InlineData("false", "UNRELATED_CONSTANT", 0)]
-    [InlineData(null, "UNRELATED_CONSTANT;XUNIT_ENTRYPOINT_DISABLE_WARNINGS", 1)]
-    [InlineData(null, "UNRELATED_XUNIT_ENTRYPOINT_DISABLE_WARNINGS_CONSTANT", 1)]
+    [InlineData(null, "UNRELATED_CONSTANT;XUNIT_GENERATED_DISABLE_WARNINGS", 1)]
+    [InlineData(null, "UNRELATED_XUNIT_GENERATED_DISABLE_WARNINGS_CONSTANT", 1)]
     public async Task should_respect_xunit_entrypoint_warning_constant_overrides(
         string? optOut,
         string initialConstants,
@@ -250,7 +250,7 @@ public sealed partial class SdkIntegrationTests
 
         Assert.Equal(
             expectedConstantCount,
-            constants.Count(constant => constant == "XUNIT_ENTRYPOINT_DISABLE_WARNINGS")
+            constants.Count(constant => constant == "XUNIT_GENERATED_DISABLE_WARNINGS")
         );
         Assert.Contains(initialConstants.Split(';')[0], constants);
     }
@@ -268,7 +268,7 @@ public sealed partial class SdkIntegrationTests
         var properties = await project.EvaluateHeadlessPropertiesAsync();
 
         Assert.Empty(properties["EnableXunitEntryPointDisableWarnings"]);
-        Assert.DoesNotContain("XUNIT_ENTRYPOINT_DISABLE_WARNINGS", properties["DefineConstants"]);
+        Assert.DoesNotContain("XUNIT_GENERATED_DISABLE_WARNINGS", properties["DefineConstants"]);
     }
 
     [Fact]
