@@ -211,11 +211,14 @@ still apply.
 `Roslynator.Formatting.Analyzers` complements CSharpier without becoming a second formatter. The
 SDK enables file-format guardrails and structural blank-line suggestions around statements
 (`RCS0001`/`RCS0008`), regions (`RCS0002`/`RCS0005`), using lists (`RCS0003`/`RCS0006`), and
-declarations or documentation (`RCS0009`/`RCS0010`/`RCS0012`). CSharpier preserves these boundaries.
+declarations or documentation (`RCS0009`/`RCS0010`). CSharpier preserves these boundaries.
 Accessor rules `RCS0007` and `RCS0011` remain disabled because CSharpier removes those blank lines;
-brace, indentation, wrapping, and blank-line removal rules also remain at package defaults.
+brace, indentation, wrapping, and blank-line removal rules also remain at package defaults. `RCS0012`
+is off because grouping consecutive single-line declarations, such as a block of fields, is idiomatic
+C#. `RCS0056` is off because CSharpier owns line width, and the lines it cannot wrap are string
+literals and inline suppression reasons that no line-length warning can fix.
 
-The bundled general and Newtonsoft.Json banned-symbol lists are enabled by default. Consumers can disable the complete banned-symbol policy with `DisableSupportBannedSymbols=true`, or disable either list independently through `IncludeDefaultBannedSymbols=false` and `BannedNewtonsoftJsonSymbols=false`. The `Microsoft.CodeAnalysis.BannedApiAnalyzers` package remains part of the analyzer infrastructure.
+The bundled general, Newtonsoft.Json, and guard-clause banned-symbol lists are enabled by default. The guard-clause list bans the BCL throw helpers `ArgumentNullException.ThrowIfNull`, `ArgumentException.ThrowIfNullOrEmpty` and `ThrowIfNullOrWhiteSpace`, every `ArgumentOutOfRangeException.ThrowIf*`, and `ObjectDisposedException.ThrowIf`, and points to the `Headless.Checks` `Argument.*` and `Ensure.*` guards instead. Consumers can disable the complete banned-symbol policy with `DisableSupportBannedSymbols=true`, or disable any list independently through `IncludeDefaultBannedSymbols=false`, `BannedNewtonsoftJsonSymbols=false`, and `BannedGuardClauseSymbols=false`. The `Microsoft.CodeAnalysis.BannedApiAnalyzers` package remains part of the analyzer infrastructure.
 
 The SDK also ships `vs-threading.SyncMethodsToExcludeFromVSTHRD103.Headless.txt`, which stops
 VSTHRD103 from reporting synchronous calls that do no I/O and no blocking wait inside async methods:
@@ -242,9 +245,10 @@ the listed default; explicit values win unless the behavior is identified as man
 | `DisableDocumentationWarnings` | `true` | Set `false` to report CS1573 and CS1591 while keeping XML documentation generation enabled. |
 | `HeadlessEnforceConfigureAwait` | `false` | Set `true` to enable CA2007 through the shipped analyzer profile. |
 | `DisableSponsorLink` | enabled unless `false` | Set `false` to retain SponsorLink and Moq analyzers that Headless removes by default. |
-| `DisableSupportBannedSymbols` | `false` | Set `true` to omit both shipped banned-symbol lists. The banned-API analyzer package remains available. |
+| `DisableSupportBannedSymbols` | `false` | Set `true` to omit all shipped banned-symbol lists. The banned-API analyzer package remains available. |
 | `IncludeDefaultBannedSymbols` | `true` | Set `false` to omit the general .NET banned-symbol list. |
 | `BannedNewtonsoftJsonSymbols` | `true` | Set `false` to permit Newtonsoft.Json APIs while retaining the general list. |
+| `BannedGuardClauseSymbols` | `true` | Set `false` to permit the BCL guard-clause throw helpers (`ArgumentNullException.ThrowIfNull` and siblings) while retaining the other lists. |
 | `HeadlessEmitInternalsVisibleToAttributes` | `true` | Set `false` when the project owns its friend-assembly list. |
 | `HeadlessEmitClsCompliantAttribute` | `true` | Set `false` when the project supplies its own `CLSCompliant` attribute. |
 | `HeadlessEnableStrictSystemTextJsonRuntimeDefaults` | `false` | Enables the two process-wide strict System.Text.Json runtime switches for TFMs compatible with `net9.0`. |

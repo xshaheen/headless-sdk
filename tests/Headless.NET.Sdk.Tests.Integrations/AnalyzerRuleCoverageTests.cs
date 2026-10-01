@@ -130,10 +130,10 @@ public sealed class AnalyzerRuleCoverageTests
             "RCS0008=suggestion",
             "RCS0009=suggestion",
             "RCS0010=suggestion",
-            "RCS0012=suggestion",
+            "RCS0012=none",
             "RCS0045=suggestion",
             "RCS0046=suggestion",
-            "RCS0056=suggestion",
+            "RCS0056=none",
             "RCS0057=suggestion",
             "RCS0058=suggestion",
         ];
@@ -156,6 +156,81 @@ public sealed class AnalyzerRuleCoverageTests
             Assert.DoesNotMatch(@"(?m)^dotnet_diagnostic\.RCS0007\.severity\s*=", analyzerConfig);
             Assert.DoesNotMatch(@"(?m)^dotnet_diagnostic\.RCS0011\.severity\s*=", analyzerConfig);
         }
+    }
+
+    // The scaffold repeats the injected severities on purpose: ReSharper, Rider and `jb inspectcode`
+    // read severities only from a real .editorconfig, and projects outside the SDK never receive the
+    // injected configs. A consumer's .editorconfig outranks the injected configs, so a copy that
+    // drifts from its source silently overrides the SDK in every repository that ejected it.
+    [Fact]
+    public void editorconfig_scaffold_severities_should_match_the_injected_configs()
+    {
+        var repositoryRoot = TestRepository.FindRoot("editorconfig scaffold");
+        var configurationsDirectory = Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "configurations");
+        var production = ReadSeverities(
+            Path.Combine(configurationsDirectory, "Headless.NET.Sdk.Analyzers.editorconfig")
+        );
+        var tests = ReadSeverities(Path.Combine(configurationsDirectory, "Headless.NET.Sdk.Tests.editorconfig"));
+        var mismatches = new List<string>();
+        string? section = null;
+
+        foreach (var rawLine in File.ReadAllLines(Path.Combine(configurationsDirectory, "editorconfig.txt")))
+        {
+            var line = rawLine.Trim();
+            if (line.StartsWith('['))
+            {
+                section = line;
+                continue;
+            }
+
+            var match = SeverityLine.Match(line);
+            if (!match.Success)
+            {
+                continue;
+            }
+
+            var ruleId = match.Groups[1].Value;
+            // Other sections hold path-scoped overrides with no injected counterpart.
+            var expected = section switch
+            {
+                "[*.cs]" => production.GetValueOrDefault(ruleId),
+                "[tests/**/*.cs]" => tests.GetValueOrDefault(ruleId) ?? production.GetValueOrDefault(ruleId),
+                _ => null,
+            };
+
+            if (
+                expected is not null
+                && !string.Equals(expected, match.Groups[2].Value, StringComparison.OrdinalIgnoreCase)
+            )
+            {
+                mismatches.Add($"{section} {ruleId}: scaffold {match.Groups[2].Value}, injected {expected}");
+            }
+        }
+
+        Assert.True(
+            mismatches.Count == 0,
+            "editorconfig.txt severities differ from the injected configs:\n" + string.Join('\n', mismatches)
+        );
+    }
+
+    private static readonly Regex SeverityLine = new(
+        @"^dotnet_diagnostic\.([A-Za-z0-9]+)\.severity\s*=\s*([a-z]+)",
+        RegexOptions.CultureInvariant
+    );
+
+    private static Dictionary<string, string> ReadSeverities(string path)
+    {
+        var severities = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var line in File.ReadAllLines(path))
+        {
+            var match = SeverityLine.Match(line.Trim());
+            if (match.Success)
+            {
+                severities[match.Groups[1].Value] = match.Groups[2].Value;
+            }
+        }
+
+        return severities;
     }
 
     private static HashSet<string> ReadTunedRuleIds(string repositoryRoot)

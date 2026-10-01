@@ -251,6 +251,13 @@ public sealed partial class SdkIntegrationTests
         Assert.Contains("N:Newtonsoft.Json.Linq", bannedNewtonsoftJson, StringComparison.Ordinal);
         Assert.Contains("N:Newtonsoft.Json.Serialization", bannedNewtonsoftJson, StringComparison.Ordinal);
 
+        var bannedGuardClauses = ReadPackageEntry(package, "configurations/BannedSymbols.GuardClauses.txt");
+        Assert.Contains(
+            "M:System.ArgumentNullException.ThrowIfNull(System.Object,System.String)",
+            bannedGuardClauses,
+            StringComparison.Ordinal
+        );
+
         var assemblyAttributes = ReadPackageEntry(package, "build/SupportAssemblyAttributes.targets");
         Assert.Contains("Headless.NET.Sdk.SdkName", assemblyAttributes, StringComparison.Ordinal);
     }

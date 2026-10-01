@@ -189,16 +189,19 @@ dotnet_diagnostic.RCS0005.severity = suggestion
 # RCS0003/RCS0006: Separate using directive lists from surrounding content
 dotnet_diagnostic.RCS0003.severity = suggestion
 dotnet_diagnostic.RCS0006.severity = suggestion
-# RCS0009/RCS0010/RCS0012: Separate declarations and documentation
+# RCS0009/RCS0010: Separate declarations and documentation
 dotnet_diagnostic.RCS0009.severity = suggestion
 dotnet_diagnostic.RCS0010.severity = suggestion
-dotnet_diagnostic.RCS0012.severity = suggestion
+# RCS0012: Add blank line between single-line declarations
+# Grouping consecutive single-line declarations, such as a block of readonly fields, is idiomatic C#.
+dotnet_diagnostic.RCS0012.severity = none
 # RCS0045: Use line feed as newline
 dotnet_diagnostic.RCS0045.severity = suggestion
 # RCS0046: Use spaces instead of tabs
 dotnet_diagnostic.RCS0046.severity = suggestion
 # RCS0056: A line is too long
-dotnet_diagnostic.RCS0056.severity = suggestion
+# CSharpier owns line width; what it cannot wrap is literals and inline suppression reasons.
+dotnet_diagnostic.RCS0056.severity = none
 # RCS0057/RCS0058: Normalize whitespace at file boundaries
 dotnet_diagnostic.RCS0057.severity = suggestion
 dotnet_diagnostic.RCS0058.severity = suggestion

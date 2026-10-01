@@ -49,6 +49,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
         "build/SupportTestProjects.targets",
         "build/SupportTestProjects.Versions.props",
         "build/SupportWebContainer.targets",
+        "configurations/BannedSymbols.GuardClauses.txt",
         "configurations/BannedSymbols.NewtonsoftJson.txt",
         "configurations/BannedSymbols.txt",
         "configurations/default.runsettings",

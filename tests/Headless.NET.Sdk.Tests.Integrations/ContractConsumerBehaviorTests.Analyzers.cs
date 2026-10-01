@@ -43,17 +43,73 @@ public sealed partial class ContractConsumerBehaviorTests
     }
 
     [Theory]
-    [InlineData("IncludeDefaultBannedSymbols", "false", false, true, false)]
-    [InlineData("IncludeDefaultBannedSymbols", "false", false, true, true)]
-    [InlineData("BannedNewtonsoftJsonSymbols", "false", true, false, false)]
-    [InlineData("BannedNewtonsoftJsonSymbols", "false", true, false, true)]
-    [InlineData("DisableSupportBannedSymbols", "true", false, false, false)]
-    [InlineData("DisableSupportBannedSymbols", "true", false, false, true)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task should_report_bcl_guard_clause_helpers_unless_the_guard_list_is_disabled(bool disableGuardList)
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            targetFramework: "net10.0",
+            extraProperties: disableGuardList
+                ? new Dictionary<string, string>(StringComparer.Ordinal) { ["BannedGuardClauseSymbols"] = "false" }
+                : null,
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["GuardClauseConsumer.cs"] = """
+                namespace ConsumerProject;
+
+                public static class GuardClauseConsumer
+                {
+                    public static void Check(object value, string text, int count, System.Type owner)
+                    {
+                        System.ArgumentNullException.ThrowIfNull(value);
+                        System.ArgumentException.ThrowIfNullOrWhiteSpace(text);
+                        System.ArgumentOutOfRangeException.ThrowIfNegative(count);
+                        System.ObjectDisposedException.ThrowIf(count == 0, owner);
+                    }
+                }
+                """,
+            }
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} --no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        string[] bannedSymbols =
+        [
+            "ArgumentNullException.ThrowIfNull(object?, string?)",
+            "ArgumentException.ThrowIfNullOrWhiteSpace(string?, string?)",
+            "ArgumentOutOfRangeException.ThrowIfNegative<T>(T, string?)",
+            "ObjectDisposedException.ThrowIf(bool, Type)",
+        ];
+
+        foreach (var symbol in bannedSymbols)
+        {
+            Assert.Equal(
+                !disableGuardList,
+                result.Output.Contains($"The symbol '{symbol}' is banned", StringComparison.Ordinal)
+            );
+        }
+    }
+
+    [Theory]
+    [InlineData("IncludeDefaultBannedSymbols", "false", false, true, true, false)]
+    [InlineData("IncludeDefaultBannedSymbols", "false", false, true, true, true)]
+    [InlineData("BannedNewtonsoftJsonSymbols", "false", true, false, true, false)]
+    [InlineData("BannedNewtonsoftJsonSymbols", "false", true, false, true, true)]
+    [InlineData("BannedGuardClauseSymbols", "false", true, true, false, false)]
+    [InlineData("BannedGuardClauseSymbols", "false", true, true, false, true)]
+    [InlineData("DisableSupportBannedSymbols", "true", false, false, false, false)]
+    [InlineData("DisableSupportBannedSymbols", "true", false, false, false, true)]
     public async Task should_honor_banned_symbol_opt_outs_in_package_and_sdk_consumption(
         string propertyName,
         string propertyValue,
         bool expectDefaultSymbols,
         bool expectNewtonsoftSymbols,
+        bool expectGuardClauseSymbols,
         bool useSdkConsumption
     )
     {
@@ -77,6 +133,12 @@ public sealed partial class ContractConsumerBehaviorTests
             expectNewtonsoftSymbols,
             additionalFiles.Any(path =>
                 path.EndsWith("BannedSymbols.NewtonsoftJson.txt", StringComparison.OrdinalIgnoreCase)
+            )
+        );
+        Assert.Equal(
+            expectGuardClauseSymbols,
+            additionalFiles.Any(path =>
+                path.EndsWith("BannedSymbols.GuardClauses.txt", StringComparison.OrdinalIgnoreCase)
             )
         );
         Assert.Contains(

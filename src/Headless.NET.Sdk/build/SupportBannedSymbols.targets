@@ -1,7 +1,7 @@
 <Project>
   <!--
     Wires the shipped BannedSymbols.txt files into BannedApiAnalyzers as AdditionalFiles.
-    Consumers can disable the complete policy or either list independently.
+    Consumers can disable the complete policy or any list independently.
   -->
   <ItemGroup>
     <AdditionalFiles
@@ -12,6 +12,11 @@
     <AdditionalFiles
       Include="$(MSBuildThisFileDirectory)..\configurations\BannedSymbols.NewtonsoftJson.txt"
       Condition="'$(BannedNewtonsoftJsonSymbols)' != 'false'"
+      Visible="false"
+    />
+    <AdditionalFiles
+      Include="$(MSBuildThisFileDirectory)..\configurations\BannedSymbols.GuardClauses.txt"
+      Condition="'$(BannedGuardClauseSymbols)' != 'false'"
       Visible="false"
     />
   </ItemGroup>

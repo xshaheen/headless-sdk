@@ -1,0 +1,17 @@
+# Banned BCL guard-clause throw helpers. Headless.Checks guards cover the same checks and keep one
+# guard vocabulary across a codebase. Set BannedGuardClauseSymbols=false to permit these helpers.
+M:System.ArgumentNullException.ThrowIfNull(System.Object,System.String);Use Headless.Checks Argument.IsNotNull, or set BannedGuardClauseSymbols=false
+M:System.ArgumentNullException.ThrowIfNull(System.Void*,System.String);Use Headless.Checks Argument.IsNotNull, or set BannedGuardClauseSymbols=false
+M:System.ArgumentException.ThrowIfNullOrEmpty(System.String,System.String);Use Headless.Checks Argument.IsNotNullOrEmpty, or set BannedGuardClauseSymbols=false
+M:System.ArgumentException.ThrowIfNullOrWhiteSpace(System.String,System.String);Use Headless.Checks Argument.IsNotNullOrWhiteSpace, or set BannedGuardClauseSymbols=false
+M:System.ArgumentOutOfRangeException.ThrowIfZero``1(``0,System.String);Use a Headless.Checks Argument.* range guard, or set BannedGuardClauseSymbols=false
+M:System.ArgumentOutOfRangeException.ThrowIfNegative``1(``0,System.String);Use a Headless.Checks Argument.* range guard, or set BannedGuardClauseSymbols=false
+M:System.ArgumentOutOfRangeException.ThrowIfNegativeOrZero``1(``0,System.String);Use a Headless.Checks Argument.* range guard, or set BannedGuardClauseSymbols=false
+M:System.ArgumentOutOfRangeException.ThrowIfEqual``1(``0,``0,System.String);Use a Headless.Checks Argument.* range guard, or set BannedGuardClauseSymbols=false
+M:System.ArgumentOutOfRangeException.ThrowIfNotEqual``1(``0,``0,System.String);Use a Headless.Checks Argument.* range guard, or set BannedGuardClauseSymbols=false
+M:System.ArgumentOutOfRangeException.ThrowIfGreaterThan``1(``0,``0,System.String);Use a Headless.Checks Argument.* range guard, or set BannedGuardClauseSymbols=false
+M:System.ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual``1(``0,``0,System.String);Use a Headless.Checks Argument.* range guard, or set BannedGuardClauseSymbols=false
+M:System.ArgumentOutOfRangeException.ThrowIfLessThan``1(``0,``0,System.String);Use a Headless.Checks Argument.* range guard, or set BannedGuardClauseSymbols=false
+M:System.ArgumentOutOfRangeException.ThrowIfLessThanOrEqual``1(``0,``0,System.String);Use a Headless.Checks Argument.* range guard, or set BannedGuardClauseSymbols=false
+M:System.ObjectDisposedException.ThrowIf(System.Boolean,System.Object);Use Headless.Checks Ensure.NotDisposed, or set BannedGuardClauseSymbols=false
+M:System.ObjectDisposedException.ThrowIf(System.Boolean,System.Type);Use Headless.Checks Ensure.NotDisposed, or set BannedGuardClauseSymbols=false
