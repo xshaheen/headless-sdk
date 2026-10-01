@@ -172,6 +172,9 @@ dotnet_diagnostic.MA0024.severity = warning
 dotnet_diagnostic.MA0037.severity = error
 dotnet_diagnostic.MA0039.severity = error
 dotnet_diagnostic.MA0047.severity = warning
+# RS0030 (banned APIs) skips generated code: consumers cannot change it, and Microsoft source
+# generators such as configuration binding emit the BCL guard helpers the guard-clause list bans.
+dotnet_banned_api_analyzer.exclude_generated_code = true
 
 # --- Style & maintainability ---
 
