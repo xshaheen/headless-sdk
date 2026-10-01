@@ -120,5 +120,12 @@
       Include="$(MSBuildThisFileDirectory)../configurations/Headless.NET.Sdk.Tests.editorconfig"
       Condition="'$(IsTestProject)' == 'true' or '$(IsTestHarnessProject)' == 'true'"
     />
+
+    <!-- VSTHRD103 exclusions for Microsoft.VisualStudio.Threading.Analyzers, which is mandatory. -->
+    <AdditionalFiles Remove="$(MSBuildThisFileDirectory)../configurations/vs-threading.SyncMethodsToExcludeFromVSTHRD103.Headless.txt" />
+    <AdditionalFiles
+      Include="$(MSBuildThisFileDirectory)../configurations/vs-threading.SyncMethodsToExcludeFromVSTHRD103.Headless.txt"
+      Visible="false"
+    />
   </ItemGroup>
 </Project>

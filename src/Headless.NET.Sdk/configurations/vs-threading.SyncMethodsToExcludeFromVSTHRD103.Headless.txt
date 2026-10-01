@@ -1,0 +1,44 @@
+# Synchronous methods VSTHRD103 must not report inside async methods. Every entry does no I/O and
+# no blocking wait, so its Async-suffixed alternative is not the better call.
+# The analyzer merges every vs-threading.SyncMethodsToExcludeFromVSTHRD103*.txt AdditionalFile, so a
+# consumer's own list adds to these entries rather than replacing them.
+# Generic types use simple names (DbSet, not its metadata name). Analyzer 18.7 compares simple names
+# only; later versions compare metadata names in any file that contains a backtick character, so
+# keep this file free of them to match both.
+
+# EF Core Add/AddRange only record change-tracking state. The Async overloads exist for
+# asynchronous value generators such as SequenceHiLo, and EF Core recommends the sync form otherwise.
+[Microsoft.EntityFrameworkCore.DbContext]::Add
+[Microsoft.EntityFrameworkCore.DbContext]::AddRange
+[Microsoft.EntityFrameworkCore.DbSet]::Add
+[Microsoft.EntityFrameworkCore.DbSet]::AddRange
+# The built-in factories construct a context without opening a connection.
+[Microsoft.EntityFrameworkCore.IDbContextFactory]::CreateDbContext
+
+# In-memory streams and text readers/writers complete synchronously; their Async overloads only
+# wrap the same work in a task.
+[System.IO.MemoryStream]::Read
+[System.IO.MemoryStream]::Write
+[System.IO.MemoryStream]::Flush
+[System.IO.MemoryStream]::Dispose
+[System.IO.StringReader]::Read
+[System.IO.StringReader]::ReadBlock
+[System.IO.StringReader]::ReadLine
+[System.IO.StringReader]::ReadToEnd
+[System.IO.StringWriter]::Write
+[System.IO.StringWriter]::WriteLine
+[System.IO.StringWriter]::Flush
+
+# Cancel runs registered callbacks inline without waiting on anything else; CancelAsync only moves
+# them off the calling thread. Prefer CancelAsync where a callback is known to block.
+[System.Threading.CancellationTokenSource]::Cancel
+# Timer.Dispose() returns without waiting for in-flight callbacks; DisposeAsync is the waiting form.
+[System.Threading.Timer]::Dispose
+
+# Test assertions over synchronous delegates. The Async variants take Func<Task> and are not a
+# replacement when the code under test is synchronous.
+[Xunit.Assert]::Throws
+[Xunit.Assert]::ThrowsAny
+[Xunit.Assert]::Raises
+[Xunit.Assert]::RaisesAny
+[NUnit.Framework.Assert]::That

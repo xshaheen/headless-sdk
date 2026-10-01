@@ -60,6 +60,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
         "configurations/template.csharpierignore",
         "configurations/template.gitattributes",
         "configurations/template.gitignore",
+        "configurations/vs-threading.SyncMethodsToExcludeFromVSTHRD103.Headless.txt",
         "logo.png",
         "package/services/metadata/core-properties/*.psmdcp",
         "README.md",

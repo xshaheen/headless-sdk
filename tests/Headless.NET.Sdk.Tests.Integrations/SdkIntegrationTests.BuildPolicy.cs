@@ -108,6 +108,90 @@ class Foo { }
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
+    public async Task should_exclude_known_non_blocking_sync_calls_from_vsthrd103(bool useSdkConsumption)
+    {
+        // A stub DbSet stands in for EF Core so the test needs no package download; the analyzer
+        // matches exclusions by namespace-qualified simple type name, so the stub exercises the DbSet entry. The
+        // Journal control proves VSTHRD103 still reports ordinary sync-over-async calls in the same
+        // build. No caller may share a name with an Async alternative, because VSTHRD103 skips an
+        // alternative named like the enclosing method.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: useSdkConsumption ? $"Headless.NET.Sdk/{fixture.PackageVersion}" : "Microsoft.NET.Sdk",
+            targetFramework: "net10.0",
+            includePackageReference: !useSdkConsumption,
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Repro.cs"] = """
+                using System.Threading.Tasks;
+
+                namespace Microsoft.EntityFrameworkCore
+                {
+                    public sealed class DbSet<TEntity>
+                    {
+                        public void Add(TEntity entity) { }
+
+                        public Task AddAsync(TEntity entity) => Task.CompletedTask;
+                    }
+                }
+
+                namespace ConsumerProject
+                {
+                    public sealed class Journal
+                    {
+                        public void Append(string entry) { }
+
+                        public Task AppendAsync(string entry) => Task.CompletedTask;
+                    }
+
+                    public static class Repro
+                    {
+                        public static async Task TrackAsync(
+                            Microsoft.EntityFrameworkCore.DbSet<string> set,
+                            System.IO.MemoryStream stream,
+                            System.Threading.CancellationTokenSource source
+                        )
+                        {
+                            await Task.Yield();
+                            set.Add("entity");
+                            stream.Write(new byte[1], 0, 1);
+                            source.Cancel();
+                        }
+
+                        public static async Task RecordAsync(Journal journal)
+                        {
+                            await Task.Yield();
+                            journal.Append("entry");
+                        }
+                    }
+                }
+                """,
+            }
+        );
+
+        var result = await project.BuildAndCollectDiagnosticsAsync(
+            $"--no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        var vsthrd103 = result
+            .Sarif.AllResults()
+            .Where(diagnostic => string.Equals(diagnostic.RuleId, "VSTHRD103", StringComparison.Ordinal))
+            .Select(diagnostic => diagnostic.ToString())
+            .ToArray();
+        Assert.True(
+            vsthrd103.Any(message => message.Contains("Append", StringComparison.Ordinal)),
+            result.SarifSummary + Environment.NewLine + result.Output
+        );
+        Assert.DoesNotContain(vsthrd103, message => message.Contains("Add", StringComparison.Ordinal));
+        Assert.DoesNotContain(vsthrd103, message => message.Contains("Write", StringComparison.Ordinal));
+        Assert.DoesNotContain(vsthrd103, message => message.Contains("Cancel", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     public async Task should_honor_directory_build_props_overrides_for_advisory_defaults(bool useSdkConsumption)
     {
         // Advisory defaults (WarningLevel, Features, ...) are ==''-guarded so a consumer

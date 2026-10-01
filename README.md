@@ -217,6 +217,14 @@ brace, indentation, wrapping, and blank-line removal rules also remain at packag
 
 The bundled general and Newtonsoft.Json banned-symbol lists are enabled by default. Consumers can disable the complete banned-symbol policy with `DisableSupportBannedSymbols=true`, or disable either list independently through `IncludeDefaultBannedSymbols=false` and `BannedNewtonsoftJsonSymbols=false`. The `Microsoft.CodeAnalysis.BannedApiAnalyzers` package remains part of the analyzer infrastructure.
 
+The SDK also ships `vs-threading.SyncMethodsToExcludeFromVSTHRD103.Headless.txt`, which stops
+VSTHRD103 from reporting synchronous calls that do no I/O and no blocking wait inside async methods:
+EF Core `Add`/`AddRange` and `IDbContextFactory.CreateDbContext`, `MemoryStream`, `StringReader`, and
+`StringWriter` operations, `CancellationTokenSource.Cancel`, `Timer.Dispose`, and xUnit/NUnit
+assertions over synchronous delegates. The analyzer merges every
+`vs-threading.SyncMethodsToExcludeFromVSTHRD103*.txt` additional file, so a consumer adds its own
+exclusions in a separately named file.
+
 The SDK owns the versions of all ten implicit analyzer references. Central Package Management
 consumers must not add `PackageVersion` entries for those analyzer IDs. SDK-form consumption rejects
 them as SDK-defined implicit references with NU1009; PackageReference consumption rejects conflicting

@@ -50,6 +50,7 @@ See the repository [consumption-mode reference](https://github.com/xshaheen/head
 - Direct opt-in only: no `buildTransitive` assets are shipped.
 - Explicit target frameworks only; Headless does not infer a TFM.
 - Mandatory nine-package analyzer baseline plus default-on, consumer-configurable general and Newtonsoft.Json banned APIs.
+- VSTHRD103 ignores known non-blocking sync calls such as EF Core `Add`/`AddRange`, in-memory stream I/O, and `CancellationTokenSource.Cancel`.
 - CI-only compiler, analyzer, nullable, MSBuild, and vulnerability warning escalation.
 - CI-only analyzer timing reports; profile a local build with `-p:ReportAnalyzer=true`.
 - CI locked restore only when an existing lock file opts the project in.
