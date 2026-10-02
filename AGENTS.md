@@ -1,0 +1,40 @@
+# Repository Guidelines
+
+## What this repository is
+
+**headless-sdk** builds the Headless MSBuild SDK family: `Headless.NET.Sdk` plus its `.Web`, `.Test`, `.Razor`, `.BlazorWebAssembly`, and `.WindowsDesktop` satellites. The packages ship no compiled code, only MSBuild props and targets, injected analyzer configs, banned-symbol lists, and scaffold files. Any .NET repository can consume them. headless-framework is one consumer: it pins a version in `global.json`, so a change here reaches it only after a release and a pin bump.
+
+The product is the consumer contract, and the README's **Support contract** section is its source of truth. Read that section before you change anything under `src/`. Two consequences guide most decisions:
+
+- **Every consumption mode is first-class.** A change must behave the same under PackageReference and MSBuild-SDK consumption, in single- and multi-targeting builds, and for every satellite. Prove it with a consumer-build test, not by reading the targets.
+- **Policies are not consumer knobs.** Analyzer infrastructure and quality gates stay on. Add an opt-out only where the README already documents one, such as the banned-symbol lists.
+
+## Where a change lands
+
+- `src/Headless.NET.Sdk/build` and `configurations` are packed into every satellite (`src/_shared/Headless.NET.Sdk.Satellite.nuspec`). One edit there changes all six packages.
+- `src/_shared` owns satellite packaging and metadata. A satellite's own `build/` and `sdk/` folders hold only its project-type wrapper.
+- `tests/Headless.NET.Sdk.Tests.Integrations` is the only test project. Most tests pack the six packages and build throwaway consumer projects against them.
+
+## Build and test
+
+Use the `make` targets; `make help` lists them.
+
+- **`make test-static`** runs the two repository-only test classes (analyzer rule coverage, version pins) in seconds. Run it after any edit to a config file or a version pin.
+- **`make verify`** runs the CI sequence: restore, `--no-incremental` build, pack, then the full suite, which takes minutes. It writes `artifacts/proof/<run>/summary.md`. Paste that summary into the PR description.
+- **`make test-class CLASS='*Name*'`** reruns matching tests against the packages from the last `make verify`. Those packages go stale when anything under `src/` changes, so rerun `make verify` first.
+
+## Rules the code does not state
+
+- **Local packs need a unique version.** The integration fixture refuses a package version that already exists in `~/.nuget/packages`, because the cached copy would shadow the packages under test. The Makefile packs as `0.0.0-local.<unix-time>`. When you pack by hand, pass `-p:MinVerVersionOverride=<x.y.z>-local.<n>`.
+- **The build fails on unformatted C#.** `CSharpier.MSBuild` reports `Was not formatted` as a build error and does not fix the file. Run `dotnet tool restore`, then `dotnet csharpier format <path>`. Keep the CSharpier version in `dotnet-tools.json` equal to the `CSharpier.MSBuild` version in `Directory.Packages.props`.
+- **Agent warnings-as-errors does not apply here.** `SupportDetectLlmContext.props` turns warnings into errors when an agent drives a consumer build. It is product behavior, covered by the integration tests. This repository's own projects use plain `Microsoft.NET.Sdk`, so it does not affect your builds.
+- **Severity edits go in two places.** Rider, ReSharper, and `jb inspectcode` read severities only from a real `.editorconfig`, and projects outside the SDK never receive the injected configs. `configurations/editorconfig.txt` repeats the injected severities for them. When you change a severity in `Headless.NET.Sdk.Analyzers.editorconfig` or `Headless.NET.Sdk.Tests.editorconfig`, make the same change in `editorconfig.txt`. `editorconfig_scaffold_severities_should_match_the_injected_configs` fails on drift.
+- **Version pins move together.** A tool or analyzer version appears in `Directory.Packages.props`, in the shipped props that expose it, and in `tests/Headless.NET.Sdk.TestToolVersions.Anchor`. The anchor exists only so that Dependabot opens bump PRs. `VersionConsistencyTests` fails when the three disagree.
+- **Test names** use `should_{action}_{expected}_when_{condition}`.
+
+## CI and releases
+
+- `main` gates on the `final-status` job in `ci.yml`. Add every new CI job to its `needs`.
+- Release tags have no `v` prefix: `0.4.3`, not `v0.4.3`. MinVer ignores prefixed tags.
+- Pushing a tag publishes to GitHub Packages (`publish.yml`). The NuGet.org job runs only for a published GitHub Release and waits for environment approval. Publishing is external and irreversible: push a tag or create a release only when explicitly asked.
+- A version is published once. If a release goes out partly, inspect both registries and ship the next version.

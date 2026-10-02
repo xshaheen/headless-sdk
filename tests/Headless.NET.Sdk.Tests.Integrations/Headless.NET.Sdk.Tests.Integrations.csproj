@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- Keep TargetFrameworks (rather than TargetFramework): CSharpier.MSBuild's inner format build expects it. -->
+    <!-- Keep TargetFrameworks (rather than TargetFramework): CSharpier.MSBuild's inner format build
+    expects it. -->
     <TargetFrameworks>net10.0</TargetFrameworks>
     <!-- xUnit v3 + Microsoft Testing Platform test projects are executables. -->
     <OutputType>Exe</OutputType>
@@ -30,7 +31,8 @@
       analyzer/workspace references resolve against.
     -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
-    <!-- Satisfies the analyzer packages' bundled workspace-layer references during reflection loading. -->
+    <!-- Satisfies the analyzer packages' bundled workspace-layer references during reflection
+    loading. -->
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
   </ItemGroup>
 </Project>

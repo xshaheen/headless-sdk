@@ -438,15 +438,18 @@ Use the `HeadlessCopy*` selectors for individual files and `HeadlessOverwriteCon
 
 ## Building and publishing this repository
 
-The repository uses the .NET SDK pinned by `global.json`:
+The repository uses the .NET SDK pinned by `global.json`. `make verify` runs the CI sequence and writes a test summary under `artifacts/proof/`; `make help` lists the faster targets. The equivalent commands:
 
 ```bash
+version="0.0.0-local.$(date +%s)"
 dotnet restore headless-sdk.slnx
-dotnet build headless-sdk.slnx --configuration Release --no-restore -p:GeneratePackageOnBuild=false
-dotnet pack headless-sdk.slnx --configuration Release --no-restore --no-build --output ./artifacts/packages-results
-HEADLESS_PACKAGES_DIR="$PWD/artifacts/packages-results" \
+dotnet build headless-sdk.slnx --configuration Release --no-restore -p:GeneratePackageOnBuild=false -p:MinVerVersionOverride="$version"
+dotnet pack headless-sdk.slnx --configuration Release --no-restore --no-build -p:MinVerVersionOverride="$version" --output "./artifacts/packages-$version"
+HEADLESS_PACKAGES_DIR="$PWD/artifacts/packages-$version" \
   dotnet test headless-sdk.slnx --configuration Release --no-restore --no-build
 ```
+
+Pack under a unique version each time. The integration tests refuse a package version that is already in the NuGet cache, because the cached copy would shadow the packages under test.
 
 The publish workflow promotes the exact packages produced by its build job, verifies SHA-256 hashes before upload, requires Linux, Windows, and macOS validation, and fails on duplicate package versions. Tag and manual runs publish to GitHub Packages. A published GitHub Release builds the same validated package family for NuGet.org, then pauses for approval in the protected `NuGet Release` environment before any push. Neither feed provides an atomic multi-package transaction: if a release stops after publishing only part of the family, abandon that version, fix the cause, and publish a new version. Never retry the same partial version or bypass a publication gate.
 

@@ -86,9 +86,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
         ["SmartAnalyzers.MultithreadingAnalyzer"] = "[1.1.31]",
     };
 
-    private static readonly Dictionary<string, string> TestDependencySnapshot = new Dictionary<string, string>(
-        StringComparer.Ordinal
-    )
+    private static readonly Dictionary<string, string> TestDependencySnapshot = new(StringComparer.Ordinal)
     {
         ["Microsoft.Testing.Extensions.CodeCoverage"] = "[18.11.2]",
         ["Microsoft.Testing.Extensions.CrashDump"] = "[2.4.1]",
@@ -435,6 +433,6 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
             expected.Add($"build/{packageId}.targets");
         }
 
-        return expected.OrderBy(path => path, StringComparer.Ordinal).ToArray();
+        return [.. expected.OrderBy(path => path, StringComparer.Ordinal)];
     }
 }

@@ -158,7 +158,11 @@ public sealed partial class SdkIntegrationTests
 
         var zero = await project.EvaluateHeadlessPropertiesAsync("-p:MinimumExpectedTests=0");
         Assert.Equal("0", zero["MinimumExpectedTests"]);
-        Assert.DoesNotContain("--minimum-expected-tests", zero["TestingPlatformCommandLineArguments"]);
+        Assert.DoesNotContain(
+            "--minimum-expected-tests",
+            zero["TestingPlatformCommandLineArguments"],
+            StringComparison.Ordinal
+        );
 
         var disabled = await project.EvaluateHeadlessPropertiesAsync("-p:EnableDefaultTestSettings=false");
         Assert.Empty(disabled["TestingPlatformCommandLineArguments"]);
@@ -268,7 +272,11 @@ public sealed partial class SdkIntegrationTests
         var properties = await project.EvaluateHeadlessPropertiesAsync();
 
         Assert.Empty(properties["EnableXunitEntryPointDisableWarnings"]);
-        Assert.DoesNotContain("XUNIT_GENERATED_DISABLE_WARNINGS", properties["DefineConstants"]);
+        Assert.DoesNotContain(
+            "XUNIT_GENERATED_DISABLE_WARNINGS",
+            properties["DefineConstants"],
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
