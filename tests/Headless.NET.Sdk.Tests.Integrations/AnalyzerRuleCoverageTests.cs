@@ -17,7 +17,7 @@ namespace Headless.NET.Sdk.Tests.Integrations;
 // tuned in a shipped editorconfig or explicitly recorded in AnalyzerRulesAtPackageDefaults.txt
 // (a conscious "package default accepted" review record). Pure source/cache check - no packaging
 // fixture - modeled as a gate on Meziantou.NET.Sdk's generated-config approach.
-public sealed class AnalyzerRuleCoverageTests
+public sealed partial class AnalyzerRuleCoverageTests
 {
     private static readonly string[] MandatoryAnalyzerPackages =
     [
@@ -143,8 +143,8 @@ public sealed class AnalyzerRuleCoverageTests
             var analyzerConfig = File.ReadAllText(
                 Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "configurations", fileName)
             );
-            var configuredFormattingRules = Regex
-                .Matches(analyzerConfig, @"dotnet_diagnostic\.([A-Za-z0-9]+)\.severity\s*=\s*([a-z]+)")
+            var configuredFormattingRules = SeverityLine
+                .Matches(analyzerConfig)
                 .Select(match => (RuleId: match.Groups[1].Value, Severity: match.Groups[2].Value))
                 .Where(setting => formattingRules.Contains(setting.RuleId, StringComparer.OrdinalIgnoreCase))
                 .OrderBy(setting => setting.RuleId, StringComparer.Ordinal)
@@ -213,10 +213,8 @@ public sealed class AnalyzerRuleCoverageTests
         );
     }
 
-    private static readonly Regex SeverityLine = new(
-        @"^dotnet_diagnostic\.([A-Za-z0-9]+)\.severity\s*=\s*([a-z]+)",
-        RegexOptions.CultureInvariant
-    );
+    [GeneratedRegex(@"^dotnet_diagnostic\.([A-Za-z0-9]+)\.severity\s*=\s*([a-z]+)", RegexOptions.CultureInvariant)]
+    private static partial Regex SeverityLine { get; }
 
     private static Dictionary<string, string> ReadSeverities(string path)
     {
@@ -233,6 +231,9 @@ public sealed class AnalyzerRuleCoverageTests
         return severities;
     }
 
+    [GeneratedRegex(@"dotnet_diagnostic\.([A-Za-z0-9]+)\.severity", RegexOptions.IgnoreCase, "en-US")]
+    private static partial Regex DiagnosticRegex { get; }
+
     private static HashSet<string> ReadTunedRuleIds(string repositoryRoot)
     {
         var tuned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -242,13 +243,7 @@ public sealed class AnalyzerRuleCoverageTests
         {
             var content = File.ReadAllText(Path.Combine(configurationsDirectory, fileName));
 
-            foreach (
-                Match match in Regex.Matches(
-                    content,
-                    @"dotnet_diagnostic\.([A-Za-z0-9]+)\.severity",
-                    RegexOptions.IgnoreCase
-                )
-            )
+            foreach (Match match in DiagnosticRegex.Matches(content))
             {
                 tuned.Add(match.Groups[1].Value);
             }
