@@ -10,6 +10,10 @@
         <File Path="nuget.config" />
         <File Path="README.md" />
     </Folder>
+    <Folder Name="/src/">
+        <Project Path="src/Headless.NET.Sdk.Analyzers.CodeFixes/Headless.NET.Sdk.Analyzers.CodeFixes.csproj" />
+        <Project Path="src/Headless.NET.Sdk.Analyzers/Headless.NET.Sdk.Analyzers.csproj" />
+    </Folder>
     <Project Path="src\Headless.NET.Sdk.BlazorWebAssembly\Headless.NET.Sdk.BlazorWebAssembly.csproj" />
     <Project Path="src\Headless.NET.Sdk.Razor\Headless.NET.Sdk.Razor.csproj" />
     <Project Path="src\Headless.NET.Sdk.Test\Headless.NET.Sdk.Test.csproj" />

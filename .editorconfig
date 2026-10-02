@@ -638,9 +638,10 @@ dotnet_diagnostic.RCS1251.severity = none
 # CSharpier owns wrapping, indentation, braces, and accessor layout.
 # Roslynator.Formatting.Analyzers adds structural blank lines that CSharpier preserves.
 roslynator_max_line_length = 120
-# RCS0001/RCS0008: Separate statements at embedded-statement and block boundaries
-dotnet_diagnostic.RCS0001.severity = suggestion
-dotnet_diagnostic.RCS0008.severity = suggestion
+# RCS0001/RCS0008: duplicates of HLS0002. A statement ending in an embedded statement or a closing
+# brace always spans lines once CSharpier formats it, and HLS0002 covers every multiline statement.
+dotnet_diagnostic.RCS0001.severity = none
+dotnet_diagnostic.RCS0008.severity = none
 # RCS0002/RCS0005: Separate region contents from region directives
 dotnet_diagnostic.RCS0002.severity = suggestion
 dotnet_diagnostic.RCS0005.severity = suggestion
@@ -663,6 +664,17 @@ dotnet_diagnostic.RCS0056.severity = none
 # RCS0057/RCS0058: Normalize whitespace at file boundaries
 dotnet_diagnostic.RCS0057.severity = suggestion
 dotnet_diagnostic.RCS0058.severity = suggestion
+
+############################################################
+# Headless.NET.Sdk analyzers (HLS)
+# Shipped inside the SDK packages. The README's "Blank-line rules" section defines each rule;
+# both only ask for blank lines that CSharpier preserves.
+############################################################
+
+# HLS0001: Add a blank line before a control-transfer statement
+dotnet_diagnostic.HLS0001.severity = suggestion
+# HLS0002: Add a blank line before and after a multiline statement
+dotnet_diagnostic.HLS0002.severity = suggestion
 
 ############################################################
 # Microsoft.VisualStudio.Threading.Analyzers (VSTHRD)

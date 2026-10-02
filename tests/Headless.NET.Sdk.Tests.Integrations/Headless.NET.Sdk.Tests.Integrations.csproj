@@ -35,4 +35,10 @@
     loading. -->
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- BlankLineAnalyzerTests drive the shipped analyzer and code fix directly. -->
+    <ProjectReference Include="..\..\src\Headless.NET.Sdk.Analyzers\Headless.NET.Sdk.Analyzers.csproj" />
+    <ProjectReference Include="..\..\src\Headless.NET.Sdk.Analyzers.CodeFixes\Headless.NET.Sdk.Analyzers.CodeFixes.csproj" />
+  </ItemGroup>
 </Project>

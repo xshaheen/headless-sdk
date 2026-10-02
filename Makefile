@@ -24,7 +24,7 @@ endif
 LAST_PACKAGES = $(ARTIFACTS_DIR)/proof/last-packages
 TEST_REPORT_ARGS = --report-trx --minimum-expected-tests 1
 # Static tests read the repository and need no packed packages or consumer builds.
-STATIC_TEST_CLASSES = --filter-class '*AnalyzerRuleCoverageTests' --filter-class '*VersionConsistencyTests'
+STATIC_TEST_CLASSES = --filter-class '*AnalyzerRuleCoverageTests' --filter-class '*VersionConsistencyTests' --filter-class '*.BlankLineAnalyzerTests'
 
 .PHONY: help
 help: ## Show available commands.
@@ -72,7 +72,7 @@ build: ## Restore and build the solution the way CI does (--no-incremental, no p
 	$(DOTNET) build "$(SOLUTION)" --configuration "$(CONFIGURATION)" --no-restore --no-incremental -p:GeneratePackageOnBuild=false -p:MinVerVersionOverride=$(LOCAL_VERSION) -v:minimal -nologo
 
 .PHONY: test-static
-test-static: ## Run the repository-only test classes (analyzer rule coverage, version pins); seconds, no packing.
+test-static: ## Run the repository-only test classes (rule coverage, version pins, HLS analyzer); seconds, no packing.
 	$(DOTNET) test --project "$(TEST_PROJECT)" --configuration "$(CONFIGURATION)" -- $(STATIC_TEST_CLASSES) --minimum-expected-tests 1
 
 .PHONY: test-class

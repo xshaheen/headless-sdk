@@ -202,15 +202,21 @@ The following analyzer packages are injected as private, implicit dependencies f
 - `ReflectionAnalyzers`
 - `ErrorProne.NET.CoreAnalyzers`
 
+The packages also carry the Headless analyzers, `Headless.NET.Sdk.Analyzers` and their code fixes, as
+assemblies under `build/analyzers/` rather than as a package dependency. They report the
+[blank-line rules](#blank-line-rules) and load in every consumption mode.
+
 The sole self-reference exception is a project whose evaluated `PackageId` is
 `Meziantou.Analyzer`; Headless omits that one analyzer reference so the analyzer package can use
 the SDK without depending on itself. The other eight analyzer references and all mandatory policy
 still apply.
 
 `Roslynator.Formatting.Analyzers` complements CSharpier without becoming a second formatter. The
-SDK enables file-format guardrails and structural blank-line suggestions around statements
-(`RCS0001`/`RCS0008`), regions (`RCS0002`/`RCS0005`), using lists (`RCS0003`/`RCS0006`), and
-declarations or documentation (`RCS0009`/`RCS0010`). CSharpier preserves these boundaries.
+SDK enables file-format guardrails and structural blank-line suggestions around regions
+(`RCS0002`/`RCS0005`), using lists (`RCS0003`/`RCS0006`), and declarations or documentation
+(`RCS0009`/`RCS0010`). CSharpier preserves these boundaries. `RCS0001` and `RCS0008` are off as
+duplicates of `HLS0002`: once CSharpier formats it, a statement that ends in an embedded statement
+or a closing brace always spans lines.
 Accessor rules `RCS0007` and `RCS0011` remain disabled because CSharpier removes those blank lines;
 brace, indentation, wrapping, and blank-line removal rules also remain at package defaults. `RCS0012`
 is off because grouping consecutive single-line declarations, such as a block of fields, is idiomatic
@@ -245,6 +251,55 @@ them as SDK-defined implicit references with NU1009; PackageReference consumptio
 central versions against the package family's exact dependency ranges.
 
 Headless adds its extra global usings only when `ImplicitUsings` is `enable` or `true` and the target framework is compatible with `net8.0`. Older or custom TFMs remain valid consumers without receiving namespaces that may not exist in their reference assemblies. Setting `ImplicitUsings=disable` prevents both the Microsoft implicit-usings feature and the Headless additions.
+
+### Blank-line rules
+
+CSharpier keeps a single blank line between statements but never adds one, and Roslynator has no
+rule for these two layouts. The Headless analyzers report them, each with a code fix:
+
+| Rule | Severity | Reports |
+| --- | --- | --- |
+| `HLS0001` | suggestion | No blank line before a `return`, `throw`, `break`, `continue`, `goto` (including `goto case` and `goto default`), `yield return`, or `yield break` statement. |
+| `HLS0002` | suggestion | No blank line before or after a statement that spans more than one line, such as a wrapped fluent chain, a multi-line invocation, or an `if`, loop, `using`, or `try` with a block. |
+
+Both rules examine each pair of adjacent statements in one block, one switch section, or the
+top-level statements of a file:
+
+- `HLS0001` applies when the second statement transfers control. `HLS0002` applies when either
+  statement spans more than one line, measured from its first token to its last; comments and
+  blank lines around it do not count.
+- The first statement of a block or switch section never needs a blank line before it, and the last
+  never needs one after it. CSharpier removes blank lines in those places, and the rules never ask
+  for one there.
+- Comments directly above a statement belong to it. The blank line goes above those comments: a
+  blank line anywhere between the previous statement and the statement itself satisfies the rule.
+- An embedded statement without braces, such as `if (done) return;`, is not in a statement list
+  and is not checked. The `if` statement around it still is.
+- A pair is skipped when both statements share a line, when a preprocessor directive or disabled
+  code sits between them, and in generated code.
+- One missing blank line can violate both rules, for example a multiline statement followed by a
+  `return`. Each rule then reports it, so turning one rule off leaves the other intact; one
+  inserted blank line fixes both, and Fix All inserts it once.
+
+The code fix inserts exactly one empty line directly after the previous statement, above any
+attached comments, using the file's existing line ending. That is the layout CSharpier prints, so
+formatting after the fix changes nothing.
+
+These rules make enforceable in any build the layout that the scaffolded `.editorconfig` requests
+from Rider through `resharper_blank_lines_before_control_transfer_statements`,
+`resharper_blank_lines_before_multiline_statements`, and
+`resharper_blank_lines_after_multiline_statements`, which only Rider's reformat applies. The
+semantics above are the ones the analyzers implement.
+
+Turn a rule off or change its severity in the consumer `.editorconfig`:
+
+```ini
+[*.cs]
+dotnet_diagnostic.HLS0002.severity = none
+```
+
+The analyzers are compiled against Roslyn 4.14, the compiler of the .NET 9.0.3xx SDKs and Visual
+Studio 17.14, so those and every later compiler, including all .NET 10 SDKs, can load them.
 
 ### Supported customization properties
 
@@ -299,7 +354,7 @@ the listed default; explicit values win unless the behavior is identified as man
 | `HeadlessCopyGitAttributesToSolutionDir` | master selector | Selects only `.gitattributes`. |
 | `HeadlessOverwriteConfigFiles` | `false` | Allows the explicit scaffold target to replace existing files. |
 
-The explicit target framework, nine analyzer packages, analyzer configuration, CI and AI-agent analyzer execution, CI warning gate,
+The explicit target framework, nine analyzer packages, the shipped Headless analyzers, analyzer configuration, CI and AI-agent analyzer execution, CI warning gate,
 NuGet audit policy, and SDK-owned MTP extension
 versions are mandatory policy. Legacy analyzer/configuration opt-out names do not disable them.
 
@@ -497,6 +552,8 @@ The publish workflow promotes the exact packages produced by its build job, veri
 ```text
 src/
   Headless.NET.Sdk/
+  Headless.NET.Sdk.Analyzers/            HLS analyzers, packed into every SDK package
+  Headless.NET.Sdk.Analyzers.CodeFixes/  their code fixes (IDE only)
   Headless.NET.Sdk.Web/
   Headless.NET.Sdk.Test/
   Headless.NET.Sdk.Razor/

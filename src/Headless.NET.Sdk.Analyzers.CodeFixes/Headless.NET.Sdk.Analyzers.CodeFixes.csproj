@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Code fixes live in their own assembly because they need Microsoft.CodeAnalysis.Workspaces,
+    which the command-line compiler does not ship; an analyzer assembly that referenced it would
+    fail to load during a build (RS1038). Only the IDE loads this assembly.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Headless.NET.Sdk.Analyzers</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Same Roslyn floor, and the same reason for VersionOverride, as Headless.NET.Sdk.Analyzers. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" VersionOverride="4.14.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Headless.NET.Sdk.Analyzers\Headless.NET.Sdk.Analyzers.csproj" />
+  </ItemGroup>
+</Project>
