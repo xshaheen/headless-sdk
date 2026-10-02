@@ -469,6 +469,12 @@ dotnet build -t:HeadlessScaffoldConfigFiles
 
 Use the `HeadlessCopy*` selectors for individual files and `HeadlessOverwriteConfigFiles=true` only when replacement is intended.
 
+The scaffolded `.editorconfig` carries editor, formatter, and ReSharper settings only. Analyzer
+severities, code-style preferences, and naming rules stay in the injected configs, so an SDK upgrade
+applies them without editing the consumer's `.editorconfig`. A severity line in a consumer
+`.editorconfig` outranks the SDK, so keep only deliberate overrides there. A repository that copied an
+earlier scaffold, which repeated every severity, should delete those copied severity lines.
+
 ## Building and publishing this repository
 
 The repository uses the .NET SDK pinned by `global.json`. `make verify` runs the CI sequence and writes a test summary under `artifacts/proof/`; `make help` lists the faster targets. The equivalent commands:

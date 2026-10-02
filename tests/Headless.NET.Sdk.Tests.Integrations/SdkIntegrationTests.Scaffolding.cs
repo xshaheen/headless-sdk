@@ -73,9 +73,10 @@ indent_size = 2
             project.EditorConfigPath,
             TestContext.Current.CancellationToken
         );
-        Assert.Contains("# Common Settings", copiedEditorConfig, StringComparison.Ordinal);
-        Assert.Contains("MA0002.report_only_non_ordinal = true", copiedEditorConfig, StringComparison.Ordinal);
-        Assert.Contains("dotnet_diagnostic.MA0002.severity = warning", copiedEditorConfig, StringComparison.Ordinal);
+        Assert.Contains("# Headless editor settings", copiedEditorConfig, StringComparison.Ordinal);
+        Assert.Contains("indent_style = space", copiedEditorConfig, StringComparison.Ordinal);
+        // Analyzer settings ship injected; a copied severity would outrank every later SDK version.
+        Assert.DoesNotMatch(@"(?m)^\s*dotnet_diagnostic\.", copiedEditorConfig);
 
         // Selecting only .editorconfig must not pull in the other files.
         Assert.False(

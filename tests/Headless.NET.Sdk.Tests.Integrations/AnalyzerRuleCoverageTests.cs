@@ -137,7 +137,7 @@ public sealed class AnalyzerRuleCoverageTests
             "RCS0058=suggestion",
         ];
 
-        foreach (var fileName in new[] { "Headless.NET.Sdk.Analyzers.editorconfig", "editorconfig.txt" })
+        foreach (var fileName in new[] { "Headless.NET.Sdk.Analyzers.editorconfig" })
         {
             var analyzerConfig = File.ReadAllText(
                 Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "configurations", fileName)
@@ -157,60 +157,40 @@ public sealed class AnalyzerRuleCoverageTests
         }
     }
 
-    // The scaffold repeats the injected severities on purpose: ReSharper, Rider and `jb inspectcode`
-    // read severities only from a real .editorconfig, and projects outside the SDK never receive the
-    // injected configs. A consumer's .editorconfig outranks the injected configs, so a copy that
-    // drifts from its source silently overrides the SDK in every repository that ejected it.
+    // A consumer .editorconfig outranks the injected configs, so a scaffold that copied analyzer
+    // settings would pin each consuming repository to the SDK version it was copied from. The
+    // scaffold carries editor settings only; severities, code style, and naming ship injected.
     [Fact]
-    public void editorconfig_scaffold_severities_should_match_the_injected_configs()
+    public void editorconfig_scaffold_should_not_carry_analyzer_settings()
     {
         var repositoryRoot = TestRepository.FindRoot("editorconfig scaffold");
-        var configurationsDirectory = Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "configurations");
-        var production = ReadSeverities(
-            Path.Combine(configurationsDirectory, "Headless.NET.Sdk.Analyzers.editorconfig")
+        var scaffold = File.ReadAllLines(
+            Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "configurations", "editorconfig.txt")
         );
-        var tests = ReadSeverities(Path.Combine(configurationsDirectory, "Headless.NET.Sdk.Tests.editorconfig"));
-        var mismatches = new List<string>();
-        string? section = null;
 
-        foreach (var rawLine in File.ReadAllLines(Path.Combine(configurationsDirectory, "editorconfig.txt")))
-        {
-            var line = rawLine.Trim();
-            if (line.StartsWith('['))
-            {
-                section = line;
-                continue;
-            }
-
-            var match = SeverityLine.Match(line);
-            if (!match.Success)
-            {
-                continue;
-            }
-
-            var ruleId = match.Groups[1].Value;
-            // Other sections hold path-scoped overrides with no injected counterpart.
-            var expected = section switch
-            {
-                "[*.cs]" => production.GetValueOrDefault(ruleId),
-                "[tests/**/*.cs]" => tests.GetValueOrDefault(ruleId) ?? production.GetValueOrDefault(ruleId),
-                _ => null,
-            };
-
-            if (
-                expected is not null
-                && !string.Equals(expected, match.Groups[2].Value, StringComparison.OrdinalIgnoreCase)
-            )
-            {
-                mismatches.Add($"{section} {ruleId}: scaffold {match.Groups[2].Value}, injected {expected}");
-            }
-        }
+        var analyzerSettings = scaffold
+            .Select(line => line.Trim())
+            .Where(line => !line.StartsWith('#'))
+            .Where(line => AnalyzerSettingPrefixes.Any(prefix => line.StartsWith(prefix, StringComparison.Ordinal)))
+            .ToList();
 
         Assert.True(
-            mismatches.Count == 0,
-            "editorconfig.txt severities differ from the injected configs:\n" + string.Join('\n', mismatches)
+            analyzerSettings.Count == 0,
+            "editorconfig.txt must not carry analyzer settings; they belong in the injected configs:\n"
+                + string.Join('\n', analyzerSettings)
         );
     }
+
+    private static readonly string[] AnalyzerSettingPrefixes =
+    [
+        "dotnet_diagnostic.",
+        "dotnet_analyzer_diagnostic.",
+        "dotnet_style_",
+        "csharp_style_",
+        "dotnet_naming_",
+        "dotnet_code_quality",
+        "roslynator_",
+    ];
 
     private static readonly Regex SeverityLine = new(
         @"^dotnet_diagnostic\.([A-Za-z0-9]+)\.severity\s*=\s*([a-z]+)",

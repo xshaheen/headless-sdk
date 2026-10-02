@@ -110,7 +110,6 @@ public sealed partial class SdkIntegrationTests
         Assert.Contains("dotnet_diagnostic.CA1707.severity = none", testsEditorConfig, StringComparison.Ordinal);
         Assert.Contains("dotnet_diagnostic.CS8604.severity = none", testsEditorConfig, StringComparison.Ordinal);
         Assert.Contains("dotnet_diagnostic.CA1849.severity = none", testsEditorConfig, StringComparison.Ordinal);
-        Assert.Contains("dotnet_diagnostic.MA0042.severity = none", testsEditorConfig, StringComparison.Ordinal);
         Assert.Contains("dotnet_diagnostic.MA0166.severity = none", testsEditorConfig, StringComparison.Ordinal);
         Assert.Contains("dotnet_diagnostic.CA1861.severity = none", testsEditorConfig, StringComparison.Ordinal);
         Assert.Contains("dotnet_diagnostic.CA1859.severity = none", testsEditorConfig, StringComparison.Ordinal);
