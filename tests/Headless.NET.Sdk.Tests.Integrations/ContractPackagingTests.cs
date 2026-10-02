@@ -8,7 +8,7 @@ using static Headless.NET.Sdk.Tests.Integrations.DotNetCommand;
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-public sealed partial class ContractConsumerBehaviorTests
+public sealed class ContractPackagingTests(HeadlessSdkPackageFixture fixture) : ContractConsumerBehaviorTests
 {
     [Theory]
     [InlineData(false)]

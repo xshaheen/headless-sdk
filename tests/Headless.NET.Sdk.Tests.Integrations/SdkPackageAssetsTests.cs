@@ -19,7 +19,7 @@ using StructuredLoggerSerialization = Microsoft.Build.Logging.StructuredLogger.S
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-public sealed partial class SdkIntegrationTests
+public sealed class SdkPackageAssetsTests(HeadlessSdkPackageFixture fixture) : SdkIntegrationTests
 {
     [Fact]
     public async Task should_pack_without_error_when_no_logo_is_provided()

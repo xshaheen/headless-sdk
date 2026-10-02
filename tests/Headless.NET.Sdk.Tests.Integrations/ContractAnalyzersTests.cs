@@ -10,7 +10,7 @@ using static Headless.NET.Sdk.Tests.Integrations.DotNetCommand;
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-public sealed partial class ContractConsumerBehaviorTests
+public sealed class ContractAnalyzersTests(HeadlessSdkPackageFixture fixture) : ContractConsumerBehaviorTests
 {
     [Fact]
     public async Task should_restore_all_mandatory_analyzers_and_report_banned_symbols()

@@ -8,8 +8,7 @@ using Xunit;
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-[Collection(nameof(HeadlessSdkPackageCollection))]
-public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
+public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IClassFixture<HeadlessSdkPackageFixture>
 {
     private const string PackageDescription =
         "An opinionated MSBuild SDK family for consistent project evaluation, mandatory analyzer infrastructure, configurable banned-API policy, CI quality gates, packaging defaults, and Microsoft Testing Platform support across compatible .NET projects. Distributed through GitHub Packages and NuGet.org; no license is currently granted.";

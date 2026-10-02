@@ -19,15 +19,13 @@ using StructuredLoggerSerialization = Microsoft.Build.Logging.StructuredLogger.S
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-[CollectionDefinition(nameof(HeadlessSdkPackageCollection))]
-public sealed class HeadlessSdkPackageCollection : ICollectionFixture<HeadlessSdkPackageFixture>;
-
-[Collection(nameof(HeadlessSdkPackageCollection))]
-public sealed partial class SdkIntegrationTests(HeadlessSdkPackageFixture fixture)
+// Shared helpers for the Sdk*Tests classes. xUnit runs the tests of one class serially, so the
+// suite is split into one class per area to let the consumer builds run in parallel.
+public abstract class SdkIntegrationTests : IClassFixture<HeadlessSdkPackageFixture>
 {
-    private static string NormalizeLineEndings(string value) => value.ReplaceLineEndings("\n");
+    private protected static string NormalizeLineEndings(string value) => value.ReplaceLineEndings("\n");
 
-    private static string CreateCentralPackageManagementProps(string packageVersionItems) =>
+    private protected static string CreateCentralPackageManagementProps(string packageVersionItems) =>
         $$"""
             <Project>
               <PropertyGroup>
@@ -40,7 +38,7 @@ public sealed partial class SdkIntegrationTests(HeadlessSdkPackageFixture fixtur
             </Project>
             """;
 
-    private static void AssertImplicitAnalyzerReference(
+    private protected static void AssertImplicitAnalyzerReference(
         IReadOnlyDictionary<string, XElement> packageReferences,
         string packageId
     )
@@ -52,7 +50,7 @@ public sealed partial class SdkIntegrationTests(HeadlessSdkPackageFixture fixtur
         Assert.Contains("analyzers", packageReference.Element("IncludeAssets")?.Value, StringComparison.Ordinal);
     }
 
-    private static bool IsBuildAsset(ZipArchiveEntry entry)
+    private protected static bool IsBuildAsset(ZipArchiveEntry entry)
     {
         if (
             !entry.FullName.EndsWith(".props", StringComparison.Ordinal)
@@ -66,7 +64,7 @@ public sealed partial class SdkIntegrationTests(HeadlessSdkPackageFixture fixtur
             || entry.FullName.StartsWith("buildMultiTargeting/", StringComparison.Ordinal);
     }
 
-    private static string ReadPackageEntry(ZipArchive package, string entryName)
+    private protected static string ReadPackageEntry(ZipArchive package, string entryName)
     {
         var entry = package.GetEntry(entryName);
         Assert.NotNull(entry);
@@ -75,7 +73,7 @@ public sealed partial class SdkIntegrationTests(HeadlessSdkPackageFixture fixtur
         return reader.ReadToEnd();
     }
 
-    private static byte[] ReadPackageEntryBytes(ZipArchive package, string entryName)
+    private protected static byte[] ReadPackageEntryBytes(ZipArchive package, string entryName)
     {
         var entry = package.GetEntry(entryName);
         Assert.NotNull(entry);
@@ -88,5 +86,5 @@ public sealed partial class SdkIntegrationTests(HeadlessSdkPackageFixture fixtur
 
     // "MPDB" is the magic header of the embedded portable PDB debug-directory blob (ECMA-335
     // Portable PDB spec); its presence in the image is what "DebugType=embedded" produces.
-    private static bool HasEmbeddedPortablePdb(byte[] assembly) => assembly.AsSpan().IndexOf("MPDB"u8) >= 0;
+    private protected static bool HasEmbeddedPortablePdb(byte[] assembly) => assembly.AsSpan().IndexOf("MPDB"u8) >= 0;
 }

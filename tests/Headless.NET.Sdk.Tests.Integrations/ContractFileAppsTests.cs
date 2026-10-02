@@ -8,7 +8,7 @@ using static Headless.NET.Sdk.Tests.Integrations.DotNetCommand;
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-public sealed partial class ContractConsumerBehaviorTests
+public sealed class ContractFileAppsTests(HeadlessSdkPackageFixture fixture) : ContractConsumerBehaviorTests
 {
     [Fact]
     public async Task should_run_a_dotnet_10_file_app_with_sdk_directive()

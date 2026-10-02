@@ -19,8 +19,15 @@ using StructuredLoggerSerialization = Microsoft.Build.Logging.StructuredLogger.S
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
+// A class fixture over one process-wide package set. Test classes take it so they can run in
+// parallel; an assembly fixture would also share it, but xUnit creates assembly fixtures even
+// when no selected test needs them, which would pack all six packages for the repository-only
+// tests. Packing therefore happens once, on first use. Every consumer build owns its temp root and
+// NuGet folders, so this package set is the only shared state and is read-only once loaded.
 public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
 {
+    private static readonly Lazy<Task<HeadlessSdkPackageFixture>> SharedPackages = new(LoadSharedAsync);
+
     internal static IReadOnlyList<string> MandatoryAnalyzerPackageIds { get; } =
     [
         "AsyncFixer",
@@ -56,6 +63,35 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
     public string PackageVersion { get; private set; } = null!;
 
     public async ValueTask InitializeAsync()
+    {
+        var shared = await SharedPackages.Value;
+        PackageRootDirectory = shared.PackageRootDirectory;
+        PackagePath = shared.PackagePath;
+        PackageSourceDirectory = shared.PackageSourceDirectory;
+        PackageVersion = shared.PackageVersion;
+
+        foreach (var (packageId, packagePath) in shared.packagePaths)
+        {
+            packagePaths[packageId] = packagePath;
+        }
+    }
+
+    private static async Task<HeadlessSdkPackageFixture> LoadSharedAsync()
+    {
+        var shared = new HeadlessSdkPackageFixture();
+        await shared.LoadAsync();
+
+        if (shared.deletePackageRootDirectory)
+        {
+            // Class fixtures are disposed per class while the package set outlives all of them,
+            // so the self-packed directory is removed when the test process exits.
+            AppDomain.CurrentDomain.ProcessExit += (_, _) => shared.DeletePackageRootDirectory();
+        }
+
+        return shared;
+    }
+
+    private async Task LoadAsync()
     {
         var repositoryRoot = TestRepository.FindRoot("integration tests");
         var prepackedPackagesDirectory = Environment.GetEnvironmentVariable("HEADLESS_PACKAGES_DIR");
@@ -189,7 +225,9 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
         }
     }
 
-    public ValueTask DisposeAsync()
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
+    private void DeletePackageRootDirectory()
     {
         try
         {
@@ -206,7 +244,5 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
         {
             Console.Error.WriteLine($"[fixture] Failed to delete '{PackageRootDirectory}': {ex.Message}");
         }
-
-        return ValueTask.CompletedTask;
     }
 }

@@ -7,7 +7,7 @@ using static Headless.NET.Sdk.Tests.Integrations.DotNetCommand;
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-public sealed partial class ContractConsumerBehaviorTests
+public sealed class ContractTargetFrameworksTests(HeadlessSdkPackageFixture fixture) : ContractConsumerBehaviorTests
 {
     [Fact]
     public async Task should_require_an_explicit_target_framework()

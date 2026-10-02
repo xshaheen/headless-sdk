@@ -11,9 +11,9 @@ using Xunit;
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-public sealed partial class ContractConsumerBehaviorTests
+public abstract partial class ContractConsumerBehaviorTests
 {
-    private static IReadOnlyDictionary<string, string> ReadPackageDependencyVersions(string packagePath)
+    private protected static IReadOnlyDictionary<string, string> ReadPackageDependencyVersions(string packagePath)
     {
         using var package = ZipFile.OpenRead(packagePath);
         var nuspec = package.Entries.Single(entry => entry.FullName.EndsWith(".nuspec", StringComparison.Ordinal));
@@ -33,7 +33,7 @@ public sealed partial class ContractConsumerBehaviorTests
             );
     }
 
-    private static string ReadExactPackageDependencyVersion(string versionRange, string packageId)
+    private protected static string ReadExactPackageDependencyVersion(string versionRange, string packageId)
     {
         if (
             versionRange.Length < 3
@@ -50,7 +50,7 @@ public sealed partial class ContractConsumerBehaviorTests
         return versionRange[1..^1];
     }
 
-    private static void AssertAnalyzerDependencyInAssets(
+    private protected static void AssertAnalyzerDependencyInAssets(
         JsonElement framework,
         JsonElement target,
         JsonElement libraries,
@@ -80,7 +80,7 @@ public sealed partial class ContractConsumerBehaviorTests
         );
     }
 
-    private static async Task AssertMandatoryAnalyzersInAssetsAsync(ConsumerProject project)
+    private protected static async Task AssertMandatoryAnalyzersInAssetsAsync(ConsumerProject project)
     {
         var assets = await File.ReadAllTextAsync(project.ProjectAssetsPath, TestContext.Current.CancellationToken);
         foreach (var analyzerPackage in HeadlessSdkPackageFixture.MandatoryAnalyzerPackageIds)
@@ -89,7 +89,7 @@ public sealed partial class ContractConsumerBehaviorTests
         }
     }
 
-    private static async Task AssertQualityContractFileAsync(string path)
+    private protected static async Task AssertQualityContractFileAsync(string path)
     {
         Assert.True(File.Exists(path), $"Expected evaluated Headless contract file '{path}'.");
         var properties = (await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken))
@@ -117,7 +117,7 @@ public sealed partial class ContractConsumerBehaviorTests
         );
     }
 
-    private static async Task WriteProjectAsync(
+    private protected static async Task WriteProjectAsync(
         ConsumerProject project,
         string projectContent,
         IReadOnlyDictionary<string, string> sourceFiles
@@ -141,7 +141,7 @@ public sealed partial class ContractConsumerBehaviorTests
         }
     }
 
-    private static async Task UpdateProjectAsync(ConsumerProject project, Action<XElement> update)
+    private protected static async Task UpdateProjectAsync(ConsumerProject project, Action<XElement> update)
     {
         var document = XDocument.Load(project.ProjectFilePath);
         var root = document.Root ?? throw new InvalidOperationException("Consumer project has no root element.");

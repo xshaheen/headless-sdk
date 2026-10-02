@@ -10,7 +10,7 @@ using static Headless.NET.Sdk.Tests.Integrations.DotNetCommand;
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-public sealed partial class ContractConsumerBehaviorTests
+public sealed class ContractConsumptionTests(HeadlessSdkPackageFixture fixture) : ContractConsumerBehaviorTests
 {
     [Fact]
     public async Task should_import_quality_assets_once_when_sdk_and_package_reference_are_both_used()

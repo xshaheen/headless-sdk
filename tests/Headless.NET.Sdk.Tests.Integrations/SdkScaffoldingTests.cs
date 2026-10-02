@@ -19,7 +19,7 @@ using StructuredLoggerSerialization = Microsoft.Build.Logging.StructuredLogger.S
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-public sealed partial class SdkIntegrationTests
+public sealed class SdkScaffoldingTests(HeadlessSdkPackageFixture fixture) : SdkIntegrationTests
 {
     [Fact]
     public async Task should_not_overwrite_existing_editorconfig_when_using_defaults()

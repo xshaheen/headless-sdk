@@ -52,7 +52,7 @@ test-class: ## Run tests matching CLASS against the last packed packages (run `m
 # (paste it into the PR) and summary.json. Every stage runs, so one failure does not hide the rest,
 # except that tests are skipped when the build or pack failed rather than run against stale output.
 .PHONY: verify
-verify: ## Build, pack (unique local version), and run the full suite; writes a proof bundle (~7 min).
+verify: ## Build, pack (unique local version), and run the full suite; writes a proof bundle (~3 min).
 	@run="$(PROOF_RUN)-verify"; status=0; mkdir -p "$$run"; \
 	$(PROOF) run --dir "$$run" --name restore -- $(DOTNET) restore "$(SOLUTION)" || status=1; \
 	$(PROOF) run --dir "$$run" --name build -- $(DOTNET) build "$(SOLUTION)" --configuration "$(CONFIGURATION)" --no-restore --no-incremental -p:GeneratePackageOnBuild=false -p:MinVerVersionOverride=$(LOCAL_VERSION) -v:minimal -nologo || status=1; \

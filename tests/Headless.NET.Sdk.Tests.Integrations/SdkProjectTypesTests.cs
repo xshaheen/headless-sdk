@@ -19,7 +19,7 @@ using StructuredLoggerSerialization = Microsoft.Build.Logging.StructuredLogger.S
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-public sealed partial class SdkIntegrationTests
+public sealed class SdkProjectTypesTests(HeadlessSdkPackageFixture fixture) : SdkIntegrationTests
 {
     [Fact]
     public async Task should_set_test_project_properties_when_using_test_project_type_sdk()

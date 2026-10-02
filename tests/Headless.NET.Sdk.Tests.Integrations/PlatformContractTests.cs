@@ -7,8 +7,8 @@ using static Headless.NET.Sdk.Tests.Integrations.DotNetCommand;
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-[Collection(nameof(HeadlessSdkPackageCollection))]
 public sealed class WindowsPlatformContractTests(HeadlessSdkPackageFixture fixture)
+    : IClassFixture<HeadlessSdkPackageFixture>
 {
     [Theory]
     [InlineData("UseWPF")]
@@ -70,8 +70,8 @@ public sealed class WindowsPlatformContractTests(HeadlessSdkPackageFixture fixtu
     }
 }
 
-[Collection(nameof(HeadlessSdkPackageCollection))]
 public sealed class MacOsPlatformContractTests(HeadlessSdkPackageFixture fixture)
+    : IClassFixture<HeadlessSdkPackageFixture>
 {
     [Fact]
     public async Task should_build_base_sdk_consumer_on_macos()

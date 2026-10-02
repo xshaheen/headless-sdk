@@ -10,7 +10,7 @@ using static Headless.NET.Sdk.Tests.Integrations.DotNetCommand;
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-public sealed partial class ContractConsumerBehaviorTests
+public sealed class ContractTestingTests(HeadlessSdkPackageFixture fixture) : ContractConsumerBehaviorTests
 {
     private static readonly string[] RequiredMtpExtensions =
     [

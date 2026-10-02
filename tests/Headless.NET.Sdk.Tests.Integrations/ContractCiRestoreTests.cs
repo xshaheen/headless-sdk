@@ -9,7 +9,7 @@ using static Headless.NET.Sdk.Tests.Integrations.DotNetCommand;
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-public sealed partial class ContractConsumerBehaviorTests
+public sealed class ContractCiRestoreTests(HeadlessSdkPackageFixture fixture) : ContractConsumerBehaviorTests
 {
     [Fact]
     public async Task should_apply_warning_errors_only_when_ci_policy_is_active()

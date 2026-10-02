@@ -19,7 +19,7 @@ using StructuredLoggerSerialization = Microsoft.Build.Logging.StructuredLogger.S
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-public sealed partial class SdkIntegrationTests
+public sealed class SdkBuildPolicyTests(HeadlessSdkPackageFixture fixture) : SdkIntegrationTests
 {
     [Fact]
     public async Task should_include_implicit_analyzer_packages_when_restoring_via_package_reference()
