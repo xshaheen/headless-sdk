@@ -157,6 +157,76 @@ public sealed partial class AnalyzerRuleCoverageTests
         }
     }
 
+    // This repository builds with plain Microsoft.NET.Sdk, so its own projects get analyzer settings
+    // only from the root .editorconfig. eng/tools/sync_root_editorconfig.py generates it from the
+    // injected configs; this test fails when they drift apart.
+    [Theory]
+    [InlineData("Headless.NET.Sdk.Analyzers.editorconfig", "[*.cs]")]
+    [InlineData("Headless.NET.Sdk.Tests.editorconfig", "[tests/**/*.cs]")]
+    public void root_editorconfig_should_match_the_injected_configs(string injectedConfig, string section)
+    {
+        var repositoryRoot = TestRepository.FindRoot("root editorconfig");
+        var injected = ReadSettings(
+            File.ReadAllLines(
+                Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "configurations", injectedConfig)
+            ),
+            section: null
+        );
+        injected.Remove("is_global");
+        injected.Remove("global_level");
+        var root = ReadSettings(File.ReadAllLines(Path.Combine(repositoryRoot, ".editorconfig")), section);
+
+        var mismatches = injected
+            .Where(setting => !root.TryGetValue(setting.Key, out var value) || value != setting.Value)
+            .Select(setting =>
+                $"{setting.Key}: injected {setting.Value}, root {root.GetValueOrDefault(setting.Key) ?? "(missing)"}"
+            )
+            .Concat(
+                root.Keys.Where(key =>
+                        AnalyzerSettingPrefixes.Any(prefix => key.StartsWith(prefix, StringComparison.Ordinal))
+                        && !injected.ContainsKey(key)
+                    )
+                    .Select(key => $"{key}: in root .editorconfig only")
+            )
+            .ToList();
+
+        Assert.True(
+            mismatches.Count == 0,
+            $"Root .editorconfig {section} differs from {injectedConfig}; run "
+                + "`python3 eng/tools/sync_root_editorconfig.py`:\n"
+                + string.Join('\n', mismatches)
+        );
+    }
+
+    // Collects key/value settings, from every occurrence of `section` when given, else from the whole file.
+    private static Dictionary<string, string> ReadSettings(IEnumerable<string> lines, string? section)
+    {
+        var settings = new Dictionary<string, string>(StringComparer.Ordinal);
+        string? current = null;
+        foreach (var raw in lines)
+        {
+            var line = raw.Trim();
+            if (line.StartsWith('['))
+            {
+                current = line;
+                continue;
+            }
+
+            if (line.Length == 0 || line.StartsWith('#') || (section is not null && current != section))
+            {
+                continue;
+            }
+
+            var separator = line.IndexOf('=', StringComparison.Ordinal);
+            if (separator > 0)
+            {
+                settings[line[..separator].Trim()] = line[(separator + 1)..].Trim();
+            }
+        }
+
+        return settings;
+    }
+
     // A consumer .editorconfig outranks the injected configs, so a scaffold that copied analyzer
     // settings would pin each consuming repository to the SDK version it was copied from. The
     // scaffold carries editor settings only; severities, code style, and naming ship injected.
@@ -198,6 +268,9 @@ public sealed partial class AnalyzerRuleCoverageTests
         RegexOptions.CultureInvariant | RegexOptions.Multiline
     )]
     private static partial Regex SeverityLine { get; }
+
+    [GeneratedRegex("in type '([^']+)'", RegexOptions.CultureInvariant)]
+    private static partial Regex LoaderFailureTypeName { get; }
 
     [GeneratedRegex(@"dotnet_diagnostic\.([A-Za-z0-9]+)\.severity", RegexOptions.IgnoreCase, "en-US")]
     private static partial Regex DiagnosticRegex { get; }
@@ -299,7 +372,7 @@ public sealed partial class AnalyzerRuleCoverageTests
                     var unwaived = loaderMessages
                         .Where(message =>
                         {
-                            var typeMatch = Regex.Match(message!, "in type '([^']+)'");
+                            var typeMatch = LoaderFailureTypeName.Match(message!);
 
                             return !typeMatch.Success
                                 || !NonAnalyzerFailedTypePrefixes.Any(prefix =>

@@ -119,8 +119,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
     {
         foreach (var packageId in HeadlessSdkPackageFixture.PackageIds)
         {
-            using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
-            var nuspec = ReadNuspec(package, packageId);
+            var nuspec = ReadNuspec(packageId);
             var metadata = nuspec.Descendants().Single(element => element.Name.LocalName == "metadata");
             var actualDependencies = metadata
                 .Descendants()
@@ -181,8 +180,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
     {
         foreach (var packageId in HeadlessSdkPackageFixture.PackageIds)
         {
-            using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
-            var nuspec = ReadNuspec(package, packageId);
+            var nuspec = ReadNuspec(packageId);
             var dependencies = nuspec.Descendants().Single(element => element.Name.LocalName == "dependencies");
             var groups = dependencies.Elements().ToArray();
 
@@ -293,8 +291,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
     {
         foreach (var packageId in HeadlessSdkPackageFixture.PackageIds)
         {
-            using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
-            var dependencies = ReadDependencies(package, packageId);
+            var dependencies = ReadDependencies(packageId);
 
             foreach (var analyzerPackage in HeadlessSdkPackageFixture.MandatoryAnalyzerPackageIds)
             {
@@ -401,9 +398,9 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
         Assert.DoesNotContain("--skip-duplicate", workflow, StringComparison.Ordinal);
     }
 
-    private static HashSet<string> ReadDependencies(ZipArchive package, string packageId)
+    private HashSet<string> ReadDependencies(string packageId)
     {
-        return ReadNuspec(package, packageId)
+        return ReadNuspec(packageId)
             .Descendants()
             .Where(element => element.Name.LocalName == "dependency")
             .Select(element => element.Attribute("id")?.Value)
@@ -412,8 +409,9 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
             .ToHashSet(StringComparer.Ordinal);
     }
 
-    private static XDocument ReadNuspec(ZipArchive package, string packageId)
+    private XDocument ReadNuspec(string packageId)
     {
+        using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
         var nuspec = package.GetEntry($"{packageId}.nuspec");
         Assert.NotNull(nuspec);
 

@@ -273,7 +273,7 @@ public sealed partial class SdkIntegrationTests
 
         foreach (var (packageId, baseSdk) in expectedPackages)
         {
-#pragma warning disable CA2000 // Dispose objects before losing scope
+#pragma warning disable CA2000 // False positive: the using declaration disposes the archive on every path.
             using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
 #pragma warning restore CA2000
 
