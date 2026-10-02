@@ -70,9 +70,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
         "sdk/Sdk.targets",
     ];
 
-    private static readonly Dictionary<string, string> BaseDependencySnapshot = new Dictionary<string, string>(
-        StringComparer.Ordinal
-    )
+    private static readonly Dictionary<string, string> BaseDependencySnapshot = new(StringComparer.Ordinal)
     {
         ["AsyncFixer"] = "[2.1.0]",
         ["ErrorProne.NET.CoreAnalyzers"] = "[0.1.2]",
@@ -338,13 +336,21 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
             {
                 var element = Assert.Single(embedElements);
                 Assert.Equal("true", element.Value);
-                Assert.Contains("'$(EmbedUntrackedSources)' == ''", element.Attribute("Condition")?.Value);
+                Assert.Contains(
+                    "'$(EmbedUntrackedSources)' == ''",
+                    element.Attribute("Condition")?.Value,
+                    StringComparison.Ordinal
+                );
             }
             else if (condition.Contains("'snupkg'", StringComparison.Ordinal))
             {
                 var element = Assert.Single(embedElements);
                 Assert.Equal("true", element.Value);
-                Assert.Contains("'$(EmbedUntrackedSources)' == ''", element.Attribute("Condition")?.Value);
+                Assert.Contains(
+                    "'$(EmbedUntrackedSources)' == ''",
+                    element.Attribute("Condition")?.Value,
+                    StringComparison.Ordinal
+                );
             }
             else if (condition.Contains("'none'", StringComparison.Ordinal))
             {

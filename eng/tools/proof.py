@@ -54,11 +54,13 @@ class TestModule:
     failures: list[dict[str, str]] = field(default_factory=list)
 
 
+_ROOT_PREFIX = REPO_ROOT.as_posix() + "/"
+
+
 def relative(path: str) -> str:
-    try:
-        return Path(path).resolve().relative_to(REPO_ROOT).as_posix()
-    except ValueError:
-        return path
+    # Tools report absolute paths under the checkout, so a prefix strip is enough; resolving every
+    # path costs a filesystem call each, and an analyzer report carries tens of thousands.
+    return path.removeprefix(_ROOT_PREFIX)
 
 
 def run_stage(directory: Path, name: str, command: list[str]) -> int:
@@ -126,8 +128,10 @@ def analyzer_findings(directory: Path, project_dirs: list[str]) -> list[dict[str
             for change in document.get("FileChanges", []):
                 description: str = change.get("FormatDescription", "")
                 severity, _, message = description.partition(" ")
+                if severity == "hidden":
+                    continue
                 file = relative(document.get("FilePath", ""))
-                if severity == "hidden" or (project_dirs and not file.startswith(tuple(project_dirs))):
+                if project_dirs and not file.startswith(tuple(project_dirs)):
                     continue
                 findings.append(
                     {
