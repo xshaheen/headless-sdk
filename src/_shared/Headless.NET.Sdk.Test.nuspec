@@ -19,7 +19,6 @@
     <repository type="$RepositoryType$" url="$RepositoryUrl$" branch="$RepositoryBranch$" commit="$RepositoryCommit$" />
     <dependencies>
       <dependency id="AsyncFixer" version="[$AsyncFixerVersion$]" include="All" />
-      <dependency id="Asyncify" version="[$AsyncifyVersion$]" include="All" />
       <dependency id="ErrorProne.NET.CoreAnalyzers" version="[$ErrorProneAnalyzersVersion$]" include="All" />
       <dependency id="Meziantou.Analyzer" version="[$MeziantouAnalyzerVersion$]" include="All" />
       <dependency id="Microsoft.CodeAnalysis.BannedApiAnalyzers" version="[$BannedApiAnalyzersVersion$]" include="All" />

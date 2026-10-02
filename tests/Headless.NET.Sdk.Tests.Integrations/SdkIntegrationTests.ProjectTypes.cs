@@ -142,10 +142,22 @@ public sealed partial class SdkIntegrationTests
         var args = defaults["TestingPlatformCommandLineArguments"];
         Assert.Equal("1", defaults["MinimumExpectedTests"]);
         Assert.Contains("--report-trx", args, StringComparison.Ordinal);
-        Assert.Contains("--crashdump", args, StringComparison.Ordinal);
-        Assert.Contains("--hangdump", args, StringComparison.Ordinal);
+        Assert.DoesNotContain("--crashdump", args, StringComparison.Ordinal);
+        Assert.DoesNotContain("--hangdump", args, StringComparison.Ordinal);
         Assert.Equal(1, args.Split("--minimum-expected-tests 1", StringSplitOptions.None).Length - 1);
         Assert.DoesNotContain("--coverage", args, StringComparison.Ordinal);
+
+        // Dumps are CI diagnostics: on by default there, and an explicit local opt-in still works.
+        var ci = (await project.EvaluateHeadlessPropertiesAsync("-p:ContinuousIntegrationBuild=true"))[
+            "TestingPlatformCommandLineArguments"
+        ];
+        Assert.Contains("--crashdump", ci, StringComparison.Ordinal);
+        Assert.Contains("--hangdump", ci, StringComparison.Ordinal);
+        var localDumps = (await project.EvaluateHeadlessPropertiesAsync("-p:EnableTestDumps=true"))[
+            "TestingPlatformCommandLineArguments"
+        ];
+        Assert.Contains("--crashdump", localDumps, StringComparison.Ordinal);
+        Assert.Contains("--hangdump", localDumps, StringComparison.Ordinal);
 
         var custom = await project.EvaluateHeadlessPropertiesAsync("-p:MinimumExpectedTests=5");
         Assert.Equal("5", custom["MinimumExpectedTests"]);

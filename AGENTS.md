@@ -7,7 +7,7 @@
 The product is the consumer contract, and the README's **Support contract** section is its source of truth. Read that section before you change anything under `src/`. Two consequences guide most decisions:
 
 - **Every consumption mode is first-class.** A change must behave the same under PackageReference and MSBuild-SDK consumption, in single- and multi-targeting builds, and for every satellite. Prove it with a consumer-build test, not by reading the targets.
-- **Policies are not consumer knobs.** Analyzer infrastructure and quality gates stay on. Add an opt-out only where the README already documents one, such as the banned-symbol lists.
+- **Policies are not consumer knobs.** Analyzer infrastructure and quality gates stay on. Add an opt-out only where the README already documents one, such as the banned-symbol lists. The local inner-loop switches `RunAnalyzersDuringBuild` and `RunAnalyzersDuringLiveAnalysis` are honored only outside CI and AI-agent builds, which force them back on.
 
 ## Where a change lands
 

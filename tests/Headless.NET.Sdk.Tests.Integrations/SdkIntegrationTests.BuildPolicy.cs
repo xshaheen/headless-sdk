@@ -114,7 +114,8 @@ class Foo { }
         // matches exclusions by namespace-qualified simple type name, so the stub exercises the DbSet entry. The
         // Journal control proves VSTHRD103 still reports ordinary sync-over-async calls in the same
         // build. No caller may share a name with an Async alternative, because VSTHRD103 skips an
-        // alternative named like the enclosing method.
+        // alternative named like the enclosing method. VSTHRD103 is off by default because CA1849
+        // reports a superset; the shipped exclusion list serves consumers that turn it back on.
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
             fixture.PackageSourceDirectory,
@@ -123,6 +124,12 @@ class Foo { }
             includePackageReference: !useSdkConsumption,
             additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
             {
+                [".editorconfig"] = """
+                root = true
+
+                [*.cs]
+                dotnet_diagnostic.VSTHRD103.severity = warning
+                """,
                 ["Repro.cs"] = """
                 using System.Threading.Tasks;
 
@@ -329,6 +336,65 @@ class Foo { }
         );
 
         Assert.Equal("true", (await projectBodyCi.EvaluateHeadlessPropertiesAsync())["ReportAnalyzer"]);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task should_honor_local_analyzer_run_opt_outs_only_outside_ci_and_agent_builds(
+        bool includePackageReference
+    )
+    {
+        // The inner-loop opt-outs must survive both consumption modes locally, while the CI and
+        // agent gates, where findings are enforced, must still run analyzers during build.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: includePackageReference ? "Microsoft.NET.Sdk" : $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            includePackageReference: includePackageReference,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["RunAnalyzersDuringBuild"] = "false",
+                ["RunAnalyzersDuringLiveAnalysis"] = "false",
+            },
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BannedApiConsumer.cs"] =
+                    "namespace ConsumerProject; public static class BannedApiConsumer { public static System.DateTime Value => System.DateTime.Now; }",
+            }
+        );
+
+        var local = await project.EvaluateHeadlessPropertiesAsync();
+        var ci = await project.EvaluateHeadlessPropertiesAsync("-p:ContinuousIntegrationBuild=true");
+        var agent = await project.EvaluateHeadlessPropertiesAsync("-p:HeadlessIsLlmContext=true");
+
+        Assert.Equal("false", local["RunAnalyzersDuringBuild"]);
+        Assert.Equal("false", local["RunAnalyzersDuringLiveAnalysis"]);
+        Assert.Equal("true", ci["RunAnalyzersDuringBuild"]);
+        Assert.Equal("true", ci["RunAnalyzersDuringLiveAnalysis"]);
+        Assert.Equal("true", agent["RunAnalyzersDuringBuild"]);
+        Assert.Equal("true", agent["RunAnalyzersDuringLiveAnalysis"]);
+
+        // Roslyn honors RunAnalyzersDuringBuild only while RunAnalyzers is empty, so prove the
+        // analyzers actually skip locally and run for an agent, not just the property values.
+        var build =
+            $"build {Quote(project.ProjectFilePath)} --no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}";
+        var localBuild = await project.RunDotNetAsync(build);
+        Assert.True(localBuild.ExitCode == 0, localBuild.Output);
+        Assert.DoesNotContain("RS0030", localBuild.Output, StringComparison.Ordinal);
+        var agentBuild = await project.RunDotNetAsync($"{build} -p:HeadlessIsLlmContext=true");
+        Assert.Contains("RS0030", agentBuild.Output, StringComparison.Ordinal);
+
+        await using var defaults = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: includePackageReference ? "Microsoft.NET.Sdk" : $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            includePackageReference: includePackageReference
+        );
+
+        var defaultProperties = await defaults.EvaluateHeadlessPropertiesAsync();
+        Assert.Equal("true", defaultProperties["RunAnalyzersDuringBuild"]);
+        Assert.Equal("true", defaultProperties["RunAnalyzersDuringLiveAnalysis"]);
     }
 
     [Fact]

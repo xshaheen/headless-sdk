@@ -135,7 +135,6 @@ public sealed partial class SdkIntegrationTests
         AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Meziantou.Analyzer");
         AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Microsoft.CodeAnalysis.BannedApiAnalyzers");
         AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "AsyncFixer");
-        AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Asyncify");
         AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Microsoft.VisualStudio.Threading.Analyzers");
         AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "SmartAnalyzers.MultithreadingAnalyzer");
         AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Roslynator.Analyzers");
@@ -209,7 +208,6 @@ public sealed partial class SdkIntegrationTests
             "Meziantou.Analyzer",
             "Microsoft.CodeAnalysis.BannedApiAnalyzers",
             "AsyncFixer",
-            "Asyncify",
             "Microsoft.VisualStudio.Threading.Analyzers",
             "SmartAnalyzers.MultithreadingAnalyzer",
             "Roslynator.Analyzers",

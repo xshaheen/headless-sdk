@@ -15,7 +15,6 @@
     <PackageVersion Remove="Meziantou.Analyzer" />
     <PackageVersion Remove="Microsoft.CodeAnalysis.BannedApiAnalyzers" />
     <PackageVersion Remove="AsyncFixer" />
-    <PackageVersion Remove="Asyncify" />
     <PackageVersion Remove="Microsoft.VisualStudio.Threading.Analyzers" />
     <PackageVersion Remove="SmartAnalyzers.MultithreadingAnalyzer" />
     <PackageVersion Remove="Roslynator.Analyzers" />
@@ -40,12 +39,6 @@
     <PackageReference
       Update="AsyncFixer"
       VersionOverride="[$(_HeadlessAsyncFixerVersion)]"
-      PrivateAssets="none"
-      IncludeAssets="all"
-    />
-    <PackageReference
-      Update="Asyncify"
-      VersionOverride="[$(_HeadlessAsyncifyVersion)]"
       PrivateAssets="none"
       IncludeAssets="all"
     />

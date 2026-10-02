@@ -1,0 +1,13 @@
+is_global = true
+global_level = 1
+
+# Applied only while BannedSymbols.GuardClauses.txt is active. These rules recommend the BCL throw
+# helpers that the list bans, so each finding would trade one diagnostic for an RS0030 error.
+# CA1510: Use ArgumentNullException throw helper
+dotnet_diagnostic.CA1510.severity = none
+# CA1511: Use ArgumentException throw helper
+dotnet_diagnostic.CA1511.severity = none
+# CA1512: Use ArgumentOutOfRangeException throw helper
+dotnet_diagnostic.CA1512.severity = none
+# CA1513: Use ObjectDisposedException throw helper
+dotnet_diagnostic.CA1513.severity = none

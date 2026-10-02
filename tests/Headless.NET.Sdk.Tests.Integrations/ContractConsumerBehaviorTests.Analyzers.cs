@@ -183,6 +183,15 @@ public sealed partial class ContractConsumerBehaviorTests
                 path.EndsWith("BannedSymbols.GuardClauses.txt", StringComparison.OrdinalIgnoreCase)
             )
         );
+        // CA1510-CA1513 recommend the banned helpers, so their overlay follows the guard-clause list.
+        Assert.Equal(
+            expectGuardClauseSymbols,
+            properties["EditorConfigFiles"]
+                .Split('|', StringSplitOptions.RemoveEmptyEntries)
+                .Any(path =>
+                    path.EndsWith("Headless.NET.Sdk.GuardClauses.editorconfig", StringComparison.OrdinalIgnoreCase)
+                )
+        );
         Assert.Contains(
             "Microsoft.CodeAnalysis.BannedApiAnalyzers",
             properties["PackageReferences"],

@@ -17,6 +17,13 @@
     <!-- Auto-enable code coverage on CI; explicit toggle wins. -->
     <EnableCodeCoverage Condition="'$(EnableCodeCoverage)' == '' AND '$(ContinuousIntegrationBuild)' == 'true'"
       >true</EnableCodeCoverage>
+    <!--
+      Crash and hang dumps are post-mortem diagnostics for unattended runs. Each extension relaunches
+      the test host under a controller process, which adds about 0.2 s to every local run while an
+      interactive developer can attach a debugger instead. CI keeps them; explicit toggle wins.
+    -->
+    <EnableTestDumps Condition="'$(EnableTestDumps)' == '' AND '$(ContinuousIntegrationBuild)' == 'true'"
+      >true</EnableTestDumps>
     <HeadlessCoverageSettingsPath Condition="'$(HeadlessCoverageSettingsPath)' == ''"
       >$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)', '..', 'configurations', 'default.runsettings'))</HeadlessCoverageSettingsPath>
   </PropertyGroup>
@@ -104,8 +111,10 @@
       >$(TestingPlatformCommandLineArguments) --coverage</TestingPlatformCommandLineArguments>
     <TestingPlatformCommandLineArguments Condition="'$(EnableCodeCoverage)' == 'true'"
       >$(TestingPlatformCommandLineArguments) --coverage-settings &quot;$(HeadlessCoverageSettingsPath)&quot;</TestingPlatformCommandLineArguments>
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --crashdump --crashdump-type mini</TestingPlatformCommandLineArguments>
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --hangdump --hangdump-timeout 10m --hangdump-type mini</TestingPlatformCommandLineArguments>
+    <TestingPlatformCommandLineArguments Condition="'$(EnableTestDumps)' == 'true'"
+      >$(TestingPlatformCommandLineArguments) --crashdump --crashdump-type mini</TestingPlatformCommandLineArguments>
+    <TestingPlatformCommandLineArguments Condition="'$(EnableTestDumps)' == 'true'"
+      >$(TestingPlatformCommandLineArguments) --hangdump --hangdump-timeout 10m --hangdump-type mini</TestingPlatformCommandLineArguments>
     <TestingPlatformCommandLineArguments
       Condition="'$(MinimumExpectedTests)' != '' AND '$(MinimumExpectedTests)' != '0'"
       >$(TestingPlatformCommandLineArguments) --minimum-expected-tests $(MinimumExpectedTests)</TestingPlatformCommandLineArguments>

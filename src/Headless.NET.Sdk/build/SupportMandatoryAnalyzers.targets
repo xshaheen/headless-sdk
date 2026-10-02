@@ -2,10 +2,36 @@
   <!-- The named Headless quality baseline is authoritative after the consumer project body. -->
   <PropertyGroup Condition="'$(IsBuildTaskProject)' != 'true'">
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <!--
+    Analyzers cost roughly 40% of compile time, so a local inner loop may set
+    RunAnalyzersDuringBuild=false (keep live analysis in the editor) or
+    RunAnalyzersDuringLiveAnalysis=false (keep build analysis). Roslyn reads those two only while
+    RunAnalyzers is empty (Microsoft.Managed.Core.targets, _SkipAnalyzers), so a local build clears
+    RunAnalyzers: a consumer RunAnalyzers=false still cannot turn analysis off wholesale.
+  -->
+  <PropertyGroup Condition="'$(IsBuildTaskProject)' != 'true'">
+    <RunAnalyzers></RunAnalyzers>
+    <RunAnalyzersDuringBuild Condition="'$(RunAnalyzersDuringBuild)' == ''">true</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis Condition="'$(RunAnalyzersDuringLiveAnalysis)' == ''"
+      >true</RunAnalyzersDuringLiveAnalysis>
+  </PropertyGroup>
+
+  <!--
+    CI and AI-agent builds are where the warning gate is enforced, so they always run analyzers;
+    an agent ignoring a consumer opt-out is what keeps its session from leaving findings for CI.
+  -->
+  <PropertyGroup
+    Condition=" '$(IsBuildTaskProject)' != 'true'
+      and ('$(_HeadlessIsKnownCiEnvironment)' == 'true'
+        or '$(ContinuousIntegrationBuild)' == 'true'
+        or '$(HeadlessIsLlmContext)' == 'true') "
+  >
     <RunAnalyzers>true</RunAnalyzers>
     <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
     <RunAnalyzersDuringLiveAnalysis>true</RunAnalyzersDuringLiveAnalysis>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <!--
@@ -14,7 +40,7 @@
     the required analyzers.
   -->
   <ItemGroup Condition="'$(IsBuildTaskProject)' != 'true'">
-    <PackageReference Remove="Meziantou.Analyzer;Microsoft.CodeAnalysis.BannedApiAnalyzers;AsyncFixer;Asyncify;Microsoft.VisualStudio.Threading.Analyzers;SmartAnalyzers.MultithreadingAnalyzer;Roslynator.Analyzers;Roslynator.Formatting.Analyzers;ReflectionAnalyzers;ErrorProne.NET.CoreAnalyzers" />
+    <PackageReference Remove="Meziantou.Analyzer;Microsoft.CodeAnalysis.BannedApiAnalyzers;AsyncFixer;Microsoft.VisualStudio.Threading.Analyzers;SmartAnalyzers.MultithreadingAnalyzer;Roslynator.Analyzers;Roslynator.Formatting.Analyzers;ReflectionAnalyzers;ErrorProne.NET.CoreAnalyzers" />
     <PackageReference
       Include="Meziantou.Analyzer"
       Condition="'$(PackageId)' != 'Meziantou.Analyzer'"
@@ -35,14 +61,6 @@
     <PackageReference
       Include="AsyncFixer"
       Version="$(_HeadlessAsyncFixerVersion)"
-      IsImplicitlyDefined="true"
-      PrivateAssets="all"
-      IncludeAssets="runtime; build; native; contentfiles; analyzers"
-      ExcludeAssets=""
-    />
-    <PackageReference
-      Include="Asyncify"
-      Version="$(_HeadlessAsyncifyVersion)"
       IsImplicitlyDefined="true"
       PrivateAssets="all"
       IncludeAssets="runtime; build; native; contentfiles; analyzers"

@@ -106,7 +106,7 @@ insert_final_newline = false
 # Analyzer Diagnostic Severities
 #
 # Roslyn analyzer-rule severities, grouped by intent. Families: CA* (NetAnalyzers),
-# RCS* (Roslynator), MA* (Meziantou), VSTHRD*/AsyncFixer*/Asyncify* (async & threading),
+# RCS* (Roslynator), MA* (Meziantou), VSTHRD*/AsyncFixer* (async & threading),
 # FAA* (AwesomeAssertions), CS* (compiler). The default below leaves every other rule at
 # its analyzer default; the per-rule lines tune the ones we care about.
 ##########################################
@@ -120,16 +120,16 @@ dotnet_analyzer_diagnostic.severity = default
 
 # CA1303: Do not pass literals as localized parameters
 dotnet_diagnostic.CA1303.severity = suggestion
-# CA1304: Specify CultureInfo
-dotnet_diagnostic.CA1304.severity = suggestion
-# CA1305: Specify IFormatProvider
-dotnet_diagnostic.CA1305.severity = suggestion
-# CA1307: Specify StringComparison for clarity
-dotnet_diagnostic.CA1307.severity = suggestion
-# CA1309: Use ordinal StringComparison
-dotnet_diagnostic.CA1309.severity = suggestion
-# CA1310: Specify StringComparison for correctness
-dotnet_diagnostic.CA1310.severity = suggestion
+# CA1304: Specify CultureInfo (duplicate of MA0011, which has a code fix)
+dotnet_diagnostic.CA1304.severity = none
+# CA1305: Specify IFormatProvider (duplicate of MA0011, which has a code fix)
+dotnet_diagnostic.CA1305.severity = none
+# CA1307: Specify StringComparison for clarity (duplicate of MA0001, which has a code fix)
+dotnet_diagnostic.CA1307.severity = none
+# CA1309: Use ordinal StringComparison (duplicate of MA0001, which has a code fix)
+dotnet_diagnostic.CA1309.severity = none
+# CA1310: Specify StringComparison for correctness (duplicate of MA0074, which has a code fix)
+dotnet_diagnostic.CA1310.severity = none
 # MA0006: Use String.Equals instead of equality operator
 dotnet_diagnostic.MA0006.severity = suggestion
 
@@ -217,26 +217,33 @@ dotnet_diagnostic.MA0045.severity = suggestion
 # MA0079: Forward the CancellationToken using .WithCancellation()
 dotnet_diagnostic.MA0079.severity = warning
 dotnet_diagnostic.MA0080.severity = warning
-dotnet_diagnostic.AsyncFixer02.severity = warning
-dotnet_diagnostic.AsyncFixer03.severity = warning
+# AsyncFixer02: duplicate of CA1849, which reports a superset of blocking calls in async code
+dotnet_diagnostic.AsyncFixer02.severity = none
+# AsyncFixer03: duplicate of VSTHRD100/VSTHRD101
+dotnet_diagnostic.AsyncFixer03.severity = none
 dotnet_diagnostic.AsyncFixer04.severity = warning
 dotnet_diagnostic.AsyncFixer05.severity = warning
-dotnet_diagnostic.AsyncifyInvocation.severity = warning
-dotnet_diagnostic.AsyncifyVariable.severity = warning
-# VSTHRD002: Avoid problematic synchronous waits
-dotnet_diagnostic.VSTHRD002.severity = none
+# VSTHRD002: Avoid problematic synchronous waits. Replaces Asyncify, which cost 11% of analyzer
+# time, and also reports .Wait() and GetAwaiter().GetResult(). A suggestion, not a warning: most
+# sync waits are deliberate bridges (sync Dispose, sync interface adapters), and the rule also
+# reports .Result reads guarded by IsCompletedSuccessfully.
+dotnet_diagnostic.VSTHRD002.severity = suggestion
 dotnet_diagnostic.VSTHRD100.severity = warning
 dotnet_diagnostic.VSTHRD101.severity = warning
-dotnet_diagnostic.VSTHRD103.severity = warning
+# VSTHRD103: duplicate of CA1849, which reports a superset of blocking calls in async code
+dotnet_diagnostic.VSTHRD103.severity = none
 dotnet_diagnostic.VSTHRD107.severity = warning
-dotnet_diagnostic.VSTHRD110.severity = warning
-dotnet_diagnostic.VSTHRD114.severity = warning
+# VSTHRD110: duplicate of MA0134, which costs a tenth as much
+dotnet_diagnostic.VSTHRD110.severity = none
+# VSTHRD114: duplicate of MA0022
+dotnet_diagnostic.VSTHRD114.severity = none
 
 # --- Security ---
 
 dotnet_diagnostic.CA5350.severity = warning
 dotnet_diagnostic.CA5351.severity = warning
-dotnet_diagnostic.CA5359.severity = warning
+# CA5359: keeps the error severity of the disabled MA0039
+dotnet_diagnostic.CA5359.severity = error
 dotnet_diagnostic.CA5360.severity = warning
 dotnet_diagnostic.CA5364.severity = warning
 dotnet_diagnostic.CA5379.severity = warning
@@ -265,13 +272,14 @@ dotnet_diagnostic.MA0021.severity = warning
 dotnet_diagnostic.MA0022.severity = warning
 dotnet_diagnostic.MA0024.severity = warning
 dotnet_diagnostic.MA0037.severity = error
-dotnet_diagnostic.MA0039.severity = error
+# MA0039: duplicate of CA5359
+dotnet_diagnostic.MA0039.severity = none
 dotnet_diagnostic.MA0047.severity = warning
 
 # --- Style & maintainability ---
 
-# RCS1021: Convert lambda expression body to expression-body
-dotnet_diagnostic.RCS1021.severity = silent
+# RCS1021: Convert lambda expression body to expression-body (duplicate of IDE0053)
+dotnet_diagnostic.RCS1021.severity = none
 # CSharpier owns wrapping, indentation, braces, and accessor layout.
 # Roslynator.Formatting.Analyzers adds structural blank lines that CSharpier preserves.
 roslynator_max_line_length = 120
@@ -292,8 +300,8 @@ dotnet_diagnostic.RCS0010.severity = suggestion
 dotnet_diagnostic.RCS0012.severity = none
 # RCS0045: Use line feed as newline
 dotnet_diagnostic.RCS0045.severity = suggestion
-# RCS0046: Use spaces instead of tabs
-dotnet_diagnostic.RCS0046.severity = suggestion
+# RCS0046: Use spaces instead of tabs (CSharpier owns indentation and trailing whitespace)
+dotnet_diagnostic.RCS0046.severity = none
 # RCS0056: A line is too long
 # CSharpier owns line width; what it cannot wrap is literals and inline suppression reasons.
 dotnet_diagnostic.RCS0056.severity = none
@@ -751,6 +759,200 @@ resharper_unused_type_parameter_highlighting = suggestion
 # This mirrors the SDK's injected Headless.NET.Sdk.Tests.editorconfig (which
 # the compiler honors but ReSharper/Rider/inspectcode cannot see).
 ##########################################
+
+# --- Single keeper per concern ---
+#
+# Each rule below duplicates a kept rule (named in the comment), is a no-op outside
+# Visual Studio extensions, or keeps the severity of a duplicate it replaced. One finding per
+# defect, and the duplicates no longer cost analyzer time.
+# CA1311: duplicate of MA0011 which has a code fix
+dotnet_diagnostic.CA1311.severity = none
+# RCS1155: duplicate of CA1862
+dotnet_diagnostic.RCS1155.severity = none
+# RCS1156: duplicate of CA1820
+dotnet_diagnostic.RCS1156.severity = none
+# MA0042: duplicate of CA1849, which reports a superset of blocking calls in async code
+dotnet_diagnostic.MA0042.severity = none
+# VSTHRD104: Visual Studio JoinableTaskFactory-oriented; VSTHRD002 reports the same synchronous waits
+dotnet_diagnostic.VSTHRD104.severity = none
+# MA0147: duplicate of VSTHRD100/VSTHRD101
+dotnet_diagnostic.MA0147.severity = none
+# MA0129: duplicate of VSTHRD107
+dotnet_diagnostic.MA0129.severity = none
+# RCS1229: duplicate of AsyncFixer04/MA0100
+dotnet_diagnostic.RCS1229.severity = none
+# VSTHRD105: duplicate of CA2008
+dotnet_diagnostic.VSTHRD105.severity = none
+# EPC14: inert without an assembly ConfigureAwait policy; CA2007 owns ConfigureAwait
+dotnet_diagnostic.EPC14.severity = none
+# EPC15: inert without an assembly ConfigureAwait policy; CA2007 owns ConfigureAwait
+dotnet_diagnostic.EPC15.severity = none
+# MT1000: duplicate of MA0064
+dotnet_diagnostic.MT1000.severity = none
+# MT1001: duplicate of CA2002
+dotnet_diagnostic.MT1001.severity = none
+# MT1002: duplicate of CA2002
+dotnet_diagnostic.MT1002.severity = none
+# RCS1059: duplicate of MA0064/CA2002
+dotnet_diagnostic.RCS1059.severity = none
+# IDE0330: duplicate of MA0158
+dotnet_diagnostic.IDE0330.severity = none
+# MA0027: duplicate of CA2200
+dotnet_diagnostic.MA0027.severity = none
+# RCS1044: duplicate of CA2200
+dotnet_diagnostic.RCS1044.severity = none
+# ERP021: duplicate of CA2200
+dotnet_diagnostic.ERP021.severity = none
+# RCS1075: duplicate of ERP022, which reports every unobserving catch-all
+dotnet_diagnostic.RCS1075.severity = none
+# MA0043: duplicate of CA1507
+dotnet_diagnostic.MA0043.severity = none
+# RCS1015: duplicate of CA1507
+dotnet_diagnostic.RCS1015.severity = none
+# CA2208: duplicate of MA0015, which reports more cases
+dotnet_diagnostic.CA2208.severity = none
+# MA0014: duplicate of CA2201
+dotnet_diagnostic.MA0014.severity = none
+# MA0013: duplicate of CA1058
+dotnet_diagnostic.MA0013.severity = none
+# MA0072: duplicate of CA2219
+dotnet_diagnostic.MA0072.severity = none
+# MA0086: duplicate of CA1065
+dotnet_diagnostic.MA0086.severity = none
+# MA0131: duplicate of CA2264
+dotnet_diagnostic.MA0131.severity = none
+# RCS1227: duplicate of MA0050
+dotnet_diagnostic.RCS1227.severity = none
+# MA0010: duplicate of CA1018
+dotnet_diagnostic.MA0010.severity = none
+# RCS1203: duplicate of CA1018
+dotnet_diagnostic.RCS1203.severity = none
+# MA0036: duplicate of CA1052
+dotnet_diagnostic.MA0036.severity = none
+# RCS1102: duplicate of CA1052
+dotnet_diagnostic.RCS1102.severity = none
+# CA1012: duplicate of MA0017, which also covers internal constructors
+dotnet_diagnostic.CA1012.severity = none
+# RCS1160: duplicate of MA0017, which also covers internal constructors
+dotnet_diagnostic.RCS1160.severity = none
+# MA0053: duplicate of CA1852 (the enforced sealing rule)
+dotnet_diagnostic.MA0053.severity = none
+# RCS1158: duplicate of CA1000
+dotnet_diagnostic.RCS1158.severity = none
+# RCS1159: duplicate of CA1003
+dotnet_diagnostic.RCS1159.severity = none
+# RCS1204: duplicate of MA0019
+dotnet_diagnostic.RCS1204.severity = none
+# RCS1110: duplicate of MA0047
+dotnet_diagnostic.RCS1110.severity = none
+# CA1050: duplicate of MA0047, which also reports internal types outside a namespace
+dotnet_diagnostic.CA1050.severity = none
+# MA0057: duplicate of CA1710
+dotnet_diagnostic.MA0057.severity = none
+# MA0058: duplicate of CA1710
+dotnet_diagnostic.MA0058.severity = none
+# MA0059: duplicate of CA1710
+dotnet_diagnostic.MA0059.severity = none
+# RCS1234: duplicate of CA1069
+dotnet_diagnostic.RCS1234.severity = none
+# MA0062: duplicate of CA2217
+dotnet_diagnostic.MA0062.severity = none
+# MA0095: duplicate of CA1067
+dotnet_diagnostic.MA0095.severity = none
+# MA0069: duplicate of CA2211
+dotnet_diagnostic.MA0069.severity = none
+# MA0070: duplicate of CA1041
+dotnet_diagnostic.MA0070.severity = none
+# CA2214: duplicate of MA0056, which also covers virtual properties and inherited members
+dotnet_diagnostic.CA2214.severity = none
+# MA0033: duplicate of CA2259
+dotnet_diagnostic.MA0033.severity = none
+# MA0082: duplicate of CA2242
+dotnet_diagnostic.MA0082.severity = none
+# RCS1193: duplicate of MA0081
+dotnet_diagnostic.RCS1193.severity = none
+# MA0005: duplicate of CA1825
+dotnet_diagnostic.MA0005.severity = none
+# MA0029: duplicate of RCS1077
+dotnet_diagnostic.MA0029.severity = none
+# MA0078: duplicate of RCS1077
+dotnet_diagnostic.MA0078.severity = none
+# MA0098: duplicate of RCS1246
+dotnet_diagnostic.MA0098.severity = none
+# MA0110: duplicate of SYSLIB1045 (Regex source generator)
+dotnet_diagnostic.MA0110.severity = none
+# RCS1186: contradicts SYSLIB1045: recommends a cached Regex instance over the source generator
+dotnet_diagnostic.RCS1186.severity = none
+# RCS1058: duplicate of IDE0054
+dotnet_diagnostic.RCS1058.severity = none
+# RCS1104: duplicate of IDE0075
+dotnet_diagnostic.RCS1104.severity = none
+# RCS1084: duplicate of IDE0029
+dotnet_diagnostic.RCS1084.severity = none
+# RCS1032: duplicate of IDE0047
+dotnet_diagnostic.RCS1032.severity = none
+# RCS1221: duplicate of IDE0019
+dotnet_diagnostic.RCS1221.severity = none
+# RCS1085: duplicate of IDE0032
+dotnet_diagnostic.RCS1085.severity = none
+# RCS1169: duplicate of IDE0044
+dotnet_diagnostic.RCS1169.severity = none
+# RCS1244: duplicate of IDE0034
+dotnet_diagnostic.RCS1244.severity = none
+# RCS1129: duplicate of CA1805
+dotnet_diagnostic.RCS1129.severity = none
+# RCS1187: duplicate of CA1802
+dotnet_diagnostic.RCS1187.severity = none
+# MA0044: duplicate of RCS1097
+dotnet_diagnostic.MA0044.severity = none
+# RCS1211: duplicate of MA0071
+dotnet_diagnostic.RCS1211.severity = none
+# RCS1033: duplicate of MA0073
+dotnet_diagnostic.RCS1033.severity = none
+# RCS1049: duplicate of MA0073
+dotnet_diagnostic.RCS1049.severity = none
+# RCS1043: duplicate of MA0204
+dotnet_diagnostic.RCS1043.severity = none
+# RCS1251: duplicate of MA0206
+dotnet_diagnostic.RCS1251.severity = none
+# RCS1195: duplicate of MA0205
+dotnet_diagnostic.RCS1195.severity = none
+# MA0090: duplicate of RCS1259
+dotnet_diagnostic.MA0090.severity = none
+# MA0184: duplicate of RCS1214
+dotnet_diagnostic.MA0184.severity = none
+# RCS1037: CSharpier owns indentation and trailing whitespace
+dotnet_diagnostic.RCS1037.severity = none
+# MA0007: conflicts with CSharpier trailing-comma formatting
+dotnet_diagnostic.MA0007.severity = none
+# VSTHRD001: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
+dotnet_diagnostic.VSTHRD001.severity = none
+# VSTHRD004: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
+dotnet_diagnostic.VSTHRD004.severity = none
+# VSTHRD010: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
+dotnet_diagnostic.VSTHRD010.severity = none
+# VSTHRD011: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
+dotnet_diagnostic.VSTHRD011.severity = none
+# VSTHRD012: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
+dotnet_diagnostic.VSTHRD012.severity = none
+# VSTHRD102: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
+dotnet_diagnostic.VSTHRD102.severity = none
+# VSTHRD106: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
+dotnet_diagnostic.VSTHRD106.severity = none
+# VSTHRD108: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
+dotnet_diagnostic.VSTHRD108.severity = none
+# VSTHRD109: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
+dotnet_diagnostic.VSTHRD109.severity = none
+# VSTHRD112: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
+dotnet_diagnostic.VSTHRD112.severity = none
+# VSTHRD113: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
+dotnet_diagnostic.VSTHRD113.severity = none
+# VSTHRD115: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
+dotnet_diagnostic.VSTHRD115.severity = none
+# CA2002: keeps the error severity of the disabled MT1001/MT1002
+dotnet_diagnostic.CA2002.severity = error
+# MA0064: keeps the error severity of the disabled MT1000
+dotnet_diagnostic.MA0064.severity = error
 
 [tests/**/*.cs]
 

@@ -56,6 +56,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
         "configurations/editorconfig.txt",
         "configurations/Headless.NET.Sdk.Analyzers.editorconfig",
         "configurations/Headless.NET.Sdk.EnforceConfigureAwait.editorconfig",
+        "configurations/Headless.NET.Sdk.GuardClauses.editorconfig",
         "configurations/Headless.NET.Sdk.SingleFileApp.editorconfig",
         "configurations/Headless.NET.Sdk.Tests.editorconfig",
         "configurations/template.csharpierignore",
@@ -74,7 +75,6 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture)
     )
     {
         ["AsyncFixer"] = "[2.1.0]",
-        ["Asyncify"] = "[0.9.7]",
         ["ErrorProne.NET.CoreAnalyzers"] = "[0.1.2]",
         ["Meziantou.Analyzer"] = "[3.0.290]",
         ["Microsoft.CodeAnalysis.BannedApiAnalyzers"] = "[5.6.0]",

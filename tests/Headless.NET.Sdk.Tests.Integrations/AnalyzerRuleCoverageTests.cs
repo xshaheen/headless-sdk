@@ -13,7 +13,7 @@ using Xunit;
 namespace Headless.NET.Sdk.Tests.Integrations;
 
 // Guards against analyzer version bumps silently introducing rules nobody made a severity
-// decision for: every diagnostic the ten mandatory analyzer packages can report must either be
+// decision for: every diagnostic the nine mandatory analyzer packages can report must either be
 // tuned in a shipped editorconfig or explicitly recorded in AnalyzerRulesAtPackageDefaults.txt
 // (a conscious "package default accepted" review record). Pure source/cache check - no packaging
 // fixture - modeled as a gate on Meziantou.NET.Sdk's generated-config approach.
@@ -24,7 +24,6 @@ public sealed class AnalyzerRuleCoverageTests
         "Meziantou.Analyzer",
         "Microsoft.CodeAnalysis.BannedApiAnalyzers",
         "AsyncFixer",
-        "Asyncify",
         "Microsoft.VisualStudio.Threading.Analyzers",
         "SmartAnalyzers.MultithreadingAnalyzer",
         "Roslynator.Analyzers",
@@ -42,7 +41,6 @@ public sealed class AnalyzerRuleCoverageTests
     private static readonly string[] MandatoryAnalyzerRuleIdPrefixes =
     [
         "AsyncFixer",
-        "Asyncify",
         "EPC",
         "ERP",
         "MA",
@@ -59,6 +57,7 @@ public sealed class AnalyzerRuleCoverageTests
         "Headless.NET.Sdk.Tests.editorconfig",
         "Headless.NET.Sdk.SingleFileApp.editorconfig",
         "Headless.NET.Sdk.EnforceConfigureAwait.editorconfig",
+        "Headless.NET.Sdk.GuardClauses.editorconfig",
     ];
 
     [Fact]
@@ -80,7 +79,7 @@ public sealed class AnalyzerRuleCoverageTests
         }
 
         // Sanity floor: reflection-loading silently finding nothing would make the gate useless.
-        Assert.True(allRules.Count > 450, $"Expected 450+ rules across the ten analyzers, found {allRules.Count}.");
+        Assert.True(allRules.Count > 450, $"Expected 450+ rules across the nine analyzers, found {allRules.Count}.");
 
         var uncovered = allRules.Where(rule => !tuned.Contains(rule.Key) && !reviewed.Contains(rule.Key)).ToList();
         var staleReviewed = reviewed
@@ -132,7 +131,7 @@ public sealed class AnalyzerRuleCoverageTests
             "RCS0010=suggestion",
             "RCS0012=none",
             "RCS0045=suggestion",
-            "RCS0046=suggestion",
+            "RCS0046=none",
             "RCS0056=none",
             "RCS0057=suggestion",
             "RCS0058=suggestion",

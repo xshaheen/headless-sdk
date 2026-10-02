@@ -24,7 +24,6 @@ public sealed class HeadlessSdkPackageFixture : IAsyncLifetime
     internal static IReadOnlyList<string> MandatoryAnalyzerPackageIds { get; } =
     [
         "AsyncFixer",
-        "Asyncify",
         "ErrorProne.NET.CoreAnalyzers",
         "Meziantou.Analyzer",
         "Microsoft.CodeAnalysis.BannedApiAnalyzers",
