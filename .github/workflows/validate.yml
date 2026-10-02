@@ -1,0 +1,177 @@
+name: Validate
+
+# Build, pack, and test the six packages. Shared by CI and Publish so a release ships exactly what
+# CI validates. Packing runs first and alone; the Linux suite shards and the platform smoke jobs
+# then all consume the same immutable "packages" artifact in parallel.
+
+on:
+  workflow_call:
+    inputs:
+      include-macos:
+        description: Also run the macOS platform smoke job.
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: "true"
+  DOTNET_NOLOGO: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+  CONFIGURATION: Release
+  MINVERBUILDMETADATA: build.${{ github.run_number }}
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+  PACKAGES_DIR: ./artifacts/packages-results
+
+jobs:
+  pack:
+    name: Build and pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: ./global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', 'global.json', 'nuget.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore headless-sdk.slnx
+
+      - name: Build
+        run: dotnet build headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -p:GeneratePackageOnBuild=false -v:minimal -nologo
+
+      - name: Pack immutable release artifacts
+        run: dotnet pack headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build --output "${{ env.PACKAGES_DIR }}"
+
+      - name: Record package hashes
+        run: |
+          cd "${{ env.PACKAGES_DIR }}"
+          shopt -s nullglob
+          package_ids=(
+            Headless.NET.Sdk
+            Headless.NET.Sdk.Web
+            Headless.NET.Sdk.Test
+            Headless.NET.Sdk.Razor
+            Headless.NET.Sdk.BlazorWebAssembly
+            Headless.NET.Sdk.WindowsDesktop
+          )
+          nupkgs=(./*.nupkg)
+          snupkgs=(./*.snupkg)
+          if [ ${#nupkgs[@]} -ne ${#package_ids[@]} ]; then
+            echo "Expected exactly ${#package_ids[@]} package artifacts; found ${#nupkgs[@]}."
+            exit 1
+          fi
+          if [ ${#snupkgs[@]} -ne 0 ]; then
+            echo "Unexpected symbol packages found; the release contract uses embedded symbols."
+            exit 1
+          fi
+          sha256sum "${nupkgs[@]}" | sort --key=2 > SHA256SUMS
+
+          : > PACKAGE_MANIFEST.tsv
+          for package_id in "${package_ids[@]}"; do
+            # NuGet versions begin with a digit. Requiring it prevents the base
+            # Headless.NET.Sdk ID from also matching every satellite package.
+            matches=("./${package_id}."[0-9]*.nupkg)
+            if [ ${#matches[@]} -ne 1 ]; then
+              echo "Expected exactly one package for ${package_id}; found ${#matches[@]}."
+              exit 1
+            fi
+            filename="${matches[0]#./}"
+            version="${filename#"${package_id}."}"
+            version="${version%.nupkg}"
+            printf '%s\t%s\n' "$package_id" "$version" >> PACKAGE_MANIFEST.tsv
+          done
+
+      - name: Upload packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: packages
+          path: ${{ env.PACKAGES_DIR }}
+          if-no-files-found: error
+
+  tests:
+    name: Tests (${{ matrix.shard }})
+    needs: pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # The second shard is the complement of the first, so a new test class always runs in
+        # exactly one shard without editing this list.
+        include:
+          - shard: sdk
+            filter: --filter-class "Headless.NET.Sdk.Tests.Integrations.Sdk*"
+          - shard: contract
+            filter: --filter-not-class "Headless.NET.Sdk.Tests.Integrations.Sdk*"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: ./global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', 'global.json', 'nuget.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Download immutable packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: packages
+          path: ${{ env.PACKAGES_DIR }}
+
+      - name: Restore test harness
+        run: dotnet restore tests/Headless.NET.Sdk.Tests.Integrations/Headless.NET.Sdk.Tests.Integrations.csproj
+
+      - name: Build test harness
+        run: dotnet build tests/Headless.NET.Sdk.Tests.Integrations/Headless.NET.Sdk.Tests.Integrations.csproj --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -v:minimal -nologo
+
+      - name: Test
+        # Microsoft Testing Platform runner (global.json "test.runner"). The integration project
+        # references Microsoft.Testing.Extensions.TrxReport, so everything after "--" is forwarded
+        # to the platform: --report-trx emits the trx and --results-directory pins it to a known path.
+        env:
+          HEADLESS_PACKAGES_DIR: ${{ github.workspace }}/artifacts/packages-results
+        run: dotnet test tests/Headless.NET.Sdk.Tests.Integrations/Headless.NET.Sdk.Tests.Integrations.csproj --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build -- ${{ matrix.filter }} --minimum-expected-tests 1 --report-trx --results-directory ./artifacts/test-results
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results-${{ matrix.shard }}
+          path: ./artifacts/test-results
+          if-no-files-found: ignore
+
+  platform-smoke:
+    needs: pack
+    uses: ./.github/workflows/platform-smoke.yml
+    with:
+      include-macos: ${{ inputs.include-macos }}

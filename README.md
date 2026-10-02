@@ -490,7 +490,7 @@ HEADLESS_PACKAGES_DIR="$PWD/artifacts/packages-$version" \
 
 Pack under a unique version each time. The integration tests refuse a package version that is already in the NuGet cache, because the cached copy would shadow the packages under test.
 
-The publish workflow promotes the exact packages produced by its build job, verifies SHA-256 hashes before upload, requires Linux, Windows, and macOS validation, and fails on duplicate package versions. Tag and manual runs publish to GitHub Packages. A published GitHub Release builds the same validated package family for NuGet.org, then pauses for approval in the protected `NuGet Release` environment before any push. Neither feed provides an atomic multi-package transaction: if a release stops after publishing only part of the family, abandon that version, fix the cause, and publish a new version. Never retry the same partial version or bypass a publication gate.
+The publish workflow promotes the exact packages produced by its build job, verifies SHA-256 hashes before upload, requires Linux, Windows, and macOS validation, and fails on duplicate package versions. Pull-request and `main` CI validates on Linux and Windows. Tag and manual runs publish to GitHub Packages. A published GitHub Release does not rebuild: it waits for its tag's push run to succeed, verifies that run's package family against the release tag, then pauses for approval in the protected `NuGet Release` environment before any push. Neither feed provides an atomic multi-package transaction: if a release stops after publishing only part of the family, abandon that version, fix the cause, and publish a new version. Never retry the same partial version or bypass a publication gate.
 
 ## Repository layout
 

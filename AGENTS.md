@@ -34,7 +34,8 @@ Use the `make` targets; `make help` lists them.
 
 ## CI and releases
 
-- `main` gates on the `final-status` job in `ci.yml`. Add every new CI job to its `needs`.
+- `main` gates on the `final-status` job in `ci.yml`. CI and Publish both call `validate.yml`, which packs once and then runs the Linux test shards and the platform smoke jobs in parallel. The macOS smoke job runs only in Publish. Put a new validation job in `validate.yml`; add any other new CI job to the `needs` of `final-status`.
+- The Linux suite runs in two shards: `Sdk*` test classes, and every other class. xUnit runs the tests of one class serially, so keep a slow area in its own class rather than growing an existing one.
 - Release tags have no `v` prefix: `0.4.3`, not `v0.4.3`. MinVer ignores prefixed tags.
-- Pushing a tag publishes to GitHub Packages (`publish.yml`). The NuGet.org job runs only for a published GitHub Release and waits for environment approval. Publishing is external and irreversible: push a tag or create a release only when explicitly asked.
+- Pushing a tag publishes to GitHub Packages (`publish.yml`). The NuGet.org job runs only for a published GitHub Release and waits for environment approval. It does not rebuild: it publishes the packages from that tag's successful push run. Publishing is external and irreversible: push a tag or create a release only when explicitly asked.
 - A version is published once. If a release goes out partly, inspect both registries and ship the next version.

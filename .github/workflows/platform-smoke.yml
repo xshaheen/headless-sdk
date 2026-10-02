@@ -2,6 +2,11 @@ name: Platform smoke
 
 on:
   workflow_call:
+    inputs:
+      include-macos:
+        description: Also build on macOS. Publish sets it so every released version is validated on Linux, Windows, and macOS.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -20,13 +25,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: Windows
-            os: windows-latest
-            test_class: "*WindowsPlatformContractTests"
-          - name: macOS
-            os: macos-latest
-            test_class: "*MacOsPlatformContractTests"
+        # Windows always runs: it is the only real WPF and Windows Forms build of the WindowsDesktop
+        # satellite. The macOS leg is a single base-consumer build that rarely diverges from Linux,
+        # so it runs only where the release contract requires it.
+        include: ${{ fromJSON(inputs.include-macos && '[{"name":"Windows","os":"windows-latest","test_class":"*WindowsPlatformContractTests"},{"name":"macOS","os":"macos-latest","test_class":"*MacOsPlatformContractTests"}]' || '[{"name":"Windows","os":"windows-latest","test_class":"*WindowsPlatformContractTests"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
 

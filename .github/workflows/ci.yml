@@ -36,92 +36,25 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
-  DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: "true"
-  DOTNET_NOLOGO: "true"
-  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
-  CONFIGURATION: Release
-  MINVERBUILDMETADATA: build.${{ github.run_number }}
-  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
-  PACKAGES_DIR: ./artifacts/packages-results
-
 jobs:
   validate:
-    name: Build, test, and pack
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
-        with:
-          global-json-file: ./global.json
-
-      - name: Cache NuGet packages
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ${{ env.NUGET_PACKAGES }}
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', 'global.json', 'nuget.config') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Restore
-        run: dotnet restore headless-sdk.slnx
-
-      - name: Build
-        run: dotnet build headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-incremental -p:GeneratePackageOnBuild=false -v:minimal -nologo
-
-      - name: Pack immutable release artifacts
-        run: dotnet pack headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build --output "${{ env.PACKAGES_DIR }}"
-
-      - name: Test
-        # Microsoft Testing Platform runner (global.json "test.runner"). The integration project
-        # references Microsoft.Testing.Extensions.TrxReport, so everything after "--" is forwarded
-        # to the platform: --report-trx emits the trx and --results-directory pins it to a known path.
-        env:
-          HEADLESS_PACKAGES_DIR: ${{ github.workspace }}/artifacts/packages-results
-        run: dotnet test headless-sdk.slnx --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build -- --report-trx --results-directory ./artifacts/test-results
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: test-results
-          path: ./artifacts/test-results
-          if-no-files-found: ignore
-
-      - name: Upload packages
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: packages
-          path: ${{ env.PACKAGES_DIR }}
-          if-no-files-found: error
-
-  platform-smoke:
-    needs: validate
-    uses: ./.github/workflows/platform-smoke.yml
+    uses: ./.github/workflows/validate.yml
 
   final-status:
     name: Final status
     if: always()
     needs:
       - validate
-      - platform-smoke
     runs-on: ubuntu-latest
 
     steps:
+      # The validate call fails if any of its jobs (pack, every test shard, every platform smoke
+      # leg) fails, so its single result covers them all.
       - name: Require every validation job
         env:
           VALIDATE_RESULT: ${{ needs.validate.result }}
-          PLATFORM_RESULT: ${{ needs.platform-smoke.result }}
         run: |
-          if [[ "$VALIDATE_RESULT" != "success" || "$PLATFORM_RESULT" != "success" ]]; then
-            echo "Validation failed: validate=$VALIDATE_RESULT platform-smoke=$PLATFORM_RESULT"
+          if [[ "$VALIDATE_RESULT" != "success" ]]; then
+            echo "Validation failed: validate=$VALIDATE_RESULT"
             exit 1
           fi
