@@ -12,7 +12,7 @@ Release notes are maintained in [GitHub Releases](https://github.com/xshaheen/he
   is identical; the documented first-clean-restore bootstrap is required for PackageReference mode.
 - Package assets apply only to the project that opts in. The packages do not ship `buildTransitive` assets.
 - Multi-targeting outer builds remain supported through `buildMultiTargeting`; inner builds receive the normal `build` contract exactly once.
-- Named quality policies are authoritative. The analyzer infrastructure and CI quality gates are not consumer opt-outs; the two shipped banned-symbol lists retain the documented whole-policy and per-list opt-outs.
+- Named quality policies are authoritative. The analyzer infrastructure and CI quality gates are not consumer opt-outs; the two shipped banned-symbol lists retain the documented whole-policy and per-list opt-outs. A local inner loop may skip analyzers during build or live analysis, but CI and AI-agent builds always run them.
 
 ## Package family
 
@@ -195,7 +195,6 @@ The following analyzer packages are injected as private, implicit dependencies f
 - `Meziantou.Analyzer`
 - `Microsoft.CodeAnalysis.BannedApiAnalyzers`
 - `AsyncFixer`
-- `Asyncify`
 - `Microsoft.VisualStudio.Threading.Analyzers`
 - `SmartAnalyzers.MultithreadingAnalyzer`
 - `Roslynator.Analyzers`
@@ -205,7 +204,7 @@ The following analyzer packages are injected as private, implicit dependencies f
 
 The sole self-reference exception is a project whose evaluated `PackageId` is
 `Meziantou.Analyzer`; Headless omits that one analyzer reference so the analyzer package can use
-the SDK without depending on itself. The other nine analyzer references and all mandatory policy
+the SDK without depending on itself. The other eight analyzer references and all mandatory policy
 still apply.
 
 `Roslynator.Formatting.Analyzers` complements CSharpier without becoming a second formatter. The
@@ -220,15 +219,27 @@ literals and inline suppression reasons that no line-length warning can fix.
 
 The bundled general, Newtonsoft.Json, and guard-clause banned-symbol lists are enabled by default. The guard-clause list bans the BCL throw helpers `ArgumentNullException.ThrowIfNull`, `ArgumentException.ThrowIfNullOrEmpty` and `ThrowIfNullOrWhiteSpace`, every `ArgumentOutOfRangeException.ThrowIf*`, and `ObjectDisposedException.ThrowIf`, and points to the `Headless.Checks` `Argument.*` and `Ensure.*` guards instead. Consumers can disable the complete banned-symbol policy with `DisableSupportBannedSymbols=true`, or disable any list independently through `IncludeDefaultBannedSymbols=false`, `BannedNewtonsoftJsonSymbols=false`, and `BannedGuardClauseSymbols=false`. The `Microsoft.CodeAnalysis.BannedApiAnalyzers` package remains part of the analyzer infrastructure.
 
-The SDK also ships `vs-threading.SyncMethodsToExcludeFromVSTHRD103.Headless.txt`, which stops
-VSTHRD103 from reporting synchronous calls that do no I/O and no blocking wait inside async methods:
-EF Core `Add`/`AddRange` and `IDbContextFactory.CreateDbContext`, `MemoryStream`, `StringReader`, and
-`StringWriter` operations, `CancellationTokenSource.Cancel`, `Timer.Dispose`, and xUnit/NUnit
-assertions over synchronous delegates. The analyzer merges every
-`vs-threading.SyncMethodsToExcludeFromVSTHRD103*.txt` additional file, so a consumer adds its own
-exclusions in a separately named file.
+Each defect class is reported by one rule. Where packages overlap, the SDK keeps the rule with the
+broader trigger set or a code fix and sets the duplicates to `none`. Examples: CA1849 reports blocking
+calls in async code, replacing VSTHRD103, AsyncFixer02, and MA0042. MA0001, MA0074, and MA0011
+report culture and comparison defaults, replacing CA1304, CA1305, CA1307, CA1309, CA1310, and CA1311.
+VSTHRD002 reports synchronous waits as a suggestion, because most are deliberate sync bridges. The Visual Studio extension rules that depend on
+JoinableTaskFactory (VSTHRD001, VSTHRD004, VSTHRD010, VSTHRD011, VSTHRD012, VSTHRD102, VSTHRD106,
+VSTHRD108, VSTHRD109, VSTHRD112, VSTHRD113, and VSTHRD115) are off. VSTHRD010 alone cost 7% of
+analyzer time in a 434-project solution. The comment beside each `none` entry in
+`Headless.NET.Sdk.Analyzers.editorconfig` names the rule that replaces it. A consumer `.editorconfig`
+can re-enable any of them. While the guard-clause banned-symbol list is active, CA1510 through CA1513
+are off, because they recommend the helpers that the list bans.
 
-The SDK owns the versions of all ten implicit analyzer references. Central Package Management
+The SDK also ships `vs-threading.SyncMethodsToExcludeFromVSTHRD103.Headless.txt` for consumers that
+re-enable VSTHRD103. It stops VSTHRD103 from reporting synchronous calls that do no I/O and no
+blocking wait inside async methods: EF Core `Add`/`AddRange` and `IDbContextFactory.CreateDbContext`,
+`MemoryStream`, `StringReader`, and `StringWriter` operations, `CancellationTokenSource.Cancel`,
+`Timer.Dispose`, and xUnit/NUnit assertions over synchronous delegates. The analyzer merges every
+`vs-threading.SyncMethodsToExcludeFromVSTHRD103*.txt` additional file, so a consumer adds its own
+exclusions in a separately named file. CA1849 has no exclusion mechanism.
+
+The SDK owns the versions of all nine implicit analyzer references. Central Package Management
 consumers must not add `PackageVersion` entries for those analyzer IDs. SDK-form consumption rejects
 them as SDK-defined implicit references with NU1009; PackageReference consumption rejects conflicting
 central versions against the package family's exact dependency ranges.
@@ -263,6 +274,9 @@ the listed default; explicit values win unless the behavior is identified as man
 | `MinimumExpectedTests` | `1` | Sets the MTP minimum-test guard. Set `0` to omit only the SDK-supplied `--minimum-expected-tests` argument; this does not guarantee that a zero-test run succeeds. |
 | `EnableXunitEntryPointDisableWarnings` | `true` when a supported xUnit v3 package is directly referenced | xUnit v3 4.0.1 and later wrap their generated entry point and AOT source in `#pragma warning disable` when `XUNIT_GENERATED_DISABLE_WARNINGS` is defined, so analyzer warnings cannot fail a build on code the consumer does not own. Set `false` to prevent the SDK from adding the constant. |
 | `OptimizeTestRun` | enabled unless `false` | Set `false` to keep analyzers enabled during MTP's test-build phase. |
+| `EnableTestDumps` | `true` on CI, otherwise unset | Adds the MTP `--crashdump` and `--hangdump` (10-minute timeout) arguments when `true`. Each extension relaunches the test host under a controller process, which costs about 0.2 s per local run. |
+| `RunAnalyzersDuringBuild` | `true` | Set `false` in a local inner loop to compile without analyzers, about 40% faster; editor live analysis still reports findings. CI and AI-agent builds force it back to `true`. |
+| `RunAnalyzersDuringLiveAnalysis` | `true` | Set `false` locally to stop editor background analysis while builds still analyze. CI and AI-agent builds force it back to `true`. |
 | `DisableSupportPackageInformation` | `false` | Set `true` to opt out of Headless package metadata and symbol policy. |
 | `SearchReadmeFileAbove` | `false` | Searches parent directories for a package README. |
 | `DisableReadme` | `false` | Prevents automatic package README discovery and packing. |
@@ -285,9 +299,28 @@ the listed default; explicit values win unless the behavior is identified as man
 | `HeadlessCopyGitAttributesToSolutionDir` | master selector | Selects only `.gitattributes`. |
 | `HeadlessOverwriteConfigFiles` | `false` | Allows the explicit scaffold target to replace existing files. |
 
-The explicit target framework, ten analyzer packages, analyzer configuration, CI warning gate,
+The explicit target framework, nine analyzer packages, analyzer configuration, CI and AI-agent analyzer execution, CI warning gate,
 NuGet audit policy, and SDK-owned MTP extension
 versions are mandatory policy. Legacy analyzer/configuration opt-out names do not disable them.
+
+### Inner-loop performance
+
+Analyzers cost roughly 40% of compile time on a typical library. A developer who wants faster
+local builds can keep analysis in the editor and skip it during build. Set the property in
+`Directory.Build.props` for the whole team, or in a user-local props file that it imports:
+
+```xml
+<PropertyGroup>
+  <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+</PropertyGroup>
+```
+
+Findings still reach the developer through the editor, and CI and AI-agent builds enforce them.
+Do not pass it as a global property (`-p:` or `Directory.Build.rsp`): a global property overrides
+the CI and AI-agent re-assertion, so those builds would skip analyzers too.
+Keep editor background analysis scoped to open files: that is the default in Visual Studio and in
+VS Code (`dotnet.backgroundAnalysis.analyzerDiagnosticsScope`). In Rider, leave solution-wide
+analysis off on large solutions.
 
 ## CI, restore, and vulnerability policy
 
@@ -322,7 +355,7 @@ Unlike CI detection, this signal is consumer-overridable: set `HeadlessIsLlmCont
 
 ## Test SDK contract
 
-`Headless.NET.Sdk.Test` is Microsoft Testing Platform only. It defaults test hosts to `OutputType=Exe`, `IsTestProject=true`, `IsPackable=false`, and `IsPublishable=false`, and supplies restore-visible MTP extensions for crash dumps, hang dumps, hot reload, retry, TRX reporting, and coverage. Default execution includes TRX output, crash and hang dumps, and a minimum expected test count; coverage is enabled on CI.
+`Headless.NET.Sdk.Test` is Microsoft Testing Platform only. It defaults test hosts to `OutputType=Exe`, `IsTestProject=true`, `IsPackable=false`, and `IsPublishable=false`, and supplies restore-visible MTP extensions for crash dumps, hang dumps, hot reload, retry, TRX reporting, and coverage. Default execution includes TRX output and a minimum expected test count; coverage and crash and hang dumps are enabled on CI.
 
 The test framework remains consumer-selected. For example:
 
@@ -435,6 +468,12 @@ dotnet build -t:HeadlessScaffoldConfigFiles
 ```
 
 Use the `HeadlessCopy*` selectors for individual files and `HeadlessOverwriteConfigFiles=true` only when replacement is intended.
+
+The scaffolded `.editorconfig` carries editor, formatter, and ReSharper settings only. Analyzer
+severities, code-style preferences, and naming rules stay in the injected configs, so an SDK upgrade
+applies them without editing the consumer's `.editorconfig`. A severity line in a consumer
+`.editorconfig` outranks the SDK, so keep only deliberate overrides there. A repository that copied an
+earlier scaffold, which repeated every severity, should delete those copied severity lines.
 
 ## Building and publishing this repository
 

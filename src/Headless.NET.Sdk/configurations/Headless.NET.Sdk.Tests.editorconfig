@@ -1,102 +1,118 @@
 is_global = true
 global_level = 1
 
-# Tests-specific analyzer configuration
-# These rules are relaxed for test code where patterns like mock setup,
-# intentional test fixtures, and cancellation testing are common.
+# Test-project overlay, applied when IsTestProject or IsTestHarnessProject is true. It only relaxes
+# the baseline for patterns that are normal in tests: mock setup, fixtures, and deliberate misuse.
+# Same layout as Headless.NET.Sdk.Analyzers.editorconfig: one section per family, sorted by ID.
 
-# --- Async & threading ---
-
-# CA2012: ValueTask should be directly awaited
-# NSubstitute .Returns(ValueTask.FromResult(...)) is a false positive - each call returns fresh ValueTask
-dotnet_diagnostic.CA2012.severity = none
-# AsyncFixer03/VSTHRD100: Async void method
-# Tests may have intentional async void methods for testing reflection
-dotnet_diagnostic.AsyncFixer03.severity = suggestion
-dotnet_diagnostic.VSTHRD100.severity = suggestion
-# EPC13: Task result should be observed
-# Complex async test patterns may intentionally not observe intermediate tasks
-dotnet_diagnostic.EPC13.severity = suggestion
-# MA0045: Do not use blocking calls in sync method
-# Stream tests verify synchronous behavior explicitly
-dotnet_diagnostic.MA0045.severity = suggestion
-# VSTHRD003: Avoid awaiting foreign Tasks
-# Tests capture tasks for later assertion which is valid test pattern
-dotnet_diagnostic.VSTHRD003.severity = none
-
-# --- Disposal & lifecycle ---
+############################################################
+# .NET code quality (CA)
+# AnalysisMode=All enables every CA rule as a warning; entries change that default.
+############################################################
 
 # CA1001: Types that own disposable fields should be disposable
 dotnet_diagnostic.CA1001.severity = suggestion
-# CA2000: Dispose objects before losing scope
-# Mock setups delegate lifecycle to consuming code; test-scoped objects cleaned up by test framework
-dotnet_diagnostic.CA2000.severity = suggestion
-# CA2213: Disposable fields should be disposed
-# Mock objects and test fixtures often don't need explicit disposal
-dotnet_diagnostic.CA2213.severity = none
-
-# --- Design & API surface ---
-
 # CA1028: Enum Storage should be Int32
 # Tests may intentionally verify non-Int32 enum backing types
 dotnet_diagnostic.CA1028.severity = none
+# CA1707: Identifiers should not contain underscores
+# snake_case test names contain underscores by convention.
+dotnet_diagnostic.CA1707.severity = none
+# CA1720: Identifiers should not contain type names — test names describe the types under test
+dotnet_diagnostic.CA1720.severity = none
+# CA1822: Member can be static
+# Test fixture classes often have instance methods for reflection testing
+dotnet_diagnostic.CA1822.severity = none
+# CA1848: Use the LoggerMessage delegates — irrelevant in test code
+dotnet_diagnostic.CA1848.severity = none
+# CA1849: Call async methods when in an async method — sync APIs are exercised deliberately
+dotnet_diagnostic.CA1849.severity = none
+# CA1859: Use concrete types when possible — tests exercise the abstractions
+dotnet_diagnostic.CA1859.severity = none
+# CA1861: Avoid constant arrays as arguments — theory data readability wins
+dotnet_diagnostic.CA1861.severity = none
+# CA1873: Logging argument evaluation may be expensive
+# Test assertions often inspect ILogger calls directly; suppress this analyzer for test-only code
+dotnet_diagnostic.CA1873.severity = none
+# CA2000: Dispose objects before losing scope
+# Mock setups delegate lifecycle to consuming code; test-scoped objects cleaned up by test framework
+dotnet_diagnostic.CA2000.severity = suggestion
+# CA2012: ValueTask should be directly awaited
+# NSubstitute .Returns(ValueTask.FromResult(...)) is a false positive - each call returns fresh ValueTask
+dotnet_diagnostic.CA2012.severity = none
+# CA2100: Review SQL queries for security vulnerabilities
+# Test fixtures use parameterized cleanup SQL; no user input involved
+dotnet_diagnostic.CA2100.severity = none
+# CA2201: Do not raise reserved exception types
+# Tests verify generic exception handling behavior
+dotnet_diagnostic.CA2201.severity = none
+# CA2213: Disposable fields should be disposed
+# Mock objects and test fixtures often don't need explicit disposal
+dotnet_diagnostic.CA2213.severity = none
 # CA2225: Operator overloads have named alternates
 # Generated primitive types and tests don't need named alternates
 dotnet_diagnostic.CA2225.severity = suggestion
 # CA2227: Collection properties should be read only
 # Test fixtures and serializers may intentionally keep extension-data setters
 dotnet_diagnostic.CA2227.severity = none
+# CA2254: Logging template should not vary between calls — assertion messages do
+dotnet_diagnostic.CA2254.severity = none
 # CA2263: Use the generic overload
 # Tests may intentionally test non-generic overloads
 dotnet_diagnostic.CA2263.severity = suggestion
-# MA0096: IComparable without IEquatable
-# Test helper classes focus on comparison behavior only
-dotnet_diagnostic.MA0096.severity = suggestion
-# AL1003: Should not have non-obsolete empty constructors
-# Generated snapshot files from source generators include these
-dotnet_diagnostic.AL1003.severity = none
-
-# --- Correctness & reliability ---
-
-# CA1508: Avoid dead conditional code
-# Tests intentionally verify edge cases like Equals(null) returning false
-dotnet_diagnostic.CA1508.severity = none
-# CA2201: Do not raise reserved exception types
-# Tests verify generic exception handling behavior
-dotnet_diagnostic.CA2201.severity = none
-# ERP022: Unobserved exception in catch block
-# Specific test cleanup may swallow exceptions intentionally
-dotnet_diagnostic.ERP022.severity = suggestion
-# MA0015: Specify the parameter name in ArgumentException
-# Tests intentionally verify exception type without caring about param name
-dotnet_diagnostic.MA0015.severity = suggestion
-
-# --- Security ---
-
-# CA2100: Review SQL queries for security vulnerabilities
-# Test fixtures use parameterized cleanup SQL; no user input involved
-dotnet_diagnostic.CA2100.severity = none
+# CA5394: Do not use insecure randomness — test data does not need a CSPRNG
+dotnet_diagnostic.CA5394.severity = none
 # CA5398: Avoid hardcoded SslProtocols
 # Tests verify specific TLS protocol configurations work correctly
 dotnet_diagnostic.CA5398.severity = none
 
-# --- Assertions & test frameworks ---
+############################################################
+# .NET code style (IDE)
+# Most IDE rules take their severity from the code-style options further down.
+############################################################
 
-# FAA0002: Use AwesomeAssertions
-# Some tests intentionally use xUnit Assert for specific scenarios
-dotnet_diagnostic.FAA0002.severity = suggestion
-# JSON001: Invalid JSON pattern
-# Tests intentionally use invalid JSON to verify error handling
-dotnet_diagnostic.JSON001.severity = suggestion
-# xUnit1045/xUnit1046: TheoryData type arguments might not be serializable
-# Parameterized tests often use non-serializable types for complex test scenarios
-dotnet_diagnostic.xUnit1045.severity = suggestion
-dotnet_diagnostic.xUnit1046.severity = suggestion
-# xUnit1051: Use TestContext.Current.CancellationToken
-# Tests that test cancellation behavior need manual CancellationTokenSource control
-dotnet_diagnostic.xUnit1051.severity = suggestion
+# IDE0017: Object initialization can be simplified
+# Tests may intentionally test property setters separately from construction
+dotnet_diagnostic.IDE0017.severity = suggestion
+# IDE0022: Use block/expression body for method
+dotnet_diagnostic.IDE0022.severity = none
+# IDE0039: Use local function instead of lambda
+dotnet_diagnostic.IDE0039.severity = none
+# IDE1006: Naming rule violation
+# Tests use the snake_case `should_do_thing` method-naming convention for readability.
+dotnet_diagnostic.IDE1006.severity = none
 
-# --- Reflection ---
+############################################################
+# Meziantou.Analyzer (MA)
+############################################################
+
+# MA0003: Add parameter name to improve readability
+dotnet_diagnostic.MA0003.severity = none
+# MA0015: Specify the parameter name in ArgumentException
+# Tests intentionally verify exception type without caring about param name
+dotnet_diagnostic.MA0015.severity = suggestion
+# MA0076: Do not use implicit culture-sensitive ToString in interpolated strings
+dotnet_diagnostic.MA0076.severity = none
+# MA0096: IComparable without IEquatable
+# Test helper classes focus on comparison behavior only
+dotnet_diagnostic.MA0096.severity = suggestion
+# MA0166: Forward the TimeProvider to methods that take one
+dotnet_diagnostic.MA0166.severity = none
+# MA0176: Optimize Guid creation
+# Guid-creation micro-optimization is irrelevant in test fixtures.
+dotnet_diagnostic.MA0176.severity = none
+
+############################################################
+# Microsoft.VisualStudio.Threading.Analyzers (VSTHRD)
+############################################################
+
+# AsyncFixer03/VSTHRD100: Async void method
+# Tests may have intentional async void methods for testing reflection
+dotnet_diagnostic.VSTHRD100.severity = suggestion
+
+############################################################
+# ReflectionAnalyzers (REFL)
+############################################################
 
 # REFL009/REFL016/REFL017: Reflection member analysis
 # Tests verify reflection behavior on internal/dynamic members
@@ -104,63 +120,44 @@ dotnet_diagnostic.REFL009.severity = suggestion
 dotnet_diagnostic.REFL016.severity = suggestion
 dotnet_diagnostic.REFL017.severity = suggestion
 
-# --- Performance ---
+############################################################
+# ErrorProne.NET.CoreAnalyzers (EPC, ERP)
+############################################################
 
-# MA0176: Optimize Guid creation
-# Guid-creation micro-optimization is irrelevant in test fixtures.
-dotnet_diagnostic.MA0176.severity = none
+# EPC13: Task result should be observed
+# Complex async test patterns may intentionally not observe intermediate tasks
+dotnet_diagnostic.EPC13.severity = suggestion
+# ERP022: Unobserved exception in catch block
+# Specific test cleanup may swallow exceptions intentionally
+dotnet_diagnostic.ERP022.severity = suggestion
 
-# --- Naming ---
+############################################################
+# C# compiler (CS)
+############################################################
 
-# IDE1006: Naming rule violation
-# Tests use the snake_case `should_do_thing` method-naming convention for readability.
-dotnet_diagnostic.IDE1006.severity = none
-# CA1707: Identifiers should not contain underscores
-# snake_case test names contain underscores by convention.
-dotnet_diagnostic.CA1707.severity = none
-
-# --- Test noise (migrated from the former test-project NoWarn) ---
-# severity = none keeps these consumer-overridable; a NoWarn entry would not be.
-
-# IDE0022: Use block/expression body for method
-dotnet_diagnostic.IDE0022.severity = none
 # CS8604: Possible null reference argument — tests intentionally pass nulls at contract edges
 dotnet_diagnostic.CS8604.severity = none
+
+############################################################
+# Analyzers consumers commonly add
+# Rules from packages the SDK does not inject; they apply only when the consumer references the package.
+############################################################
+
+# AL1003: Should not have non-obsolete empty constructors
+# Generated snapshot files from source generators include these
+dotnet_diagnostic.AL1003.severity = none
+# FAA0002: Use AwesomeAssertions
+# Some tests intentionally use xUnit Assert for specific scenarios
+dotnet_diagnostic.FAA0002.severity = suggestion
+# JSON001: Invalid JSON pattern
+# Tests intentionally use invalid JSON to verify error handling
+dotnet_diagnostic.JSON001.severity = suggestion
 # S4144: Methods should not have identical implementations — parameterized tests often do
 dotnet_diagnostic.S4144.severity = none
-# CA5394: Do not use insecure randomness — test data does not need a CSPRNG
-dotnet_diagnostic.CA5394.severity = none
-# CA1848: Use the LoggerMessage delegates — irrelevant in test code
-dotnet_diagnostic.CA1848.severity = none
-# MA0076: Do not use implicit culture-sensitive ToString in interpolated strings
-dotnet_diagnostic.MA0076.severity = none
-# MA0003: Add parameter name to improve readability
-dotnet_diagnostic.MA0003.severity = none
-# CA2254: Logging template should not vary between calls — assertion messages do
-dotnet_diagnostic.CA2254.severity = none
-# IDE0039: Use local function instead of lambda
-dotnet_diagnostic.IDE0039.severity = none
-# CA1849: Call async methods when in an async method — sync APIs are exercised deliberately
-dotnet_diagnostic.CA1849.severity = none
-# MA0042: Do not use blocking calls in an async method — same rationale as CA1849
-dotnet_diagnostic.MA0042.severity = none
-# MA0166: Forward the TimeProvider to methods that take one
-dotnet_diagnostic.MA0166.severity = none
-# CA1861: Avoid constant arrays as arguments — theory data readability wins
-dotnet_diagnostic.CA1861.severity = none
-# CA1859: Use concrete types when possible — tests exercise the abstractions
-dotnet_diagnostic.CA1859.severity = none
-# CA1720: Identifiers should not contain type names — test names describe the types under test
-dotnet_diagnostic.CA1720.severity = none
-
-# --- Style & maintainability ---
-
-# CA1822: Member can be static
-# Test fixture classes often have instance methods for reflection testing
-dotnet_diagnostic.CA1822.severity = none
-# CA1873: Logging argument evaluation may be expensive
-# Test assertions often inspect ILogger calls directly; suppress this analyzer for test-only code
-dotnet_diagnostic.CA1873.severity = none
-# IDE0017: Object initialization can be simplified
-# Tests may intentionally test property setters separately from construction
-dotnet_diagnostic.IDE0017.severity = suggestion
+# xUnit1045/xUnit1046: TheoryData type arguments might not be serializable
+# Parameterized tests often use non-serializable types for complex test scenarios
+dotnet_diagnostic.xUnit1045.severity = suggestion
+dotnet_diagnostic.xUnit1046.severity = suggestion
+# xUnit1051: Use TestContext.Current.CancellationToken
+# Tests that test cancellation behavior need manual CancellationTokenSource control
+dotnet_diagnostic.xUnit1051.severity = suggestion

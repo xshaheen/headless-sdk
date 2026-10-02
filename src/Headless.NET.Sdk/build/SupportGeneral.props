@@ -65,8 +65,15 @@
     <CodeAnalysisTreatWarningsAsErrors Condition="'$(CodeAnalysisTreatWarningsAsErrors)' == ''"
       >false</CodeAnalysisTreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
-    <RunAnalyzersDuringLiveAnalysis>true</RunAnalyzersDuringLiveAnalysis>
+    <!--
+      Inner-loop choices, not policy: a local build may skip analyzers during build or live
+      analysis. Guarded so a consumer value wins under PackageReference consumption, where this
+      file evaluates after Directory.Build.props. SupportMandatoryAnalyzers.targets forces both
+      back on for CI and AI-agent builds, which are where the quality gate is enforced.
+    -->
+    <RunAnalyzersDuringBuild Condition="'$(RunAnalyzersDuringBuild)' == ''">true</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis Condition="'$(RunAnalyzersDuringLiveAnalysis)' == ''"
+      >true</RunAnalyzersDuringLiveAnalysis>
     <_SkipUpgradeNetAnalyzersNuGetWarning>true</_SkipUpgradeNetAnalyzersNuGetWarning>
 
     <AccelerateBuildsInVisualStudio Condition="'$(AccelerateBuildsInVisualStudio)' == ''"

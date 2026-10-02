@@ -19,5 +19,11 @@
       Condition="'$(BannedGuardClauseSymbols)' != 'false'"
       Visible="false"
     />
+    <!-- CA1510-CA1513 recommend the helpers this list bans; silence them only while it is active. -->
+    <EditorConfigFiles Remove="$(MSBuildThisFileDirectory)..\configurations\Headless.NET.Sdk.GuardClauses.editorconfig" />
+    <EditorConfigFiles
+      Include="$(MSBuildThisFileDirectory)..\configurations\Headless.NET.Sdk.GuardClauses.editorconfig"
+      Condition="'$(BannedGuardClauseSymbols)' != 'false'"
+    />
   </ItemGroup>
 </Project>

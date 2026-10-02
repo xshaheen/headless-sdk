@@ -163,7 +163,7 @@ public sealed partial class ContractConsumerBehaviorTests
         var arguments = argumentsEvaluation.Output.Trim();
         Assert.False(string.IsNullOrWhiteSpace(arguments));
         Assert.Single(arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries), token => token == "--coverage");
-        Assert.Single(Regex.Matches(arguments, @"(?<!\S)--coverage-settings(?=\s|$)").Cast<Match>());
+        Assert.Single(CoverageSettingsArgument.Matches(arguments).Cast<Match>());
         Assert.Contains($"--coverage-settings \"{coverageSettingsPath}\"", arguments, StringComparison.Ordinal);
     }
 
@@ -205,4 +205,7 @@ public sealed partial class ContractConsumerBehaviorTests
         using var reader = new StreamReader(entry.Open());
         return reader.ReadToEnd();
     }
+
+    [GeneratedRegex(@"(?<!\S)--coverage-settings(?=\s|$)", RegexOptions.CultureInvariant)]
+    private static partial Regex CoverageSettingsArgument { get; }
 }

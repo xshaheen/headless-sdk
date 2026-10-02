@@ -13,7 +13,7 @@ using Xunit;
 namespace Headless.NET.Sdk.Tests.Integrations;
 
 // Guards against analyzer version bumps silently introducing rules nobody made a severity
-// decision for: every diagnostic the ten mandatory analyzer packages can report must either be
+// decision for: every diagnostic the nine mandatory analyzer packages can report must either be
 // tuned in a shipped editorconfig or explicitly recorded in AnalyzerRulesAtPackageDefaults.txt
 // (a conscious "package default accepted" review record). Pure source/cache check - no packaging
 // fixture - modeled as a gate on Meziantou.NET.Sdk's generated-config approach.
@@ -24,7 +24,6 @@ public sealed partial class AnalyzerRuleCoverageTests
         "Meziantou.Analyzer",
         "Microsoft.CodeAnalysis.BannedApiAnalyzers",
         "AsyncFixer",
-        "Asyncify",
         "Microsoft.VisualStudio.Threading.Analyzers",
         "SmartAnalyzers.MultithreadingAnalyzer",
         "Roslynator.Analyzers",
@@ -42,7 +41,6 @@ public sealed partial class AnalyzerRuleCoverageTests
     private static readonly string[] MandatoryAnalyzerRuleIdPrefixes =
     [
         "AsyncFixer",
-        "Asyncify",
         "EPC",
         "ERP",
         "MA",
@@ -59,6 +57,7 @@ public sealed partial class AnalyzerRuleCoverageTests
         "Headless.NET.Sdk.Tests.editorconfig",
         "Headless.NET.Sdk.SingleFileApp.editorconfig",
         "Headless.NET.Sdk.EnforceConfigureAwait.editorconfig",
+        "Headless.NET.Sdk.GuardClauses.editorconfig",
     ];
 
     [Fact]
@@ -80,7 +79,7 @@ public sealed partial class AnalyzerRuleCoverageTests
         }
 
         // Sanity floor: reflection-loading silently finding nothing would make the gate useless.
-        Assert.True(allRules.Count > 450, $"Expected 450+ rules across the ten analyzers, found {allRules.Count}.");
+        Assert.True(allRules.Count > 450, $"Expected 450+ rules across the nine analyzers, found {allRules.Count}.");
 
         var uncovered = allRules.Where(rule => !tuned.Contains(rule.Key) && !reviewed.Contains(rule.Key)).ToList();
         var staleReviewed = reviewed
@@ -132,13 +131,13 @@ public sealed partial class AnalyzerRuleCoverageTests
             "RCS0010=suggestion",
             "RCS0012=none",
             "RCS0045=suggestion",
-            "RCS0046=suggestion",
+            "RCS0046=none",
             "RCS0056=none",
             "RCS0057=suggestion",
             "RCS0058=suggestion",
         ];
 
-        foreach (var fileName in new[] { "Headless.NET.Sdk.Analyzers.editorconfig", "editorconfig.txt" })
+        foreach (var fileName in new[] { "Headless.NET.Sdk.Analyzers.editorconfig" })
         {
             var analyzerConfig = File.ReadAllText(
                 Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "configurations", fileName)
@@ -158,78 +157,120 @@ public sealed partial class AnalyzerRuleCoverageTests
         }
     }
 
-    // The scaffold repeats the injected severities on purpose: ReSharper, Rider and `jb inspectcode`
-    // read severities only from a real .editorconfig, and projects outside the SDK never receive the
-    // injected configs. A consumer's .editorconfig outranks the injected configs, so a copy that
-    // drifts from its source silently overrides the SDK in every repository that ejected it.
-    [Fact]
-    public void editorconfig_scaffold_severities_should_match_the_injected_configs()
+    // This repository builds with plain Microsoft.NET.Sdk, so its own projects get analyzer settings
+    // only from the root .editorconfig. eng/tools/sync_root_editorconfig.py generates it from the
+    // injected configs; this test fails when they drift apart.
+    [Theory]
+    [InlineData("Headless.NET.Sdk.Analyzers.editorconfig", "[*.cs]")]
+    [InlineData("Headless.NET.Sdk.Tests.editorconfig", "[tests/**/*.cs]")]
+    public void root_editorconfig_should_match_the_injected_configs(string injectedConfig, string section)
     {
-        var repositoryRoot = TestRepository.FindRoot("editorconfig scaffold");
-        var configurationsDirectory = Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "configurations");
-        var production = ReadSeverities(
-            Path.Combine(configurationsDirectory, "Headless.NET.Sdk.Analyzers.editorconfig")
+        var repositoryRoot = TestRepository.FindRoot("root editorconfig");
+        var injected = ReadSettings(
+            File.ReadAllLines(
+                Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "configurations", injectedConfig)
+            ),
+            section: null
         );
-        var tests = ReadSeverities(Path.Combine(configurationsDirectory, "Headless.NET.Sdk.Tests.editorconfig"));
-        var mismatches = new List<string>();
-        string? section = null;
+        injected.Remove("is_global");
+        injected.Remove("global_level");
+        var root = ReadSettings(File.ReadAllLines(Path.Combine(repositoryRoot, ".editorconfig")), section);
 
-        foreach (var rawLine in File.ReadAllLines(Path.Combine(configurationsDirectory, "editorconfig.txt")))
-        {
-            var line = rawLine.Trim();
-            if (line.StartsWith('['))
-            {
-                section = line;
-                continue;
-            }
-
-            var match = SeverityLine.Match(line);
-            if (!match.Success)
-            {
-                continue;
-            }
-
-            var ruleId = match.Groups[1].Value;
-            // Other sections hold path-scoped overrides with no injected counterpart.
-            var expected = section switch
-            {
-                "[*.cs]" => production.GetValueOrDefault(ruleId),
-                "[tests/**/*.cs]" => tests.GetValueOrDefault(ruleId) ?? production.GetValueOrDefault(ruleId),
-                _ => null,
-            };
-
-            if (
-                expected is not null
-                && !string.Equals(expected, match.Groups[2].Value, StringComparison.OrdinalIgnoreCase)
+        var mismatches = injected
+            .Where(setting => !root.TryGetValue(setting.Key, out var value) || value != setting.Value)
+            .Select(setting =>
+                $"{setting.Key}: injected {setting.Value}, root {root.GetValueOrDefault(setting.Key) ?? "(missing)"}"
             )
-            {
-                mismatches.Add($"{section} {ruleId}: scaffold {match.Groups[2].Value}, injected {expected}");
-            }
-        }
+            .Concat(
+                root.Keys.Where(key =>
+                        AnalyzerSettingPrefixes.Any(prefix => key.StartsWith(prefix, StringComparison.Ordinal))
+                        && !injected.ContainsKey(key)
+                    )
+                    .Select(key => $"{key}: in root .editorconfig only")
+            )
+            .ToList();
 
         Assert.True(
             mismatches.Count == 0,
-            "editorconfig.txt severities differ from the injected configs:\n" + string.Join('\n', mismatches)
+            $"Root .editorconfig {section} differs from {injectedConfig}; run "
+                + "`python3 eng/tools/sync_root_editorconfig.py`:\n"
+                + string.Join('\n', mismatches)
         );
     }
 
-    [GeneratedRegex(@"^dotnet_diagnostic\.([A-Za-z0-9]+)\.severity\s*=\s*([a-z]+)", RegexOptions.CultureInvariant)]
-    private static partial Regex SeverityLine { get; }
-
-    private static Dictionary<string, string> ReadSeverities(string path)
+    // Collects key/value settings, from every occurrence of `section` when given, else from the whole file.
+    private static Dictionary<string, string> ReadSettings(IEnumerable<string> lines, string? section)
     {
-        var severities = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var line in File.ReadAllLines(path))
+        var settings = new Dictionary<string, string>(StringComparer.Ordinal);
+        string? current = null;
+        foreach (var raw in lines)
         {
-            var match = SeverityLine.Match(line.Trim());
-            if (match.Success)
+            var line = raw.Trim();
+            if (line.StartsWith('['))
             {
-                severities[match.Groups[1].Value] = match.Groups[2].Value;
+                current = line;
+                continue;
+            }
+
+            if (line.Length == 0 || line.StartsWith('#') || (section is not null && current != section))
+            {
+                continue;
+            }
+
+            var separator = line.IndexOf('=', StringComparison.Ordinal);
+            if (separator > 0)
+            {
+                settings[line[..separator].Trim()] = line[(separator + 1)..].Trim();
             }
         }
 
-        return severities;
+        return settings;
     }
+
+    // A consumer .editorconfig outranks the injected configs, so a scaffold that copied analyzer
+    // settings would pin each consuming repository to the SDK version it was copied from. The
+    // scaffold carries editor settings only; severities, code style, and naming ship injected.
+    [Fact]
+    public void editorconfig_scaffold_should_not_carry_analyzer_settings()
+    {
+        var repositoryRoot = TestRepository.FindRoot("editorconfig scaffold");
+        var scaffold = File.ReadAllLines(
+            Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk", "configurations", "editorconfig.txt")
+        );
+
+        var analyzerSettings = scaffold
+            .Select(line => line.Trim())
+            .Where(line => !line.StartsWith('#'))
+            .Where(line => AnalyzerSettingPrefixes.Any(prefix => line.StartsWith(prefix, StringComparison.Ordinal)))
+            .ToList();
+
+        Assert.True(
+            analyzerSettings.Count == 0,
+            "editorconfig.txt must not carry analyzer settings; they belong in the injected configs:\n"
+                + string.Join('\n', analyzerSettings)
+        );
+    }
+
+    private static readonly string[] AnalyzerSettingPrefixes =
+    [
+        "dotnet_diagnostic.",
+        "dotnet_analyzer_diagnostic.",
+        "dotnet_style_",
+        "csharp_style_",
+        "dotnet_naming_",
+        "dotnet_code_quality",
+        "roslynator_",
+    ];
+
+    // Multiline: the formatting policy test matches it against a whole config file.
+    [GeneratedRegex(
+        @"^dotnet_diagnostic\.([A-Za-z0-9]+)\.severity\s*=\s*([a-z]+)",
+        RegexOptions.CultureInvariant | RegexOptions.Multiline
+    )]
+    private static partial Regex SeverityLine { get; }
+
+    [GeneratedRegex("in type '([^']+)'", RegexOptions.CultureInvariant)]
+    private static partial Regex LoaderFailureTypeName { get; }
 
     [GeneratedRegex(@"dotnet_diagnostic\.([A-Za-z0-9]+)\.severity", RegexOptions.IgnoreCase, "en-US")]
     private static partial Regex DiagnosticRegex { get; }
@@ -331,7 +372,7 @@ public sealed partial class AnalyzerRuleCoverageTests
                     var unwaived = loaderMessages
                         .Where(message =>
                         {
-                            var typeMatch = Regex.Match(message!, "in type '([^']+)'");
+                            var typeMatch = LoaderFailureTypeName.Match(message!);
 
                             return !typeMatch.Success
                                 || !NonAnalyzerFailedTypePrefixes.Any(prefix =>

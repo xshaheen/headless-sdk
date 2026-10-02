@@ -110,7 +110,6 @@ public sealed partial class SdkIntegrationTests
         Assert.Contains("dotnet_diagnostic.CA1707.severity = none", testsEditorConfig, StringComparison.Ordinal);
         Assert.Contains("dotnet_diagnostic.CS8604.severity = none", testsEditorConfig, StringComparison.Ordinal);
         Assert.Contains("dotnet_diagnostic.CA1849.severity = none", testsEditorConfig, StringComparison.Ordinal);
-        Assert.Contains("dotnet_diagnostic.MA0042.severity = none", testsEditorConfig, StringComparison.Ordinal);
         Assert.Contains("dotnet_diagnostic.MA0166.severity = none", testsEditorConfig, StringComparison.Ordinal);
         Assert.Contains("dotnet_diagnostic.CA1861.severity = none", testsEditorConfig, StringComparison.Ordinal);
         Assert.Contains("dotnet_diagnostic.CA1859.severity = none", testsEditorConfig, StringComparison.Ordinal);
@@ -135,7 +134,6 @@ public sealed partial class SdkIntegrationTests
         AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Meziantou.Analyzer");
         AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Microsoft.CodeAnalysis.BannedApiAnalyzers");
         AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "AsyncFixer");
-        AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Asyncify");
         AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Microsoft.VisualStudio.Threading.Analyzers");
         AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "SmartAnalyzers.MultithreadingAnalyzer");
         AssertImplicitAnalyzerReference(implicitAnalyzerReferences, "Roslynator.Analyzers");
@@ -209,7 +207,6 @@ public sealed partial class SdkIntegrationTests
             "Meziantou.Analyzer",
             "Microsoft.CodeAnalysis.BannedApiAnalyzers",
             "AsyncFixer",
-            "Asyncify",
             "Microsoft.VisualStudio.Threading.Analyzers",
             "SmartAnalyzers.MultithreadingAnalyzer",
             "Roslynator.Analyzers",
@@ -276,7 +273,7 @@ public sealed partial class SdkIntegrationTests
 
         foreach (var (packageId, baseSdk) in expectedPackages)
         {
-#pragma warning disable CA2000 // Dispose objects before losing scope
+#pragma warning disable CA2000 // False positive: the using declaration disposes the archive on every path.
             using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
 #pragma warning restore CA2000
 

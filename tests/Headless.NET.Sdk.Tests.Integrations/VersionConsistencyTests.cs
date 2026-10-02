@@ -36,7 +36,6 @@ public sealed class VersionConsistencyTests
         ["_HeadlessMeziantouAnalyzerVersion"] = "Meziantou.Analyzer",
         ["_HeadlessBannedApiAnalyzersVersion"] = "Microsoft.CodeAnalysis.BannedApiAnalyzers",
         ["_HeadlessAsyncFixerVersion"] = "AsyncFixer",
-        ["_HeadlessAsyncifyVersion"] = "Asyncify",
         ["_HeadlessVisualStudioThreadingAnalyzersVersion"] = "Microsoft.VisualStudio.Threading.Analyzers",
         ["_HeadlessMultithreadingAnalyzerVersion"] = "SmartAnalyzers.MultithreadingAnalyzer",
         ["_HeadlessRoslynatorAnalyzersVersion"] = "Roslynator.Analyzers",
