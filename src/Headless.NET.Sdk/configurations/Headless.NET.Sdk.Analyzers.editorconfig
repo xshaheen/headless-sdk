@@ -27,8 +27,6 @@ dotnet_diagnostic.CA1002.severity = none
 dotnet_diagnostic.CA1008.severity = suggestion
 # CA1012: duplicate of MA0017, which also covers internal constructors
 dotnet_diagnostic.CA1012.severity = none
-# CA1018: Mark attributes with AttributeUsageAttribute
-dotnet_diagnostic.CA1018.severity = warning
 # CA1019: Define accessors for attribute arguments
 dotnet_diagnostic.CA1019.severity = suggestion
 # CA1024: Use properties where appropriate
@@ -49,8 +47,6 @@ dotnet_diagnostic.CA1036.severity = suggestion
 dotnet_diagnostic.CA1040.severity = none
 # CA1045: Do not pass types by reference
 dotnet_diagnostic.CA1045.severity = suggestion
-# CA1047: Do not declare protected member in sealed type
-dotnet_diagnostic.CA1047.severity = warning
 # CA1050: duplicate of MA0047, which also reports internal types outside a namespace
 dotnet_diagnostic.CA1050.severity = none
 # CA1054/CA1055/CA1056/CA2234: URI values should be System.Uri instead of strings
@@ -77,18 +73,14 @@ dotnet_diagnostic.CA1310.severity = none
 #
 # CA1311: duplicate of MA0011 which has a code fix
 dotnet_diagnostic.CA1311.severity = none
+# CA1508: Avoid dead conditional code
+# Flow analysis with frequent false positives on defensive checks, and one of the costliest CA
+# rules to run.
+dotnet_diagnostic.CA1508.severity = none
 # CA1515: Consider making public types internal
 dotnet_diagnostic.CA1515.severity = none
-# CA1707: Identifiers should not contain underscores
-dotnet_diagnostic.CA1707.severity = warning
-# CA1708: Identifiers should differ by more than case
-dotnet_diagnostic.CA1708.severity = warning
 # CA1711: Identifiers should not have incorrect suffix
 dotnet_diagnostic.CA1711.severity = none
-# CA1712: Do not prefix enum values with type name
-dotnet_diagnostic.CA1712.severity = warning
-# CA1715: Identifiers should have correct prefix
-dotnet_diagnostic.CA1715.severity = warning
 # CA1716: Identifiers should not match keywords
 dotnet_diagnostic.CA1716.severity = none
 # CA1720: Identifiers should not contain type names
@@ -105,22 +97,8 @@ dotnet_diagnostic.CA1812.severity = none
 dotnet_diagnostic.CA1819.severity = none
 # CA1823: Avoid unused private fields
 dotnet_diagnostic.CA1823.severity = suggestion
-# CA1825: Avoid zero-length array allocations
-dotnet_diagnostic.CA1825.severity = warning
-# CA1826: Do not use Enumerable methods on indexable collections. Instead use the collection directly
-dotnet_diagnostic.CA1826.severity = warning
-# CA1827: Do not use Count() or LongCount() when Any() can be used
-dotnet_diagnostic.CA1827.severity = warning
-# CA1829: Use Length/Count property instead of Count() when available
-dotnet_diagnostic.CA1829.severity = warning
 # CA1831|CA1832|CA1833: Use AsSpan or AsMemory instead of Range-based indexers when appropriate
 dotnet_diagnostic.CA1831.severity = warning
-dotnet_diagnostic.CA1832.severity = warning
-dotnet_diagnostic.CA1833.severity = warning
-# CA1836: Prefer IsEmpty over Count
-dotnet_diagnostic.CA1836.severity = warning
-# CA1837: Use 'Environment.ProcessId'
-dotnet_diagnostic.CA1837.severity = warning
 # CA1848: Use the LoggerMessage delegates
 dotnet_diagnostic.CA1848.severity = silent
 # CA1851: Possible multiple enumerations of 'IEnumerable' collection
@@ -137,38 +115,14 @@ dotnet_diagnostic.CA2002.severity = error
 # SynchronizationContext); HeadlessEnforceConfigureAwait=true applies the EnforceConfigureAwait
 # overlay (global_level 1), which raises this to warning.
 dotnet_diagnostic.CA2007.severity = none
-# CA2009: Do not call ToImmutableCollection on an ImmutableCollection value
-dotnet_diagnostic.CA2009.severity = warning
-# CA2011: Avoid infinite recursion
-dotnet_diagnostic.CA2011.severity = warning
-# CA2012: Use ValueTasks correctly
-dotnet_diagnostic.CA2012.severity = warning
-# CA2016: Forward the 'CancellationToken' parameter to methods
-dotnet_diagnostic.CA2016.severity = warning
 # CA2208: duplicate of MA0015, which reports more cases
 dotnet_diagnostic.CA2208.severity = none
 # CA2214: duplicate of MA0056, which also covers virtual properties and inherited members
 dotnet_diagnostic.CA2214.severity = none
 # CA2227: Collection properties should be read only
 dotnet_diagnostic.CA2227.severity = silent
-# CA2249: Consider using 'string.Contains' instead of 'string.IndexOf'
-dotnet_diagnostic.CA2249.severity = warning
-# CA5350: Do Not Use Weak Cryptographic Algorithms
-dotnet_diagnostic.CA5350.severity = warning
-# CA5351: Do Not Use Broken Cryptographic Algorithms
-dotnet_diagnostic.CA5351.severity = warning
 # CA5359: keeps the error severity of the disabled MA0039
 dotnet_diagnostic.CA5359.severity = error
-# CA5360: Do Not Call Dangerous Methods In Deserialization
-dotnet_diagnostic.CA5360.severity = warning
-# CA5364: Do Not Use Deprecated Security Protocols
-dotnet_diagnostic.CA5364.severity = warning
-# CA5379: Ensure Key Derivation Function algorithm is sufficiently strong
-dotnet_diagnostic.CA5379.severity = warning
-# CA5384: Do Not Use Digital Signature Algorithm (DSA)
-dotnet_diagnostic.CA5384.severity = warning
-# CA5385: Use Rivest-Shamir-Adleman (RSA) Algorithm With Sufficient Key Size
-dotnet_diagnostic.CA5385.severity = warning
 # CA5394: Do not use insecure randomness
 dotnet_diagnostic.CA5394.severity = suggestion
 
@@ -257,8 +211,10 @@ dotnet_diagnostic.MA0042.severity = none
 dotnet_diagnostic.MA0043.severity = none
 # MA0044: duplicate of RCS1097
 dotnet_diagnostic.MA0044.severity = none
-# MA0045: Do not use blocking call (make method async)
-dotnet_diagnostic.MA0045.severity = suggestion
+# MA0045: Do not use blocking calls, even when the calling method must become async
+# Advice for migrating sync code to async, not a defect. VSTHRD002 already reports synchronous
+# task waits, and in measured consumers this was the most-suppressed analyzer rule.
+dotnet_diagnostic.MA0045.severity = none
 # MA0047: Declare types in namespaces
 dotnet_diagnostic.MA0047.severity = warning
 # MA0048: File name must match type name (multiple types per file are allowed)
@@ -444,6 +400,10 @@ dotnet_diagnostic.VSTHRD001.severity = none
 # sync waits are deliberate bridges (sync Dispose, sync interface adapters), and the rule also
 # reports .Result reads guarded by IsCompletedSuccessfully.
 dotnet_diagnostic.VSTHRD002.severity = suggestion
+# VSTHRD003: Avoid awaiting foreign Tasks
+# The deadlock it guards against needs JoinableTaskFactory main-thread affinity, which only
+# Visual Studio-style apps have.
+dotnet_diagnostic.VSTHRD003.severity = none
 # VSTHRD004: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
 dotnet_diagnostic.VSTHRD004.severity = none
 # VSTHRD010: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
@@ -711,7 +671,7 @@ dotnet_naming_rule.public_protected_static_readonly_fields_must_be_pascal_case_r
 dotnet_naming_rule.public_protected_static_readonly_fields_must_be_pascal_case_rule.severity = suggestion
 
 # All private constant fields must be _PascalCase
-# Custom
+# House convention: differs from the .NET runtime naming style
 dotnet_naming_symbols.private_constant_fields_group.applicable_accessibilities = private
 dotnet_naming_symbols.private_constant_fields_group.required_modifiers = const
 dotnet_naming_symbols.private_constant_fields_group.applicable_kinds = field
@@ -720,7 +680,7 @@ dotnet_naming_rule.private_constant_fields_must_be_pascal_case_rule.style = _pas
 dotnet_naming_rule.private_constant_fields_must_be_pascal_case_rule.severity = suggestion
 
 # All private static readonly fields must be _PascalCase
-# Custom
+# House convention: differs from the .NET runtime naming style
 dotnet_naming_symbols.private_static_readonly_fields_group.applicable_accessibilities = private
 dotnet_naming_symbols.private_static_readonly_fields_group.required_modifiers = readonly, static
 dotnet_naming_symbols.private_static_readonly_fields_group.applicable_kinds = field
@@ -729,7 +689,7 @@ dotnet_naming_rule.private_static_readonly_fields_must_be_pascal_case_rule.style
 dotnet_naming_rule.private_static_readonly_fields_must_be_pascal_case_rule.severity = suggestion
 
 # All private fields must be _camelCase
-# Custom
+# House convention: differs from the .NET runtime naming style
 dotnet_naming_symbols.private_fields_group.applicable_accessibilities = private
 dotnet_naming_symbols.private_fields_group.applicable_kinds = field
 dotnet_naming_rule.private_fields_group_must_be_camel_case_rule.symbols = private_fields_group
@@ -784,7 +744,7 @@ dotnet_naming_rule.parameters_rule.style = camel_case_style
 dotnet_naming_rule.parameters_rule.severity = suggestion
 
 # All private methods must be _PascalCase()
-# Custom
+# House convention: differs from the .NET runtime naming style
 dotnet_naming_symbols.private_methods_group.applicable_accessibilities = private
 dotnet_naming_symbols.private_methods_group.applicable_kinds = method
 dotnet_naming_rule.private_methods_group_must_be_camel_case_rule.symbols = private_methods_group
@@ -792,7 +752,7 @@ dotnet_naming_rule.private_methods_group_must_be_camel_case_rule.style = _pascal
 dotnet_naming_rule.private_methods_group_must_be_camel_case_rule.severity = suggestion
 
 # Local functions must be camelCase
-# Custom
+# House convention: differs from the .NET runtime naming style
 dotnet_naming_symbols.local_functions_group.applicable_accessibilities = local
 dotnet_naming_symbols.local_functions_group.applicable_kinds = local
 dotnet_naming_rule.local_functions_must_be_camel_case_rule.symbols = local_functions_group

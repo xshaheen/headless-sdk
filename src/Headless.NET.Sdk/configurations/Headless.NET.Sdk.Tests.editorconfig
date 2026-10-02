@@ -15,9 +15,6 @@ dotnet_diagnostic.CA1001.severity = suggestion
 # CA1028: Enum Storage should be Int32
 # Tests may intentionally verify non-Int32 enum backing types
 dotnet_diagnostic.CA1028.severity = none
-# CA1508: Avoid dead conditional code
-# Tests intentionally verify edge cases like Equals(null) returning false
-dotnet_diagnostic.CA1508.severity = none
 # CA1707: Identifiers should not contain underscores
 # snake_case test names contain underscores by convention.
 dotnet_diagnostic.CA1707.severity = none
@@ -109,9 +106,6 @@ dotnet_diagnostic.MA0176.severity = none
 # Microsoft.VisualStudio.Threading.Analyzers (VSTHRD)
 ############################################################
 
-# VSTHRD003: Avoid awaiting foreign Tasks
-# Tests capture tasks for later assertion which is valid test pattern
-dotnet_diagnostic.VSTHRD003.severity = none
 # AsyncFixer03/VSTHRD100: Async void method
 # Tests may have intentional async void methods for testing reflection
 dotnet_diagnostic.VSTHRD100.severity = suggestion
