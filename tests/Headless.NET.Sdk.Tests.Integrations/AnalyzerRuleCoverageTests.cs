@@ -43,7 +43,6 @@ public sealed partial class AnalyzerRuleCoverageTests
         "AsyncFixer",
         "EPC",
         "ERP",
-        "HLS",
         "MA",
         "MT",
         "RCS",
@@ -77,13 +76,6 @@ public sealed partial class AnalyzerRuleCoverageTests
             {
                 allRules.TryAdd(ruleId, packageId);
             }
-        }
-
-        // The Headless analyzers ship inside the SDK packages rather than as a package of their
-        // own; this project references them directly.
-        foreach (var ruleId in LoadHeadlessDiagnosticIds())
-        {
-            allRules.TryAdd(ruleId, "Headless.NET.Sdk");
         }
 
         // Sanity floor: reflection-loading silently finding nothing would make the gate useless.
@@ -129,12 +121,12 @@ public sealed partial class AnalyzerRuleCoverageTests
         var formattingRules = LoadSupportedDiagnosticIds("Roslynator.Formatting.Analyzers", version);
         string[] expectedRules =
         [
-            "RCS0001=none",
+            "RCS0001=suggestion",
             "RCS0002=suggestion",
             "RCS0003=suggestion",
             "RCS0005=suggestion",
             "RCS0006=suggestion",
-            "RCS0008=none",
+            "RCS0008=suggestion",
             "RCS0009=suggestion",
             "RCS0010=suggestion",
             "RCS0012=none",
@@ -323,20 +315,6 @@ public sealed partial class AnalyzerRuleCoverageTests
         }
 
         return reviewed;
-    }
-
-    private static IReadOnlyCollection<string> LoadHeadlessDiagnosticIds()
-    {
-        var ruleIds = typeof(Headless.NET.Sdk.Analyzers.BlankLineAnalyzer)
-            .Assembly.GetTypes()
-            .Where(type => !type.IsAbstract && typeof(DiagnosticAnalyzer).IsAssignableFrom(type))
-            .SelectMany(type => ((DiagnosticAnalyzer)Activator.CreateInstance(type)!).SupportedDiagnostics)
-            .Select(descriptor => descriptor.Id)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        Assert.True(ruleIds.Count > 0, "Headless.NET.Sdk.Analyzers: no DiagnosticAnalyzer rules were discovered.");
-
-        return ruleIds;
     }
 
     private static IReadOnlyCollection<string> LoadSupportedDiagnosticIds(string packageId, string version)

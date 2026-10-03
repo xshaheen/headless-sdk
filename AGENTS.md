@@ -2,7 +2,7 @@
 
 ## What this repository is
 
-**headless-sdk** builds the Headless MSBuild SDK family: `Headless.NET.Sdk` plus its `.Web`, `.Test`, `.Razor`, `.BlazorWebAssembly`, and `.WindowsDesktop` satellites. The packages ship MSBuild props and targets, injected analyzer configs, banned-symbol lists, scaffold files, and one piece of compiled code: the Headless analyzers (`HLS*` rules) and their code fixes, under `build/analyzers/`. Any .NET repository can consume them. headless-framework is one consumer: it pins a version in `global.json`, so a change here reaches it only after a release and a pin bump.
+**headless-sdk** builds the Headless MSBuild SDK family: `Headless.NET.Sdk` plus its `.Web`, `.Test`, `.Razor`, `.BlazorWebAssembly`, and `.WindowsDesktop` satellites. The packages ship no compiled code, only MSBuild props and targets, injected analyzer configs, banned-symbol lists, and scaffold files. Any .NET repository can consume them. headless-framework is one consumer: it pins a version in `global.json`, so a change here reaches it only after a release and a pin bump.
 
 The product is the consumer contract, and the README's **Support contract** section is its source of truth. Read that section before you change anything under `src/`. Two consequences guide most decisions:
 
@@ -13,14 +13,13 @@ The product is the consumer contract, and the README's **Support contract** sect
 
 - `src/Headless.NET.Sdk/build` and `configurations` are packed into every satellite (`src/_shared/Headless.NET.Sdk.Satellite.nuspec`). One edit there changes all six packages.
 - `src/_shared` owns satellite packaging and metadata. A satellite's own `build/` and `sdk/` folders hold only its project-type wrapper.
-- `src/Headless.NET.Sdk.Analyzers` and `.CodeFixes` are never packed on their own: `Directory.Build.targets` builds them and every nuspec copies the two assemblies into `build/analyzers/`. They compile against Roslyn 4.14 through `VersionOverride`, with no central pin, so older compilers can still load them; do not raise it to the test project's Roslyn.
 - `tests/Headless.NET.Sdk.Tests.Integrations` is the only test project. Most tests pack the six packages and build throwaway consumer projects against them.
 
 ## Build and test
 
 Use the `make` targets; `make help` lists them.
 
-- **`make test-static`** runs the repository-only test classes (analyzer rule coverage, version pins, the HLS analyzer unit tests) in seconds. Run it after any edit to a config file or a version pin.
+- **`make test-static`** runs the two repository-only test classes (analyzer rule coverage, version pins) in seconds. Run it after any edit to a config file or a version pin.
 - **`make verify`** runs the CI sequence: restore, `--no-incremental` build, pack, then the full suite, which takes minutes. It writes `artifacts/proof/<run>/summary.md`. Paste that summary into the PR description.
 - **`make test-class CLASS='*Name*'`** reruns matching tests against the packages from the last `make verify`. Those packages go stale when anything under `src/` changes, so rerun `make verify` first.
 

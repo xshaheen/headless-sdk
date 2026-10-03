@@ -23,8 +23,6 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
         "build/Headless.NET.Sdk.targets",
         "build/RuntimeHostConfigurationOption.props",
         "build/RuntimeHostConfigurationOption.targets",
-        "build/analyzers/Headless.NET.Sdk.Analyzers.CodeFixes.dll",
-        "build/analyzers/Headless.NET.Sdk.Analyzers.dll",
         "build/SupportAdditionalFiles.targets",
         "build/SupportAnalyzerEditorConfigs.props",
         "build/SupportAnalyzerHygiene.targets",

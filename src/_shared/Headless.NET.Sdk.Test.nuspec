@@ -44,7 +44,5 @@
     <file src="$BaseSdkDirectory$/configurations/**/*" target="configurations" />
     <file src="$PackageProjectDirectory$/README.md" target="" />
     <file src="$RepositoryRoot$logo.png" target="" />
-    <file src="$AnalyzerAssembly$" target="build/analyzers" />
-    <file src="$CodeFixAssembly$" target="build/analyzers" />
   </files>
 </package>

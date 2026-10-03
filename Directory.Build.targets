@@ -12,59 +12,18 @@
     </PropertyGroup>
   </Target>
 
-  <!--
-    Every SDK package carries the Headless analyzers in build/analyzers (see the nuspecs), so the
-    analyzer projects build first; the code-fix project references the analyzer project, so one
-    reference orders both. Nothing is compiled against them. The integration fixture packs each
-    SDK project into its own BaseIntermediateOutputPath, and those global properties would
-    otherwise flow into the analyzer projects and make two projects share one obj folder.
-  -->
-  <ItemGroup Condition="'$(PackageType)' == 'MSBuildSdk'">
-    <ProjectReference
-      Include="$(MSBuildThisFileDirectory)src/Headless.NET.Sdk.Analyzers.CodeFixes/Headless.NET.Sdk.Analyzers.CodeFixes.csproj"
-      ReferenceOutputAssembly="false"
-      PrivateAssets="all"
-      GlobalPropertiesToRemove="BaseIntermediateOutputPath;BaseOutputPath"
-    />
-  </ItemGroup>
-
   <Target
     Name="HeadlessSetNuspecProperties"
     BeforeTargets="GenerateNuspec"
     DependsOnTargets="InitializeSourceControlInformation"
     Condition="'$(PackageType)' == 'MSBuildSdk' and '$(NuspecFile)' != ''"
   >
-    <!--
-      Pack runs this target without Build here (GeneratePackageOnBuild), so the analyzers are built
-      on demand unless the caller already built them (NoBuild). Build also returns the output path,
-      so no bin layout is assumed. No Properties: the caller's global properties pass through, so
-      within one solution build this resolves to the instance the project reference already built.
-    -->
-    <PropertyGroup>
-      <_HeadlessAnalyzerTargets>Build</_HeadlessAnalyzerTargets>
-      <_HeadlessAnalyzerTargets Condition="'$(NoBuild)' == 'true'">GetTargetPath</_HeadlessAnalyzerTargets>
-    </PropertyGroup>
-    <MSBuild
-      Projects="$(MSBuildThisFileDirectory)src/Headless.NET.Sdk.Analyzers/Headless.NET.Sdk.Analyzers.csproj"
-      Targets="$(_HeadlessAnalyzerTargets)"
-      RemoveProperties="BaseIntermediateOutputPath;BaseOutputPath;TargetFramework"
-    >
-      <Output TaskParameter="TargetOutputs" PropertyName="_HeadlessAnalyzerAssembly" />
-    </MSBuild>
-    <MSBuild
-      Projects="$(MSBuildThisFileDirectory)src/Headless.NET.Sdk.Analyzers.CodeFixes/Headless.NET.Sdk.Analyzers.CodeFixes.csproj"
-      Targets="$(_HeadlessAnalyzerTargets)"
-      RemoveProperties="BaseIntermediateOutputPath;BaseOutputPath;TargetFramework"
-    >
-      <Output TaskParameter="TargetOutputs" PropertyName="_HeadlessCodeFixAssembly" />
-    </MSBuild>
-
     <PropertyGroup>
       <RepositoryBranch Condition="'$(RepositoryBranch)' == ''">$(SourceBranchName)</RepositoryBranch>
       <RepositoryCommit Condition="'$(RepositoryCommit)' == ''">$(SourceRevisionId)</RepositoryCommit>
       <_HeadlessNuspecDescription>$([MSBuild]::Escape('$(Description)'))</_HeadlessNuspecDescription>
       <_HeadlessNuspecPackageTags>$([MSBuild]::Escape('$(PackageTags)'))</_HeadlessNuspecPackageTags>
-      <NuspecProperties>PackageId=$(PackageId);PackageVersion=$(PackageVersion);Title=$(Title);Authors=$(Authors);Description=$(_HeadlessNuspecDescription);PackageIcon=$(PackageIcon);PackageReadmeFile=$(PackageReadmeFile);PackageProjectUrl=$(PackageProjectUrl);PackageReleaseNotes=$(PackageReleaseNotes);PackageTags=$(_HeadlessNuspecPackageTags);PackageProjectDirectory=$(MSBuildProjectDirectory);BaseSdkDirectory=$(MSBuildThisFileDirectory)src/Headless.NET.Sdk;RepositoryRoot=$(MSBuildThisFileDirectory);RepositoryUrl=$(RepositoryUrl);RepositoryType=$(RepositoryType);RepositoryBranch=$(RepositoryBranch);RepositoryCommit=$(RepositoryCommit);Copyright=$(Copyright);MeziantouAnalyzerVersion=$(_HeadlessMeziantouAnalyzerVersion);BannedApiAnalyzersVersion=$(_HeadlessBannedApiAnalyzersVersion);AsyncFixerVersion=$(_HeadlessAsyncFixerVersion);VisualStudioThreadingAnalyzersVersion=$(_HeadlessVisualStudioThreadingAnalyzersVersion);MultithreadingAnalyzerVersion=$(_HeadlessMultithreadingAnalyzerVersion);RoslynatorAnalyzersVersion=$(_HeadlessRoslynatorAnalyzersVersion);RoslynatorFormattingAnalyzersVersion=$(_HeadlessRoslynatorFormattingAnalyzersVersion);ReflectionAnalyzersVersion=$(_HeadlessReflectionAnalyzersVersion);ErrorProneAnalyzersVersion=$(_HeadlessErrorProneAnalyzersVersion);SbomTargetsVersion=$(_HeadlessMicrosoftSbomTargetsVersion);AnalyzerAssembly=$(_HeadlessAnalyzerAssembly);CodeFixAssembly=$(_HeadlessCodeFixAssembly)</NuspecProperties>
+      <NuspecProperties>PackageId=$(PackageId);PackageVersion=$(PackageVersion);Title=$(Title);Authors=$(Authors);Description=$(_HeadlessNuspecDescription);PackageIcon=$(PackageIcon);PackageReadmeFile=$(PackageReadmeFile);PackageProjectUrl=$(PackageProjectUrl);PackageReleaseNotes=$(PackageReleaseNotes);PackageTags=$(_HeadlessNuspecPackageTags);PackageProjectDirectory=$(MSBuildProjectDirectory);BaseSdkDirectory=$(MSBuildThisFileDirectory)src/Headless.NET.Sdk;RepositoryRoot=$(MSBuildThisFileDirectory);RepositoryUrl=$(RepositoryUrl);RepositoryType=$(RepositoryType);RepositoryBranch=$(RepositoryBranch);RepositoryCommit=$(RepositoryCommit);Copyright=$(Copyright);MeziantouAnalyzerVersion=$(_HeadlessMeziantouAnalyzerVersion);BannedApiAnalyzersVersion=$(_HeadlessBannedApiAnalyzersVersion);AsyncFixerVersion=$(_HeadlessAsyncFixerVersion);VisualStudioThreadingAnalyzersVersion=$(_HeadlessVisualStudioThreadingAnalyzersVersion);MultithreadingAnalyzerVersion=$(_HeadlessMultithreadingAnalyzerVersion);RoslynatorAnalyzersVersion=$(_HeadlessRoslynatorAnalyzersVersion);RoslynatorFormattingAnalyzersVersion=$(_HeadlessRoslynatorFormattingAnalyzersVersion);ReflectionAnalyzersVersion=$(_HeadlessReflectionAnalyzersVersion);ErrorProneAnalyzersVersion=$(_HeadlessErrorProneAnalyzersVersion);SbomTargetsVersion=$(_HeadlessMicrosoftSbomTargetsVersion)</NuspecProperties>
       <NuspecProperties Condition="'$(PackageId)' == 'Headless.NET.Sdk.Test'"
         >$(NuspecProperties);MtpCrashDumpVersion=$(_HeadlessMtpCrashDumpVersion);MtpCodeCoverageVersion=$(_HeadlessMtpCodeCoverageVersion);MtpHangDumpVersion=$(_HeadlessMtpHangDumpVersion);MtpHotReloadVersion=$(_HeadlessMtpHotReloadVersion);MtpRetryVersion=$(_HeadlessMtpRetryVersion);MtpTrxReportVersion=$(_HeadlessMtpTrxReportVersion)</NuspecProperties>
     </PropertyGroup>

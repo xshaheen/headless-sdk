@@ -116,20 +116,6 @@
     />
   </ItemGroup>
 
-  <!--
-    The Headless analyzers ship inside this package rather than as a dependency, so they always
-    match the package's own configs. They live outside analyzers/: NuGet adds that folder only for
-    PackageReference consumers, and adding it here as well would load the assembly twice. One
-    explicit item serves every consumption mode. Remove-then-include keeps a consumer's own item
-    for the same path from duplicating it.
-  -->
-  <ItemGroup Condition="'$(IsBuildTaskProject)' != 'true'">
-    <Analyzer Remove="$(MSBuildThisFileDirectory)analyzers/Headless.NET.Sdk.Analyzers.dll" />
-    <Analyzer Include="$(MSBuildThisFileDirectory)analyzers/Headless.NET.Sdk.Analyzers.dll" />
-    <Analyzer Remove="$(MSBuildThisFileDirectory)analyzers/Headless.NET.Sdk.Analyzers.CodeFixes.dll" />
-    <Analyzer Include="$(MSBuildThisFileDirectory)analyzers/Headless.NET.Sdk.Analyzers.CodeFixes.dll" />
-  </ItemGroup>
-
   <!-- Remove and re-add authoritative editorconfigs exactly once after consumer item evaluation. -->
   <ItemGroup Condition="'$(IsBuildTaskProject)' != 'true'">
     <EditorConfigFiles Remove="$(MSBuildThisFileDirectory)../configurations/Headless.NET.Sdk.Analyzers.editorconfig" />
