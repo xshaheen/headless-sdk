@@ -1,0 +1,4 @@
+#!/bin/sh
+# Committed hook; the global hooks (or `make hooks` on machines without them) run it.
+set -eu
+exec make --no-print-directory hook-pre-commit
