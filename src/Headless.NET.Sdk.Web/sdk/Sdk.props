@@ -1,5 +1,7 @@
 <Project>
   <PropertyGroup>
+    <!-- Lets the build assets tell MSBuild-SDK consumption from PackageReference consumption. -->
+    <_HeadlessConsumedAsMSBuildSdk>true</_HeadlessConsumedAsMSBuildSdk>
     <HeadlessSdkName Condition="'$(HeadlessSdkName)' == ''">Headless.NET.Sdk.Web</HeadlessSdkName>
     <HeadlessSdkProjectType Condition="'$(HeadlessSdkProjectType)' == ''">Web</HeadlessSdkProjectType>
     <_HeadlessMustImportMicrosoftNETSdk Condition="'$(UsingMicrosoftNETSdk)' != 'true'"

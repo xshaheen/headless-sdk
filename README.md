@@ -9,7 +9,7 @@ Release notes are maintained in [GitHub Releases](https://github.com/xshaheen/he
 - The package family is built and validated with the repository-pinned .NET 10 SDK. Headless does not restrict consumer target frameworks; compatibility is determined by the selected Microsoft SDK and its installed targeting packs or workloads.
 - Every MSBuild project must declare its target framework explicitly. Headless does not infer one.
 - All five consumption modes below are first-class. Build, pack, analyzer, and application policy
-  is identical; the documented first-clean-restore bootstrap is required for PackageReference mode.
+  is identical; the documented restore bootstrap is required for PackageReference mode.
 - Package assets apply only to the project that opts in. The packages do not ship `buildTransitive` assets.
 - Multi-targeting outer builds remain supported through `buildMultiTargeting`; inner builds receive the normal `build` contract exactly once.
 - Named quality policies are authoritative. The analyzer infrastructure and CI quality gates are not consumer opt-outs; the two shipped banned-symbol lists retain the documented whole-policy and per-list opt-outs. A local inner loop may skip analyzers during build or live analysis, but CI and AI-agent builds always run them.
@@ -81,9 +81,9 @@ Use the matching Microsoft SDK and add Headless directly:
 
 For example, `Headless.NET.Sdk.Web` is paired with `Microsoft.NET.Sdk.Web`. Because no `buildTransitive` assets ship, referenced projects are unaffected unless they also opt in.
 
-NuGet cannot import a package's `build` assets until the first restore has created
-`obj/*.nuget.g.props` and `obj/*.nuget.g.targets`. Consequently, a clean project's first
-PackageReference restore cannot receive restore-time lock and audit-warning policy from Headless.
+NuGet evaluates a project for restore with `ExcludeRestorePackageImports=true`, which skips the
+`build` assets of every referenced package. Consequently, no PackageReference restore receives the
+Headless restore-time audit, lock, and audit-warning policy, whether or not `obj/` already exists.
 Repositories using this mode must bootstrap those restore settings in `Directory.Build.props` (or
 equivalent restore CLI arguments):
 
@@ -102,8 +102,17 @@ equivalent restore CLI arguments):
 </Project>
 ```
 
-This limitation is specific to the first clean PackageReference restore. MSBuild SDK resolution
-loads Headless props before restore, and all modes receive the same post-restore project policy.
+This limitation is specific to PackageReference restore. MSBuild SDK resolution loads Headless
+props before restore, and all modes receive the same build-time project policy.
+
+When a PackageReference build finds restore settings weaker than this bootstrap, it reports warning
+`HSDK001` and names the missing settings. Unset audit values take NuGet's defaults, so a
+`net10.0`-or-later project needs no audit settings, but an earlier target framework needs
+`NuGetAuditMode=all`. On CI, the warning also requires the `NU1901`-`NU1904` escalation and, when a
+lock file exists, `RestoreLockedMode=true`. Like any MSBuild warning, `HSDK001` fails CI and AI-agent
+builds. Set `RestoreLockedMode` in `Directory.Build.props` or on the command line; the check does
+not see a value set in the project file. The bootstrap's `CI` conditions cover providers that set `CI=true`;
+extend them for a provider that does not, such as Azure Pipelines (`TF_BUILD`).
 
 ### 2. Project SDK
 

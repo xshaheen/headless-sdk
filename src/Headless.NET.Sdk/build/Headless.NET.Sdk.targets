@@ -17,6 +17,15 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
   <!-- Sentinel guard - see Headless.NET.Sdk.props for rationale. -->
   <PropertyGroup>
     <_HeadlessSdkBuildTargetsImported>true</_HeadlessSdkBuildTargetsImported>
+    <!--
+      The consumer's restore settings after its project body, before SupportNuGetAudit.targets
+      overrides them. SupportRestoreBootstrap.targets reads them.
+    -->
+    <_HeadlessBootstrapNuGetAudit>$(NuGetAudit)</_HeadlessBootstrapNuGetAudit>
+    <_HeadlessBootstrapNuGetAuditMode>$(NuGetAuditMode)</_HeadlessBootstrapNuGetAuditMode>
+    <_HeadlessBootstrapNuGetAuditLevel>$(NuGetAuditLevel)</_HeadlessBootstrapNuGetAuditLevel>
+    <_HeadlessBootstrapWarningsAsErrors>$(WarningsAsErrors)</_HeadlessBootstrapWarningsAsErrors>
+    <_HeadlessBootstrapTreatWarningsAsErrors>$(TreatWarningsAsErrors)</_HeadlessBootstrapTreatWarningsAsErrors>
   </PropertyGroup>
 
   <!-- Package metadata defaults must evaluate before CI fills provider-specific repository values. -->
@@ -34,6 +43,10 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
     Condition=" '$(DisableSupportCopyright)' != 'true' "
   />
   <Import Project="$(MSBuildThisFileDirectory)SupportNuGetAudit.targets" />
+  <Import
+    Project="$(MSBuildThisFileDirectory)SupportRestoreBootstrap.targets"
+    Condition=" '$(_HeadlessConsumedAsMSBuildSdk)' != 'true' and '$(IsBuildTaskProject)' != 'true' "
+  />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportBannedSymbols.targets"
     Condition=" '$(DisableSupportBannedSymbols)' != 'true' "

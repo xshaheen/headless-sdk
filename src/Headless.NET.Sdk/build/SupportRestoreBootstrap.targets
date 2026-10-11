@@ -1,0 +1,62 @@
+<Project>
+  <!--
+    PackageReference consumption only. NuGet evaluates a project for restore with
+    ExcludeRestorePackageImports=true, which skips every package's build assets, so restore audits
+    and locks with whatever the consumer configured, never with the Headless restore policy. The
+    README documents a Directory.Build.props bootstrap; this check reports when restore would be
+    weaker than that policy. MSBuild-SDK consumption, and this repository's own packing projects,
+    import Headless directly, so restore sees the policy and this file is not imported.
+
+    Unset values take NuGet's own defaults from NuGet.targets: NuGetAudit=true, NuGetAuditLevel=low,
+    and NuGetAuditMode=all only for .NETCoreApp 10.0 and later. The audit and warning values are
+    captured after the consumer project body, so a project-file setting counts. The lock setting is
+    captured before Headless sets its own, so it counts only from Directory.Build.props or the
+    command line, as the README instructs.
+
+    PrepareForBuild runs once per target framework and never in the outer multi-targeting build,
+    which has no TargetFrameworkVersion to resolve the NuGetAuditMode default from.
+  -->
+  <Target Name="_HeadlessWarnOnMissingRestoreBootstrap" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <_HeadlessBootstrapNuGetAuditMode
+        Condition=" '$(_HeadlessBootstrapNuGetAuditMode)' == ''
+          and '$(TargetFrameworkIdentifier)' == '.NETCoreApp'
+          and '$(TargetFrameworkVersion)' != ''
+          and $([MSBuild]::VersionGreaterThanOrEquals('$(TargetFrameworkVersion)', '10.0')) "
+        >all</_HeadlessBootstrapNuGetAuditMode>
+      <_HeadlessBootstrapIsCi
+        Condition=" '$(_HeadlessIsKnownCiEnvironment)' == 'true' or '$(ContinuousIntegrationBuild)' == 'true' "
+        >true</_HeadlessBootstrapIsCi>
+
+      <_HeadlessBootstrapMissing />
+      <_HeadlessBootstrapMissing
+        Condition=" '$(_HeadlessBootstrapNuGetAudit)' != '' and '$(_HeadlessBootstrapNuGetAudit)' != 'true' "
+        >$(_HeadlessBootstrapMissing), NuGetAudit=true</_HeadlessBootstrapMissing>
+      <_HeadlessBootstrapMissing Condition=" '$(_HeadlessBootstrapNuGetAuditMode)' != 'all' "
+        >$(_HeadlessBootstrapMissing), NuGetAuditMode=all</_HeadlessBootstrapMissing>
+      <_HeadlessBootstrapMissing
+        Condition=" '$(_HeadlessBootstrapNuGetAuditLevel)' != '' and '$(_HeadlessBootstrapNuGetAuditLevel)' != 'low' "
+        >$(_HeadlessBootstrapMissing), NuGetAuditLevel=low</_HeadlessBootstrapMissing>
+      <_HeadlessBootstrapMissing
+        Condition=" '$(_HeadlessBootstrapIsCi)' == 'true'
+          and Exists('$(_HeadlessPackageLockFile)')
+          and '$(_HeadlessBootstrapRestoreLockedMode)' != 'true' "
+        >$(_HeadlessBootstrapMissing), RestoreLockedMode=true</_HeadlessBootstrapMissing>
+      <_HeadlessBootstrapMissing
+        Condition=" '$(_HeadlessBootstrapIsCi)' == 'true'
+          and '$(_HeadlessBootstrapTreatWarningsAsErrors)' != 'true'
+          and !($(_HeadlessBootstrapWarningsAsErrors.Contains('NU1901'))
+            and $(_HeadlessBootstrapWarningsAsErrors.Contains('NU1902'))
+            and $(_HeadlessBootstrapWarningsAsErrors.Contains('NU1903'))
+            and $(_HeadlessBootstrapWarningsAsErrors.Contains('NU1904'))) "
+        >$(_HeadlessBootstrapMissing), WarningsAsErrors=NU1901;NU1902;NU1903;NU1904</_HeadlessBootstrapMissing>
+    </PropertyGroup>
+
+    <Warning
+      Condition=" '$(_HeadlessBootstrapMissing)' != '' "
+      Code="HSDK001"
+      Text="$(HeadlessSdkName) is consumed by PackageReference, and NuGet restore does not load package build assets, so the Headless restore policy does not apply to restore. Set $(_HeadlessBootstrapMissing.Substring(2)) in Directory.Build.props or on the restore command line, or consume $(HeadlessSdkName) as an MSBuild SDK."
+      HelpLink="https://github.com/xshaheen/headless-sdk#1-packagereference"
+    />
+  </Target>
+</Project>

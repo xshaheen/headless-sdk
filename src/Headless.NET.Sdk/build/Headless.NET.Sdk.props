@@ -22,6 +22,12 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
   -->
   <PropertyGroup>
     <_HeadlessSdkBuildPropsImported>true</_HeadlessSdkBuildPropsImported>
+    <!--
+      Under PackageReference consumption this file loads after Directory.Build.props, so this is
+      the consumer's own value, before the CI policy below sets one. SupportRestoreBootstrap.targets
+      reads it.
+    -->
+    <_HeadlessBootstrapRestoreLockedMode>$(RestoreLockedMode)</_HeadlessBootstrapRestoreLockedMode>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)SupportDetectContinuousIntegration.props" />

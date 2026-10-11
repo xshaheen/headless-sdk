@@ -41,6 +41,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
         "build/SupportNuGetWarningPolicy.props",
         "build/SupportPackageInformation.props",
         "build/SupportPackageInformation.targets",
+        "build/SupportRestoreBootstrap.targets",
         "build/SupportSbom.props",
         "build/SupportSbom.targets",
         "build/SupportSingleFileApp.props",

@@ -11,6 +11,97 @@ namespace Headless.NET.Sdk.Tests.Integrations;
 
 public sealed class ContractCiRestoreTests(HeadlessSdkPackageFixture fixture) : ContractConsumerBehaviorTests
 {
+    // The PackageReference restore bootstrap the README documents, verbatim.
+    private const string RestoreBootstrapDirectoryBuildProps = """
+        <Project>
+          <PropertyGroup>
+            <NuGetAudit>true</NuGetAudit>
+            <NuGetAuditMode>all</NuGetAuditMode>
+            <NuGetAuditLevel>low</NuGetAuditLevel>
+            <RestoreLockedMode
+              Condition="Exists('$(MSBuildProjectDirectory)/packages.lock.json')"
+            >true</RestoreLockedMode>
+            <WarningsAsErrors Condition="'$(CI)' == 'true'">$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
+            <WarningsNotAsErrors Condition="'$(CI)' == 'true'">$(WarningsNotAsErrors);NU1900;NU1905</WarningsNotAsErrors>
+          </PropertyGroup>
+        </Project>
+        """;
+
+    [Fact]
+    public async Task should_warn_about_the_restore_bootstrap_when_package_reference_targets_net8()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            targetFramework: "net8.0"
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.Contains("warning HSDK001", result.Output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Set NuGetAuditMode=all in", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_fail_ci_build_when_package_reference_has_no_restore_bootstrap()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -p:CI=true -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
+        );
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("error HSDK001", result.Output, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Set WarningsAsErrors=NU1901;NU1902;NU1903;NU1904 in", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_not_warn_about_the_restore_bootstrap_when_ci_package_reference_has_it()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            targetFramework: "net8.0",
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Directory.Build.props"] = RestoreBootstrapDirectoryBuildProps,
+            }
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -p:CI=true -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.DoesNotContain("HSDK001", result.Output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task should_not_warn_about_the_restore_bootstrap_when_consumed_as_msbuild_sdk()
+    {
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            targetFramework: "net8.0",
+            includePackageReference: false
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -p:CI=true -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.DoesNotContain("HSDK001", result.Output, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public async Task should_apply_warning_errors_only_when_ci_policy_is_active()
     {

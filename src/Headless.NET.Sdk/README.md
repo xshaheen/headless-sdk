@@ -65,6 +65,7 @@ See the repository [consumption-mode reference](https://github.com/xshaheen/head
 
 Named quality policies are authoritative. Other supported customization properties are documented in the [main README](https://github.com/xshaheen/headless-sdk).
 
-Direct PackageReference consumers must also follow the main README's first-clean-restore bootstrap.
-NuGet cannot load package `build` assets early enough for the package itself to govern that initial
-restore; this limitation does not affect build, pack, analyzer, or later restore behavior.
+Direct PackageReference consumers must also follow the main README's restore bootstrap. NuGet
+restore never loads package `build` assets, so the package cannot govern restore in this mode; the
+limitation does not affect build, pack, or analyzer behavior. A build whose restore settings are
+weaker than the bootstrap reports warning `HSDK001`.
