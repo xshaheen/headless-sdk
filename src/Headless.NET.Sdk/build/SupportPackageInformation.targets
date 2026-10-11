@@ -59,7 +59,16 @@
       Condition="'$(_PackageThirdPartyNoticesPath)' == '' and Exists('$(MSBuildProjectDirectory)/THIRD-PARTY-NOTICES.md')"
       >$(MSBuildProjectDirectory)/THIRD-PARTY-NOTICES.md</_PackageThirdPartyNoticesPath>
 
-    <!-- Logo -->
+    <!--
+      Logo. HeadlessPackageIconPath names an icon outside the conventional locations, such as a
+      repository assets/ folder; $(SolutionDir) is empty when a single project is built, so the
+      solution-level fallback alone misses it there.
+    -->
+    <PackageIcon
+      Condition="'$(DisablePackageLogo)' != 'true'
+        and '$(PackageIcon)' == ''
+        and '$(HeadlessPackageIconPath)' != ''"
+      >$([System.IO.Path]::GetFileName('$(HeadlessPackageIconPath)'))</PackageIcon>
     <PackageIcon
       Condition="'$(DisablePackageLogo)' != 'true'
         and '$(PackageIcon)' == ''
@@ -197,10 +206,20 @@
     />
 
     <!-- Logo -->
-    <_ProjectLogo Include="$(ProjectDir)logo.png" Condition="Exists('$(ProjectDir)logo.png')" />
+    <None
+      Include="$(HeadlessPackageIconPath)"
+      Pack="true"
+      PackagePath=""
+      Visible="false"
+      Condition="'$(DisablePackageLogo)' != 'true' and '$(HeadlessPackageIconPath)' != ''"
+    />
+    <_ProjectLogo
+      Include="$(ProjectDir)logo.png"
+      Condition="'$(HeadlessPackageIconPath)' == '' and Exists('$(ProjectDir)logo.png')"
+    />
     <_SolutionLogo
       Include="$(SolutionDir)logo.png"
-      Condition="@(_ProjectLogo) == '' and Exists('$(SolutionDir)logo.png')"
+      Condition="'$(HeadlessPackageIconPath)' == '' and @(_ProjectLogo) == '' and Exists('$(SolutionDir)logo.png')"
     />
     <None
       Include="@(_ProjectLogo)"

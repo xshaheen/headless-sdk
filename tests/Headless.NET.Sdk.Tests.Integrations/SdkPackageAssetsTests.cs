@@ -386,6 +386,52 @@ public sealed class SdkPackageAssetsTests(HeadlessSdkPackageFixture fixture) : S
     }
 
     [Fact]
+    public async Task should_pack_configured_icon_instead_of_discovered_logo_when_icon_path_is_set()
+    {
+        // A project-local logo.png is present on purpose: the configured icon must replace it, not
+        // ship next to it.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["HeadlessPackageIconPath"] = "assets/brand.png",
+            }
+        );
+        var assetsDirectory = Path.Combine(project.RootDirectory, "assets");
+        Directory.CreateDirectory(assetsDirectory);
+        await File.WriteAllBytesAsync(
+            Path.Combine(assetsDirectory, "brand.png"),
+            OnePixelPng,
+            TestContext.Current.CancellationToken
+        );
+        await File.WriteAllBytesAsync(
+            Path.Combine(project.RootDirectory, "logo.png"),
+            OnePixelPng,
+            TestContext.Current.CancellationToken
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"pack {Quote(project.ProjectFilePath)} -c Release -o {Quote(project.PackagesDirectory)} -p:PackageVersion=1.2.3 -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+
+        using var package = ZipFile.OpenRead(Path.Combine(project.PackagesDirectory, "ConsumerProject.1.2.3.nupkg"));
+        Assert.NotNull(package.GetEntry("brand.png"));
+        Assert.Null(package.GetEntry("logo.png"));
+        Assert.Contains(
+            "<icon>brand.png</icon>",
+            ReadPackageEntry(package, "ConsumerProject.nuspec"),
+            StringComparison.Ordinal
+        );
+    }
+
+    private static readonly byte[] OnePixelPng = Convert.FromBase64String(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+    );
+
+    [Fact]
     public async Task should_pack_first_third_party_notice_variant_when_multiple_exist()
     {
         await using var project = await ConsumerProject.CreateAsync(

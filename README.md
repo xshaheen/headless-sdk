@@ -308,13 +308,14 @@ the listed default; explicit values win unless the behavior is identified as man
 | `SearchReadmeFileAbove` | `false` | Searches parent directories for a package README. |
 | `DisableReadme` | `false` | Prevents automatic package README discovery and packing. |
 | `DisablePackageLogo` | `false` | Prevents automatic `logo.png` discovery and packing. |
+| `HeadlessPackageIconPath` | unset | Packs this file, relative to the project or absolute, as the package icon instead of a discovered `logo.png`. Use it when the icon lives outside the project and solution directories, such as a repository `assets/` folder. An explicit `PackageIcon` still wins. |
 | `DisableSupportCopyright` | `false` | Prevents Headless copyright generation. |
 | `DisableSupportEmbedBinlog` | `false` | Prevents Headless configuration inputs from being embedded in binlogs. |
 | `DisableSupportWebContainer` | `false` | Prevents Web container defaults from being evaluated. |
 | `EnableSdkContainerSupport` | `true` for Web projects on GitHub Actions | Enables the Microsoft SDK container targets; an explicit value wins. |
 | `ContainerRegistry` | `ghcr.io` for Web projects on GitHub Actions | Overrides the target container registry. |
-| `ContainerRepository` | GitHub owner plus kebab-case repository name | Overrides the target container repository. |
-| `ContainerImageTagsMainVersionPrefix` | `1.0` | Sets the prefix used for main-branch run-number tags. |
+| `ContainerRepository` | `<owner>/<repository>/<assembly>` in kebab case, so each Web project publishes its own image | Overrides the target container repository. |
+| `ContainerImageTagsMainVersionPrefix` | `1.0` | Sets the prefix used for main-branch run-number tags. A main build whose `$(Version)` is set, including by a target such as MinVer, is tagged with that version instead; `+` build metadata becomes `-`. |
 | `ContainerImageTagsIncludeLatest` | `true` | Set `false` to omit `latest` from main-branch image tags. |
 | `ContainerImageTags` | `prefix.run-number;latest` on main, otherwise `0.0.1-preview.sha` | Overrides the complete semicolon-separated image tag set. |
 | `HeadlessSuppressNonPackablePackWarning` | `true` | Set `false` to retain the Microsoft warning for packing a non-packable project. |
@@ -478,9 +479,9 @@ Headless sets repository metadata and discovers a project README, icon, license 
 
 ## Runtime and application behavior
 
-- Non-test applications default to `RollForward=LatestMajor`.
+- Non-test, non-Web applications default to `RollForward=LatestMajor`. Web apps keep the .NET default, so a server without the pinned major runtime fails to start instead of serving traffic on an untested major version.
 - Non-Web executable projects default to .NET tool packaging.
-- Web projects on GitHub Actions receive SDK container defaults for `ghcr.io` and deterministic branch/tag calculation. Set `DisableSupportWebContainer=true` only when the project owns its container policy.
+- Web projects on GitHub Actions receive SDK container defaults for `ghcr.io`, one image repository per project, and deterministic branch/tag calculation. Set `DisableSupportWebContainer=true` only when the project owns its container policy.
 - `HeadlessEnableStrictSystemTextJsonRuntimeDefaults=true` enables the .NET runtime switches for required constructor parameters and nullable annotations on TFMs compatible with `net9.0`. It is off by default because these process-wide switches can break third-party serializers.
 - When `System.Runtime.Experimental` is referenced, Headless removes only the conflicting `System.Runtime.dll` facade from `Microsoft.NETCore.App.Ref`. The experimental package carries its own facade; leaving both references can make conflict resolution select the wrong compile-time assembly. This targeted correction is intentionally always active.
 
