@@ -1,0 +1,9 @@
+#!/bin/sh
+# Committed hook; the global hooks (or `make hooks` on machines without them) run it.
+set -eu
+# Git supplies an all-zero local object ID for deletions; only published objects need the check.
+while read -r _local_ref local_oid _remote_ref _remote_oid; do
+    case "$local_oid" in
+        ''|*[!0]*) exec make --no-print-directory hook-pre-push ;;
+    esac
+done
