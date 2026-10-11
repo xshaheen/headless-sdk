@@ -551,6 +551,7 @@ class Foo { }
 
         Assert.True(result.ExitCode != 0, result.Output);
         Assert.Contains("error CS8604", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("HSDK001", result.Output, StringComparison.Ordinal);
     }
 
     private Task<ConsumerProject> CreateNullArgumentProjectAsync(string? testKindProperty)
@@ -565,9 +566,13 @@ class Foo { }
             extraProperties[testKindProperty] = "true";
         }
 
+        // MSBuild-SDK consumption isolates the nullable gate: a PackageReference consumer under the
+        // same gate also fails on HSDK001 unless it carries the restore bootstrap.
         return ConsumerProject.CreateAsync(
             fixture.PackageVersion,
             fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            includePackageReference: false,
             extraProperties: extraProperties,
             additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
             {
