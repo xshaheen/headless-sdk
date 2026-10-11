@@ -23,6 +23,23 @@
   </PropertyGroup>
 
   <!--
+    WarningsAsErrors=nullable expands to a command-line promotion of every nullable diagnostic, and
+    a command-line option outranks a global analyzer config. Without this exemption the CS8604
+    `severity = none` in Headless.NET.Sdk.Tests.editorconfig is ignored exactly where the gate is
+    on, and every test that passes null at a contract edge fails a CI or agent build. Keep this list
+    in step with the nullable (CS86xx) relaxations in that file.
+  -->
+  <PropertyGroup
+    Label="Test Nullable Relaxations"
+    Condition=" ('$(IsTestProject)' == 'true' or '$(IsTestHarnessProject)' == 'true')
+      and ('$(_HeadlessIsKnownCiEnvironment)' == 'true'
+        or '$(ContinuousIntegrationBuild)' == 'true'
+        or '$(HeadlessIsLlmContext)' == 'true') "
+  >
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);CS8604</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <!--
     NuGet restore consumes TreatWarningsAsErrors during evaluation. Set it only immediately before
     compilation so compiler and analyzer diagnostics become errors without changing restore.
   -->
@@ -136,14 +153,19 @@
 
   <!--
     Allow apps to run on a newer major .NET runtime if their pinned major isn't installed.
-    Applied to every non-test project: it is what executables (Exe and WinExe) need, and an inert
-    no-op for libraries (RollForward only affects the runtime host, and libraries emit no
-    runtimeconfig.json). Gating on OutputType is deliberately avoided so WinExe desktop apps are
-    still covered. Skipped only for test projects, which should pin to the SDK they were built against.
+    Applied to non-test, non-Web projects: it is what tools and desktop executables (Exe and WinExe)
+    need, and an inert no-op for libraries (RollForward only affects the runtime host, and libraries
+    emit no runtimeconfig.json). Gating on OutputType is deliberately avoided so WinExe desktop apps
+    are still covered. Test projects pin to the SDK they were built against. Web apps keep the .NET
+    default (Minor): a server missing the pinned major should fail to start, not silently serve
+    traffic on a major runtime the app was never tested against.
   -->
   <PropertyGroup
     Label="RollForward"
-    Condition=" '$(RollForward)' == '' and '$(IsTestProject)' != 'true' and '$(IsTestHarnessProject)' != 'true' "
+    Condition=" '$(RollForward)' == ''
+      and '$(IsTestProject)' != 'true'
+      and '$(IsTestHarnessProject)' != 'true'
+      and '$(UsingMicrosoftNETSdkWeb)' != 'true' "
   >
     <RollForward>LatestMajor</RollForward>
   </PropertyGroup>

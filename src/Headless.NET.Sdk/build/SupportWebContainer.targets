@@ -3,9 +3,14 @@
     Container support for Web SDK projects on GitHub Actions.
     Auto-computes:
       ContainerRegistry    = ghcr.io
-      ContainerRepository  = <owner>/<repo-kebab-case>     from $(GITHUB_REPOSITORY)
-      ContainerImageTags   = <prefix>.<run-number>;latest  on main
+      ContainerRepository  = <owner>/<repo-kebab-case>/<assembly-kebab-case>
+                                                           from $(GITHUB_REPOSITORY) and $(AssemblyName)
+      ContainerImageTags   = <version>;latest              on main, when the project carries its own version
+                             <prefix>.<run-number>;latest  on main otherwise
                              0.0.1-preview.<sha>           elsewhere
+
+    The assembly segment keeps every Web project in a repository on its own image; without it, two
+    services publishing from one repository would push to, and overwrite, the same image.
 
     Disable by setting any of: EnableSdkContainerSupport=false, ContainerRegistry, ContainerRepository,
     ContainerImageTags. Only activates when the project uses Microsoft.NET.Sdk.Web on GitHub Actions.
@@ -27,9 +32,15 @@
       Condition="'$(_GitHubRepositoryNameKebabCase)' == '' AND '$(_GitHubRepositoryNameNormalized)' != ''"
       >$([System.String]::Copy($([System.Text.RegularExpressions.Regex]::Replace('$(_GitHubRepositoryNameNormalized)', '([a-z0-9])([A-Z])', '$1-$2'))).ToLowerInvariant())</_GitHubRepositoryNameKebabCase>
 
+    <_HeadlessContainerAssemblyNameNormalized Condition="'$(_HeadlessContainerAssemblyNameNormalized)' == ''"
+      >$([System.Text.RegularExpressions.Regex]::Replace('$(AssemblyName)', '[^0-9A-Za-z]+', '-').Trim('-'))</_HeadlessContainerAssemblyNameNormalized>
+    <_HeadlessContainerAssemblyNameKebabCase
+      Condition="'$(_HeadlessContainerAssemblyNameKebabCase)' == '' AND '$(_HeadlessContainerAssemblyNameNormalized)' != ''"
+      >$([System.String]::Copy($([System.Text.RegularExpressions.Regex]::Replace('$(_HeadlessContainerAssemblyNameNormalized)', '([a-z0-9])([A-Z])', '$1-$2'))).ToLowerInvariant())</_HeadlessContainerAssemblyNameKebabCase>
+
     <ContainerRepository
-      Condition="'$(ContainerRepository)' == '' AND '$(_GitHubRepositoryOwner)' != '' AND '$(_GitHubRepositoryNameKebabCase)' != ''"
-      >$(_GitHubRepositoryOwner)/$(_GitHubRepositoryNameKebabCase)</ContainerRepository>
+      Condition="'$(ContainerRepository)' == '' AND '$(_GitHubRepositoryOwner)' != '' AND '$(_GitHubRepositoryNameKebabCase)' != '' AND '$(_HeadlessContainerAssemblyNameKebabCase)' != ''"
+      >$(_GitHubRepositoryOwner)/$(_GitHubRepositoryNameKebabCase)/$(_HeadlessContainerAssemblyNameKebabCase)</ContainerRepository>
 
     <_IsGitHubMain
       Condition="'$(_IsGitHubMain)' == '' AND ('$(GITHUB_REF_NAME)' == 'main' OR '$(GITHUB_REF)' == 'refs/heads/main')"
@@ -44,6 +55,9 @@
       Condition="'$(ContainerImageTagsIncludeLatest)' != 'true'"
     ></_ContainerImageTagsLatestSuffix>
 
+    <_HeadlessContainerImageTagsDefaultedOnMain
+      Condition="'$(ContainerImageTags)' == '' AND '$(_IsGitHubMain)' == 'true' AND '$(GITHUB_RUN_NUMBER)' != ''"
+      >true</_HeadlessContainerImageTagsDefaultedOnMain>
     <ContainerImageTags
       Condition="'$(ContainerImageTags)' == '' AND '$(_IsGitHubMain)' == 'true' AND '$(GITHUB_RUN_NUMBER)' != ''"
       >$(ContainerImageTagsMainVersionPrefix).$(GITHUB_RUN_NUMBER)$(_ContainerImageTagsLatestSuffix)</ContainerImageTags>
@@ -51,4 +65,20 @@
       Condition="'$(ContainerImageTags)' == '' AND '$(_IsGitHubMain)' != 'true' AND '$(GITHUB_SHA)' != ''"
       >0.0.1-preview.$(GITHUB_SHA)</ContainerImageTags>
   </PropertyGroup>
+
+  <!--
+    Version-aware main tags. Tag-based versioning such as MinVer computes $(Version) in a target, so
+    evaluation cannot see it; this runs just before the container SDK reads the tags. 1.0.0 is the
+    .NET SDK placeholder for a project without a version, so it keeps the run-number tag. Docker
+    tags cannot contain '+', so SemVer build metadata is joined with '-'.
+  -->
+  <Target
+    Name="HeadlessUseVersionForContainerImageTags"
+    BeforeTargets="ComputeContainerConfig"
+    Condition="'$(_HeadlessContainerImageTagsDefaultedOnMain)' == 'true' AND '$(Version)' != '' AND '$(Version)' != '1.0.0'"
+  >
+    <PropertyGroup>
+      <ContainerImageTags>$(Version.Replace('+', '-'))$(_ContainerImageTagsLatestSuffix)</ContainerImageTags>
+    </PropertyGroup>
+  </Target>
 </Project>

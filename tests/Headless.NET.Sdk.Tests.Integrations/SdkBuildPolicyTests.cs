@@ -523,6 +523,65 @@ class Foo { }
         Assert.Contains("warning CA2007", result.Output, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("IsTestProject")]
+    [InlineData("IsTestHarnessProject")]
+    public async Task should_keep_test_null_argument_relaxation_when_ci_gate_promotes_nullable_warnings(
+        string testKindProperty
+    )
+    {
+        // The CI gate adds WarningsAsErrors=nullable, a command-line promotion that outranks the
+        // global analyzer config carrying the test-only CS8604 relaxation.
+        await using var project = await CreateNullArgumentProjectAsync(testKindProperty);
+
+        var result = await BuildNoIncrementalAsync(project);
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.DoesNotContain("CS8604", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_fail_null_argument_when_ci_gate_builds_a_non_test_project()
+    {
+        // Control for the test-project exemption: the same source fails a production build, so the
+        // exemption is scoped to tests and the gate itself is active.
+        await using var project = await CreateNullArgumentProjectAsync(testKindProperty: null);
+
+        var result = await BuildNoIncrementalAsync(project);
+
+        Assert.True(result.ExitCode != 0, result.Output);
+        Assert.Contains("error CS8604", result.Output, StringComparison.Ordinal);
+    }
+
+    private Task<ConsumerProject> CreateNullArgumentProjectAsync(string? testKindProperty)
+    {
+        var extraProperties = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["ContinuousIntegrationBuild"] = "true",
+        };
+
+        if (testKindProperty is not null)
+        {
+            extraProperties[testKindProperty] = "true";
+        }
+
+        return ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            extraProperties: extraProperties,
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["NullArgument.cs"] =
+                    "namespace ConsumerProject; public static class NullArgument { public static int Length(string value) => value.Length; public static int Probe(string? value) => Length(value); }",
+            }
+        );
+    }
+
+    private static Task<DotNetCommandResult> BuildNoIncrementalAsync(ConsumerProject project) =>
+        project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} --no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
+        );
+
     [Fact]
     public async Task should_use_expected_msbuild_property_defaults()
     {
@@ -552,6 +611,24 @@ class Foo { }
 
         var overrides = await libraryProject.EvaluateHeadlessPropertiesAsync("-p:EnablePackageValidation=false");
         Assert.Equal("false", overrides["EnablePackageValidation"]);
+    }
+
+    [Fact]
+    public async Task should_keep_default_roll_forward_when_project_is_a_web_app()
+    {
+        // A web server must not silently start on an untested major runtime; an explicit value wins.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: "Microsoft.NET.Sdk.Web",
+            outputType: "Exe"
+        );
+
+        Assert.Empty((await project.EvaluateHeadlessPropertiesAsync())["RollForward"]);
+        Assert.Equal(
+            "LatestMajor",
+            (await project.EvaluateHeadlessPropertiesAsync("-p:RollForward=LatestMajor"))["RollForward"]
+        );
     }
 
     [Fact]
@@ -784,8 +861,46 @@ public static class JsonConsumer
 
         Assert.Equal("true", properties["EnableSdkContainerSupport"]);
         Assert.Equal("ghcr.io", properties["ContainerRegistry"]);
-        Assert.Equal("xshaheen/headless-sdk", properties["ContainerRepository"]);
+        Assert.Equal("xshaheen/headless-sdk/consumer-project", properties["ContainerRepository"]);
         Assert.Equal("1.0.123;latest", properties["ContainerImageTags"]);
+    }
+
+    [Theory]
+    [InlineData("2.3.4+abc123", "2.3.4-abc123;latest")]
+    [InlineData("1.0.0", "1.0.123;latest")]
+    public async Task should_tag_main_container_images_with_project_version_when_version_is_computed_by_a_target(
+        string version,
+        string expectedTags
+    )
+    {
+        // MinVer and similar tools set Version in a build target that runs before publishing, so the
+        // tags must be resolved at the container SDK's ComputeContainerConfig, not at evaluation. 1.0.0 is the .NET SDK
+        // placeholder for an unversioned project and keeps the run-number tag.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: "Microsoft.NET.Sdk.Web",
+            outputType: "Exe",
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Directory.Build.targets"] = $$"""
+                <Project>
+                  <Target Name="SetVersionLikeMinVer">
+                    <PropertyGroup>
+                      <Version>{{version}}</Version>
+                    </PropertyGroup>
+                  </Target>
+                </Project>
+                """,
+            }
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"msbuild {Quote(project.ProjectFilePath)} -restore -t:SetVersionLikeMinVer;ComputeContainerConfig -getProperty:ContainerImageTags -v:quiet -p:GITHUB_ACTIONS=true -p:GITHUB_REPOSITORY=xshaheen/headless-sdk -p:GITHUB_REF=refs/heads/main -p:GITHUB_RUN_NUMBER=123 -p:RestoreConfigFile={Quote(project.NuGetConfigPath)} -nologo"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.Equal(expectedTags, result.Output.Trim());
     }
 
     [Fact]
