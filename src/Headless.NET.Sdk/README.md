@@ -37,6 +37,8 @@ All five family consumption modes are supported. Every MSBuild project must set 
 </Project>
 ```
 
+The additional-SDK form layers Headless over any project SDK, not only Microsoft's. Prefer it to PackageReference for projects such as an Aspire AppHost; the [Additional SDK](https://github.com/xshaheen/headless-sdk#3-additional-sdk) section shows that example.
+
 The version can instead be resolved from `global.json`. .NET 10 file-based apps use:
 
 ```csharp
@@ -50,7 +52,7 @@ See the repository [consumption-mode reference](https://github.com/xshaheen/head
 - Direct opt-in only: no `buildTransitive` assets are shipped.
 - Explicit target frameworks only; Headless does not infer a TFM.
 - Mandatory nine-package analyzer baseline plus default-on, consumer-configurable general, Newtonsoft.Json, and BCL guard-clause banned APIs.
-- VSTHRD103 ignores known non-blocking sync calls such as EF Core `Add`/`AddRange`, in-memory stream I/O, and `CancellationTokenSource.Cancel`.
+- VSTHRD103 is off by default because CA1849 reports the same blocking calls. The bundled `vs-threading.SyncMethodsToExcludeFromVSTHRD103.Headless.txt` exclusion list, which skips non-blocking sync calls such as EF Core `Add`/`AddRange`, in-memory stream I/O, and `CancellationTokenSource.Cancel`, takes effect only for a consumer that turns VSTHRD103 back on.
 - CI-only compiler, analyzer, nullable, MSBuild, and vulnerability warning escalation.
 - CI-only analyzer timing reports; profile a local build with `-p:ReportAnalyzer=true`.
 - CI locked restore only when an existing lock file opts the project in.

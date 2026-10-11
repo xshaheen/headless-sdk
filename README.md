@@ -133,6 +133,24 @@ Layer Headless over an already selected Microsoft SDK:
 </Project>
 ```
 
+The base SDK need not be Microsoft's. Use this form, not PackageReference, to add Headless to a
+project whose SDK comes from another package, such as an Aspire AppHost:
+
+```xml
+<Project Sdk="Aspire.AppHost.Sdk/13.6.1">
+  <Sdk Name="Headless.NET.Sdk" Version="x.y.z" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+</Project>
+```
+
+The Aspire AppHost SDK sets `IsAspireHost=true`, which turns off CA1707 for its generated members.
+Aspire 13.6 reports ASPIRE010 unless the AppHost sets `AspireUseCliBundle=true` or suppresses
+ASPIRE010. Headless escalates that warning to an error in CI and AI-agent builds.
+
 ### 4. `global.json` MSBuild SDK resolution
 
 Pin one or more family members centrally:
