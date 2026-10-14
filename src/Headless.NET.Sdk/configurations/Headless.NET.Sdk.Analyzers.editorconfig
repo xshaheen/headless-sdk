@@ -412,6 +412,8 @@ dotnet_diagnostic.VSTHRD010.severity = none
 dotnet_diagnostic.VSTHRD011.severity = none
 # VSTHRD012: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
 dotnet_diagnostic.VSTHRD012.severity = none
+# VSTHRD013: Microsoft.VisualStudio.Threading CompletedTaskAttribute-only; no-op cost elsewhere
+dotnet_diagnostic.VSTHRD013.severity = none
 # VSTHRD100: Avoid async void methods
 dotnet_diagnostic.VSTHRD100.severity = warning
 # VSTHRD101: Avoid unsupported async delegates
@@ -444,8 +446,16 @@ dotnet_diagnostic.VSTHRD113.severity = none
 dotnet_diagnostic.VSTHRD114.severity = none
 # VSTHRD115: Visual Studio/JoinableTaskFactory-only; no-op cost elsewhere
 dotnet_diagnostic.VSTHRD115.severity = none
+# VSTHRD116: [ThreadStatic] on an instance field is silently ignored
+dotnet_diagnostic.VSTHRD116.severity = warning
+# VSTHRD117: duplicate of CA2019 (ThreadStatic fields should not use inline initialization)
+dotnet_diagnostic.VSTHRD117.severity = none
 # RCS1046/VSTHRD200: Asynchronous method name should end with 'Async'
 dotnet_diagnostic.VSTHRD200.severity = none
+# VSTHRD202: Remove unnecessary async state machine. Same policy as AsyncFixer01 and RCS1174:
+# dropping async/await moves synchronous exceptions out of the returned Task and ends a using
+# scope before the task completes, so the rewrite is a review decision, not a lint.
+dotnet_diagnostic.VSTHRD202.severity = none
 
 ############################################################
 # AsyncFixer
