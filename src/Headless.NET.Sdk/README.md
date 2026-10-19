@@ -53,10 +53,10 @@ See the repository [consumption-mode reference](https://github.com/xshaheen/head
 - Explicit target frameworks only; Headless does not infer a TFM.
 - Mandatory nine-package analyzer baseline plus default-on, consumer-configurable general, Newtonsoft.Json, and BCL guard-clause banned APIs.
 - VSTHRD103 is off by default because CA1849 reports the same blocking calls. The bundled `vs-threading.SyncMethodsToExcludeFromVSTHRD103.Headless.txt` exclusion list, which skips non-blocking sync calls such as EF Core `Add`/`AddRange`, in-memory stream I/O, and `CancellationTokenSource.Cancel`, takes effect only for a consumer that turns VSTHRD103 back on.
-- CI-only compiler, analyzer, nullable, MSBuild, and vulnerability warning escalation.
+- CI-only compiler, analyzer, nullable, and MSBuild warning escalation.
 - CI-only analyzer timing reports; profile a local build with `-p:ReportAnalyzer=true`.
 - CI locked restore only when an existing lock file opts the project in.
-- Direct and transitive NuGet audit; `NU1901`-`NU1904` fail CI while `NU1900` and `NU1905` remain warnings.
+- Direct and transitive NuGet audit; findings (`NU1901`-`NU1904`) and missing audit data (`NU1900`, `NU1905`) are warnings that never fail a build.
 - Extra Headless global usings only when `ImplicitUsings` is enabled and the TFM is compatible with `net8.0`.
 - Automatic analyzer profile for .NET 10 file-based apps.
 - Opt-in SBOM generation with `GenerateSBOM=true`.

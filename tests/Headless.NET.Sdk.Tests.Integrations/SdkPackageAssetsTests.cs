@@ -60,28 +60,21 @@ public sealed class SdkPackageAssetsTests(HeadlessSdkPackageFixture fixture) : S
     }
 
     [Fact]
-    public void should_pack_nuget_audit_targets_with_fixed_warnings_as_errors_expression()
+    public void should_pack_nuget_audit_findings_as_warnings_when_the_warning_gate_is_active()
     {
         using var package = ZipFile.OpenRead(fixture.PackagePath);
-        var entry = package.GetEntry("build/SupportNuGetAudit.targets");
+        var audit = XDocument.Parse(ReadPackageEntry(package, "build/SupportNuGetAudit.targets"));
+        var policy = XDocument.Parse(ReadPackageEntry(package, "build/SupportNuGetWarningPolicy.props"));
 
-        Assert.NotNull(entry);
+        // An advisory published after a change was written must not fail that change's build, so the
+        // audit targets escalate nothing and the gate's exemption list carries every audit code.
+        Assert.Empty(audit.Descendants("WarningsAsErrors"));
 
-        using var reader = new StreamReader(entry.Open());
-        var content = reader.ReadToEnd();
-
-        var warningsAsErrors = XDocument
-            .Parse(content)
-            .Root!.Elements("PropertyGroup")
-            .Elements("WarningsAsErrors")
-            .Single()
-            .Value;
-
-        // Vulnerability severities (NU1901-NU1904) are escalated to errors on CI/Release, prefixed by
-        // the existing $(WarningsAsErrors) so consumer values are preserved.
-        Assert.Contains("$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904", warningsAsErrors, StringComparison.Ordinal);
-        // NU1900 (audit source unreachable) must NOT be escalated: a connectivity blip should not fail the build.
-        Assert.DoesNotContain("NU1900", warningsAsErrors, StringComparison.Ordinal);
+        var notAsErrors = policy.Descendants("_HeadlessNuGetWarningsNotAsErrors").Single().Value.Split(';');
+        Assert.Subset(
+            new HashSet<string>(notAsErrors, StringComparer.Ordinal),
+            new HashSet<string>(["NU1900", "NU1901", "NU1902", "NU1903", "NU1904", "NU1905"], StringComparer.Ordinal)
+        );
     }
 
     [Fact]

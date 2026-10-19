@@ -1,23 +1,23 @@
 <Project>
-  <!-- Audit is a mandatory quality policy; local builds warn and CI escalates actual vulnerabilities. -->
+  <!--
+    Audit is a mandatory quality policy, but its findings are warnings in every build, CI and AI-agent
+    builds included. A finding depends on the advisory database, not on the change being built: an
+    advisory published today fails every branch, unrelated pull requests too, until someone patches
+    or pins the package. Visibility is the policy; the fix is prioritized like any other security work.
+
+      NU1901 - package with a known low severity vulnerability.
+      NU1902 - package with a known moderate severity vulnerability.
+      NU1903 - package with a known high severity vulnerability.
+      NU1904 - package with a known critical severity vulnerability.
+      see: https://learn.microsoft.com/nuget/reference/errors-and-warnings/nu1901-nu1904
+
+    SupportNuGetWarningPolicy.props keeps them out of the CI and AI-agent MSBuild warning escalation.
+    A consumer that wants a hard gate lists the codes in its own WarningsAsErrors, which NuGet honors
+    ahead of WarningsNotAsErrors.
+  -->
   <PropertyGroup>
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditMode>all</NuGetAuditMode>
     <NuGetAuditLevel>low</NuGetAuditLevel>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(_HeadlessIsKnownCiEnvironment)' == 'true' or '$(ContinuousIntegrationBuild)' == 'true' ">
-    <!--
-      NU1901 - Found a package with a vulnerability with level 'unknown' in the project.
-      NU1902 - Found a package with a vulnerability with level 'low' in the project.
-      NU1903 - Found a package with a vulnerability with level 'medium' in the project.
-      NU1904 - Found a package with a vulnerability with level 'high' in the project.
-      see: https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1901-nu1904
-
-      NU1900 and companion NU1905 are intentionally NOT escalated: they mean the audit source could
-      not provide vulnerability data (offline, registry outage, transient network error), not that a
-      vulnerability was found. Escalating them would turn a connectivity blip into a hard CI failure.
-    -->
-    <WarningsAsErrors>$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
   </PropertyGroup>
 </Project>

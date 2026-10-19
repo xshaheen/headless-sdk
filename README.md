@@ -96,8 +96,7 @@ equivalent restore CLI arguments):
     <RestoreLockedMode
       Condition="Exists('$(MSBuildProjectDirectory)/packages.lock.json')"
     >true</RestoreLockedMode>
-    <WarningsAsErrors Condition="'$(CI)' == 'true'">$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
-    <WarningsNotAsErrors Condition="'$(CI)' == 'true'">$(WarningsNotAsErrors);NU1900;NU1905</WarningsNotAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904;NU1905</WarningsNotAsErrors>
   </PropertyGroup>
 </Project>
 ```
@@ -108,11 +107,10 @@ props before restore, and all modes receive the same build-time project policy.
 When a PackageReference build finds restore settings weaker than this bootstrap, it reports warning
 `HSDK001` and names the missing settings. Unset audit values take NuGet's defaults, so a
 `net10.0`-or-later project needs no audit settings, but an earlier target framework needs
-`NuGetAuditMode=all`. On CI, the warning also requires the `NU1901`-`NU1904` escalation and, when a
-lock file exists, `RestoreLockedMode=true`. Like any MSBuild warning, `HSDK001` fails CI and AI-agent
-builds. Set `RestoreLockedMode` in `Directory.Build.props` or on the command line; the check does
-not see a value set in the project file. The bootstrap's `CI` conditions cover providers that set `CI=true`;
-extend them for a provider that does not, such as Azure Pipelines (`TF_BUILD`).
+`NuGetAuditMode=all`. On CI, the warning also requires `RestoreLockedMode=true` when a lock file
+exists. Like any MSBuild warning, `HSDK001` fails CI and AI-agent builds. Set `RestoreLockedMode`
+in `Directory.Build.props` or on the command line; the check does not see a value set in the
+project file.
 
 ### 2. Project SDK
 
@@ -357,8 +355,7 @@ Headless detects common CI provider environment variables. Consumers can also ac
 On CI, the SDK authoritatively enables:
 
 - compiler, nullable, code-analysis, and MSBuild warnings as errors;
-- preview target-framework warnings;
-- `NU1901`, `NU1902`, `NU1903`, and `NU1904` as errors.
+- preview target-framework warnings.
 
 CI also defaults `ReportAnalyzer=true`, which prints the compiler's per-analyzer timing table so the
 analyzer budget stays visible where regressions are reviewed. Unlike the warning gate this is
@@ -369,9 +366,20 @@ The Microsoft `NETSDK1138` warning remains visible but non-fatal on CI. End-of-l
 not receive security fixes, but Headless does not reject them when the selected Microsoft SDK can
 still target them.
 
-`NU1900` and its companion `NU1905` remain warnings because they report missing audit data rather
-than a confirmed vulnerability. NuGet audit is always enabled with `NuGetAuditMode=all` and
-`NuGetAuditLevel=low`, covering direct and transitive dependencies.
+NuGet audit findings stay warnings in every build, CI and AI-agent builds included. `NU1901`
+through `NU1904` report a known low, moderate, high, or critical vulnerability, and `NU1900` and
+`NU1905` report missing audit data. A finding depends on the advisory database rather than on the
+change being built, so an error would fail unrelated pull requests the day an advisory is published.
+The warnings keep every finding visible; patch or pin the package as security work. A repository
+that wants a hard gate adds the codes to its own `WarningsAsErrors`, which NuGet honors ahead of the
+SDK's `WarningsNotAsErrors`:
+
+```xml
+<WarningsAsErrors>$(WarningsAsErrors);NU1903;NU1904</WarningsAsErrors>
+```
+
+NuGet audit is always enabled with `NuGetAuditMode=all` and `NuGetAuditLevel=low`, covering direct
+and transitive dependencies.
 
 Locked restore is enforced on CI only when the project has opted in by committing `packages.lock.json`, or when `NuGetLockFilePath` identifies an existing lock file. Projects without a lock file are restored normally.
 

@@ -24,8 +24,6 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
     <_HeadlessBootstrapNuGetAudit>$(NuGetAudit)</_HeadlessBootstrapNuGetAudit>
     <_HeadlessBootstrapNuGetAuditMode>$(NuGetAuditMode)</_HeadlessBootstrapNuGetAuditMode>
     <_HeadlessBootstrapNuGetAuditLevel>$(NuGetAuditLevel)</_HeadlessBootstrapNuGetAuditLevel>
-    <_HeadlessBootstrapWarningsAsErrors>$(WarningsAsErrors)</_HeadlessBootstrapWarningsAsErrors>
-    <_HeadlessBootstrapTreatWarningsAsErrors>$(TreatWarningsAsErrors)</_HeadlessBootstrapTreatWarningsAsErrors>
   </PropertyGroup>
 
   <!-- Package metadata defaults must evaluate before CI fills provider-specific repository values. -->
