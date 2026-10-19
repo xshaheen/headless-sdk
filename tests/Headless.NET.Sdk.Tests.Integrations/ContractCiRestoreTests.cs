@@ -21,8 +21,7 @@ public sealed class ContractCiRestoreTests(HeadlessSdkPackageFixture fixture) : 
             <RestoreLockedMode
               Condition="Exists('$(MSBuildProjectDirectory)/packages.lock.json')"
             >true</RestoreLockedMode>
-            <WarningsAsErrors Condition="'$(CI)' == 'true'">$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
-            <WarningsNotAsErrors Condition="'$(CI)' == 'true'">$(WarningsNotAsErrors);NU1900;NU1905</WarningsNotAsErrors>
+            <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904;NU1905</WarningsNotAsErrors>
           </PropertyGroup>
         </Project>
         """;
@@ -50,7 +49,8 @@ public sealed class ContractCiRestoreTests(HeadlessSdkPackageFixture fixture) : 
     {
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
-            fixture.PackageSourceDirectory
+            fixture.PackageSourceDirectory,
+            targetFramework: "net8.0"
         );
 
         var result = await project.RunDotNetAsync(
@@ -59,7 +59,7 @@ public sealed class ContractCiRestoreTests(HeadlessSdkPackageFixture fixture) : 
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.Contains("error HSDK001", result.Output, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Set WarningsAsErrors=NU1901;NU1902;NU1903;NU1904 in", result.Output, StringComparison.Ordinal);
+        Assert.Contains("Set NuGetAuditMode=all in", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -186,6 +186,47 @@ public sealed class ContractCiRestoreTests(HeadlessSdkPackageFixture fixture) : 
         Assert.True(result.ExitCode == 0, result.Output);
         Assert.Contains("warning NU1900", result.Output, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("error NU1900", result.Output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task should_keep_vulnerable_package_findings_as_warnings_on_ci_unless_the_consumer_escalates_them()
+    {
+        // Newtonsoft.Json 12.0.1 carries GHSA-5crp-9r3c-p9vr (high severity, NU1903). The finding
+        // comes from the live nuget.org advisory feed, so this test needs the network like any restore.
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            targetFramework: "net10.0",
+            includePackageReference: false,
+            extraPackageReferences: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Newtonsoft.Json"] = "12.0.1",
+            }
+        );
+
+        var ci = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} --no-incremental -p:GITHUB_ACTIONS=true -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
+        );
+
+        Assert.True(ci.ExitCode == 0, ci.Output);
+        Assert.Contains("warning NU1903", ci.Output, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("error NU1903", ci.Output, StringComparison.OrdinalIgnoreCase);
+
+        await UpdateProjectAsync(
+            project,
+            root =>
+                root.Add(
+                    new XElement("PropertyGroup", new XElement("WarningsAsErrors", "$(WarningsAsErrors);NU1903;NU1904"))
+                )
+        );
+
+        var escalated = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} --no-incremental -p:GITHUB_ACTIONS=true -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
+        );
+
+        Assert.NotEqual(0, escalated.ExitCode);
+        Assert.Contains("error NU1903", escalated.Output, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

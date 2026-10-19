@@ -8,7 +8,7 @@
     import Headless directly, so restore sees the policy and this file is not imported.
 
     Unset values take NuGet's own defaults from NuGet.targets: NuGetAudit=true, NuGetAuditLevel=low,
-    and NuGetAuditMode=all only for .NETCoreApp 10.0 and later. The audit and warning values are
+    and NuGetAuditMode=all only for .NETCoreApp 10.0 and later. The audit values are
     captured after the consumer project body, so a project-file setting counts. The lock setting is
     captured before Headless sets its own, so it counts only from Directory.Build.props or the
     command line, as the README instructs.
@@ -42,14 +42,6 @@
           and Exists('$(_HeadlessPackageLockFile)')
           and '$(_HeadlessBootstrapRestoreLockedMode)' != 'true' "
         >$(_HeadlessBootstrapMissing), RestoreLockedMode=true</_HeadlessBootstrapMissing>
-      <_HeadlessBootstrapMissing
-        Condition=" '$(_HeadlessBootstrapIsCi)' == 'true'
-          and '$(_HeadlessBootstrapTreatWarningsAsErrors)' != 'true'
-          and !($(_HeadlessBootstrapWarningsAsErrors.Contains('NU1901'))
-            and $(_HeadlessBootstrapWarningsAsErrors.Contains('NU1902'))
-            and $(_HeadlessBootstrapWarningsAsErrors.Contains('NU1903'))
-            and $(_HeadlessBootstrapWarningsAsErrors.Contains('NU1904'))) "
-        >$(_HeadlessBootstrapMissing), WarningsAsErrors=NU1901;NU1902;NU1903;NU1904</_HeadlessBootstrapMissing>
     </PropertyGroup>
 
     <Warning
