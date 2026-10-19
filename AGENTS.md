@@ -20,7 +20,7 @@ The product is the consumer contract, and the README's **Support contract** sect
 Use the `make` targets; `make help` lists them.
 
 - **`make test-static`** runs the two repository-only test classes (analyzer rule coverage, version pins) in seconds. Run it after any edit to a config file or a version pin.
-- **`make verify`** runs the CI sequence: restore, `--no-incremental` build, pack, then the full suite, which takes minutes. It writes `artifacts/proof/<run>/summary.md`. Paste that summary into the PR description.
+- **`make verify`** runs the CI sequence: restore, `--no-incremental` build, pack, then the full suite, which takes minutes. It writes `artifacts/proof/<run>/summary.md`. Paste that summary into the PR description inside a collapsed `<details>` block, under the Verification lines that state its result.
 - **`make test-class CLASS='*Name*'`** reruns matching tests against the packages from the last `make verify`. Those packages go stale when anything under `src/` changes, so rerun `make verify` first.
 
 ## Rules the code does not state
@@ -39,3 +39,9 @@ Use the `make` targets; `make help` lists them.
 - Release tags have no `v` prefix: `0.4.3`, not `v0.4.3`. MinVer ignores prefixed tags.
 - Pushing a tag publishes to GitHub Packages (`publish.yml`). The NuGet.org job runs only for a published GitHub Release and waits for environment approval. It does not rebuild: it publishes the packages from that tag's successful push run. Publishing is external and irreversible: push a tag or create a release only when explicitly asked.
 - A version is published once. If a release goes out partly, inspect both registries and ship the next version.
+
+## Pull requests
+
+- **Fill the template's Review guide first.** `.github/PULL_REQUEST_TEMPLATE.md` opens with the decisions the reviewer must make, each linked to its hunk, then what is safe to skim and where you are least sure. A reviewer reads that and the hunks it points to, not every line. Keep the visible text under ~400 words (~700 for a large PR); proof and logs go in collapsed blocks.
+- **Split by kind of change.** Version pin bumps, the regenerated root `.editorconfig`, and renames go in their own PR, stacked under the behavior change, so the behavior change reads on its own.
+- **This repository is public.** A title, description, commit message, or comment never names a private repository, a client or consumer app, or a local path. Write "a consumer app" and state the fact: which project type, consumption mode, and property misbehaved.
