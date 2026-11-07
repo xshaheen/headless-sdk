@@ -4,7 +4,7 @@
 # deciding whether the default severity is right for the SDK baseline.
 # Format: one rule ID per line; '#' starts a comment.
 #
-# Baseline reviewed 2026-10-14 with: Meziantou.Analyzer 3.0.303,
+# Baseline reviewed 2026-11-07 with: Meziantou.Analyzer 3.0.321,
 # Microsoft.CodeAnalysis.BannedApiAnalyzers 5.6.0, AsyncFixer 2.1.0,
 # Microsoft.VisualStudio.Threading.Analyzers 18.12.1, SmartAnalyzers.MultithreadingAnalyzer
 # 1.1.31, Roslynator.Analyzers 5.0.1, Roslynator.Formatting.Analyzers 5.0.1,
@@ -232,6 +232,9 @@ MA0239 # disabled by default upstream; sealed-type typeof hint remains opt-in
 MA0240 # warns only when a consumer configures banned syntax, so the default is inert
 MA0241 # surfaces an invalid consumer banned-syntax entry instead of ignoring it
 MA0242 # informational ConcurrentDictionary value-factory hint; accept the upstream default
+MA0243 # disabled by default upstream; it flags literal tabs, so invisible-character escapes remain opt-in
+MA0244 # warning by default upstream; a constant float-to-decimal conversion changes value under the .NET 11 SDK
+MA0245 # disabled by default upstream; non-constant float-to-decimal conversions are a review aid, not a defect
 
 # --- SmartAnalyzers.MultithreadingAnalyzer ---
 MT1000

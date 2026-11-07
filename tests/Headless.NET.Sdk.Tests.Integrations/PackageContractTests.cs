@@ -74,7 +74,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
     {
         ["AsyncFixer"] = "[2.1.0]",
         ["ErrorProne.NET.CoreAnalyzers"] = "[0.1.2]",
-        ["Meziantou.Analyzer"] = "[3.0.303]",
+        ["Meziantou.Analyzer"] = "[3.0.321]",
         ["Microsoft.CodeAnalysis.BannedApiAnalyzers"] = "[5.6.0]",
         ["Microsoft.Sbom.Targets"] = "[4.1.13]",
         ["Microsoft.VisualStudio.Threading.Analyzers"] = "[18.12.1]",
@@ -87,11 +87,11 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
     private static readonly Dictionary<string, string> TestDependencySnapshot = new(StringComparer.Ordinal)
     {
         ["Microsoft.Testing.Extensions.CodeCoverage"] = "[18.12.0]",
-        ["Microsoft.Testing.Extensions.CrashDump"] = "[2.5.1]",
-        ["Microsoft.Testing.Extensions.HangDump"] = "[2.5.1]",
-        ["Microsoft.Testing.Extensions.HotReload"] = "[2.5.1]",
-        ["Microsoft.Testing.Extensions.Retry"] = "[2.5.1]",
-        ["Microsoft.Testing.Extensions.TrxReport"] = "[2.5.1]",
+        ["Microsoft.Testing.Extensions.CrashDump"] = "[2.5.2]",
+        ["Microsoft.Testing.Extensions.HangDump"] = "[2.5.2]",
+        ["Microsoft.Testing.Extensions.HotReload"] = "[2.5.2]",
+        ["Microsoft.Testing.Extensions.Retry"] = "[2.5.2]",
+        ["Microsoft.Testing.Extensions.TrxReport"] = "[2.5.2]",
     };
 
     [Fact]
