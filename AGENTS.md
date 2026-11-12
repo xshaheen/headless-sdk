@@ -17,11 +17,13 @@ The product is the consumer contract, and the README's **Support contract** sect
 
 ## Build and test
 
-Use the `make` targets; `make help` lists them.
+Use the `make` targets; `make help` lists them. A fresh clone or worktree needs `make bootstrap` (tools, restore, hooks); `make doctor` names any missing prerequisite with its fix.
 
 - **`make test-static`** runs the two repository-only test classes (analyzer rule coverage, version pins) in seconds. Run it after any edit to a config file or a version pin.
 - **`make verify`** runs the CI sequence: restore, `--no-incremental` build, pack, then the full suite, which takes minutes. It writes `artifacts/proof/<run>/summary.md`. Paste that summary into the PR description inside a collapsed `<details>` block, under the Verification lines that state its result.
 - **`make test-class CLASS='*Name*'`** reruns matching tests against the packages from the last `make verify`. Those packages go stale when anything under `src/` changes, so rerun `make verify` first.
+- **`make verify-affected`** is the gate to run once, on the final head, before you publish. It runs `make check`: `format-check`, `test-static`, then `verify`. The repo has one solution and one test project, so there is no narrower affected scope.
+- **`make build`** is incremental and asserts restore instead of restoring (run `make restore` after a package change). `make rebuild` is CI's `--no-incremental` build.
 
 ## Rules the code does not state
 

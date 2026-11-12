@@ -1,0 +1,4 @@
+# CSharpier also reads .gitignore. These folders are ignored only through .git/info/exclude or a
+# global ignore, which CSharpier does not read: a cloned project wiki, and agent output.
+.wiki/
+.local/
