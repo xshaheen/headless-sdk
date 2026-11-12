@@ -22,12 +22,12 @@
       shipped version properties and package dependencies; VersionConsistencyTests enforces the
       three-way contract.
     -->
-    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.2" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.3" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="2.5.2" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.5.2" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.HotReload" Version="2.5.2" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.Retry" Version="2.5.2" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="2.5.3" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.5.3" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HotReload" Version="2.5.3" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.Retry" Version="2.5.3" />
     <!--
       Mandatory analyzer versions injected by SupportImplicitAnalyzers.props. Same contract as
       the MTP extensions above: keep these pins synchronized with the shipped version properties

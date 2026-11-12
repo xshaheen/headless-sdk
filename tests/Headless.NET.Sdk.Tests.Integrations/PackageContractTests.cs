@@ -87,11 +87,11 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
     private static readonly Dictionary<string, string> TestDependencySnapshot = new(StringComparer.Ordinal)
     {
         ["Microsoft.Testing.Extensions.CodeCoverage"] = "[18.12.0]",
-        ["Microsoft.Testing.Extensions.CrashDump"] = "[2.5.2]",
-        ["Microsoft.Testing.Extensions.HangDump"] = "[2.5.2]",
-        ["Microsoft.Testing.Extensions.HotReload"] = "[2.5.2]",
-        ["Microsoft.Testing.Extensions.Retry"] = "[2.5.2]",
-        ["Microsoft.Testing.Extensions.TrxReport"] = "[2.5.2]",
+        ["Microsoft.Testing.Extensions.CrashDump"] = "[2.5.3]",
+        ["Microsoft.Testing.Extensions.HangDump"] = "[2.5.3]",
+        ["Microsoft.Testing.Extensions.HotReload"] = "[2.5.3]",
+        ["Microsoft.Testing.Extensions.Retry"] = "[2.5.3]",
+        ["Microsoft.Testing.Extensions.TrxReport"] = "[2.5.3]",
     };
 
     [Fact]
@@ -161,11 +161,9 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
             Assert.Equal("true", MetadataValue(metadata, "developmentDependency"));
             Assert.Equal("false", MetadataValue(metadata, "requireLicenseAcceptance"));
             Assert.Null(metadata.Elements().SingleOrDefault(element => element.Name.LocalName == "license"));
-            Assert.Contains(
-                metadata.Descendants(),
-                element =>
-                    element.Name.LocalName == "packageType"
-                    && string.Equals(element.Attribute("name")?.Value, "MSBuildSdk", StringComparison.Ordinal)
+            Assert.Contains(metadata.Descendants(), element =>
+                element.Name.LocalName == "packageType"
+                && string.Equals(element.Attribute("name")?.Value, "MSBuildSdk", StringComparison.Ordinal)
             );
             var repository = Assert.Single(metadata.Descendants(), element => element.Name.LocalName == "repository");
             Assert.Equal("git", repository.Attribute("type")?.Value);
@@ -185,15 +183,12 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
             var groups = dependencies.Elements().ToArray();
 
             Assert.NotEmpty(groups);
-            Assert.All(
-                groups,
-                group =>
-                {
-                    Assert.Equal("group", group.Name.LocalName);
-                    Assert.Null(group.Attribute("targetFramework"));
-                    Assert.Contains(group.Elements(), element => element.Name.LocalName == "dependency");
-                }
-            );
+            Assert.All(groups, group =>
+            {
+                Assert.Equal("group", group.Name.LocalName);
+                Assert.Null(group.Attribute("targetFramework"));
+                Assert.Contains(group.Elements(), element => element.Name.LocalName == "dependency");
+            });
         }
     }
 
@@ -221,9 +216,8 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
         {
             using var package = ZipFile.OpenRead(fixture.GetPackagePath(packageId));
 
-            Assert.DoesNotContain(
-                package.Entries,
-                entry => entry.FullName.StartsWith("buildTransitive/", StringComparison.Ordinal)
+            Assert.DoesNotContain(package.Entries, entry =>
+                entry.FullName.StartsWith("buildTransitive/", StringComparison.Ordinal)
             );
             Assert.Contains(package.Entries, entry => entry.FullName == $"build/{packageId}.props");
             Assert.Contains(package.Entries, entry => entry.FullName == $"build/{packageId}.targets");
@@ -276,9 +270,8 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
 
             using var stream = sdkProps.Open();
             var document = XDocument.Load(stream);
-            var hook = Assert.Single(
-                document.Descendants(),
-                element => element.Name.LocalName == "BeforeMicrosoftNETSdkTargets"
+            var hook = Assert.Single(document.Descendants(), element =>
+                element.Name.LocalName == "BeforeMicrosoftNETSdkTargets"
             );
 
             Assert.Null(hook.Attribute("Condition"));
