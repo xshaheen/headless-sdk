@@ -43,9 +43,8 @@ public sealed partial class ContractCoverageTests(HeadlessSdkPackageFixture fixt
         Assert.Contains(@".*\.generated\.cs$", sourceExclusions);
         Assert.Contains(@".*\.Designer\.cs$", sourceExclusions);
 
-        var generatedPathPattern = Assert.Single(
-            sourceExclusions,
-            pattern => pattern.Contains("obj", StringComparison.Ordinal)
+        var generatedPathPattern = Assert.Single(sourceExclusions, pattern =>
+            pattern.Contains("obj", StringComparison.Ordinal)
         );
         var generatedPathRegex = new Regex(generatedPathPattern, RegexOptions.CultureInvariant);
         Assert.Matches(generatedPathRegex, "/repo/project/obj/generated/Output.cs");

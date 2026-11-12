@@ -707,9 +707,8 @@ public sealed class SdkPackageAssetsTests(HeadlessSdkPackageFixture fixture) : S
         Assert.Empty(Directory.EnumerateFiles(project.PackagesDirectory, "*.snupkg", SearchOption.TopDirectoryOnly));
 
         using var package = ZipFile.OpenRead(Path.Combine(project.PackagesDirectory, "ConsumerProject.1.2.3.nupkg"));
-        Assert.DoesNotContain(
-            package.Entries,
-            entry => entry.FullName.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)
+        Assert.DoesNotContain(package.Entries, entry =>
+            entry.FullName.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)
         );
 
         var assembly = ReadPackageEntryBytes(package, "lib/net10.0/ConsumerProject.dll");
@@ -745,9 +744,8 @@ public sealed class SdkPackageAssetsTests(HeadlessSdkPackageFixture fixture) : S
         Assert.False(HasEmbeddedPortablePdb(assembly), "snupkg mode must keep the PDB out of the assembly.");
 
         using var symbolPackage = ZipFile.OpenRead(symbolPackagePath);
-        Assert.Contains(
-            symbolPackage.Entries,
-            entry => entry.FullName.EndsWith("ConsumerProject.pdb", StringComparison.OrdinalIgnoreCase)
+        Assert.Contains(symbolPackage.Entries, entry =>
+            entry.FullName.EndsWith("ConsumerProject.pdb", StringComparison.OrdinalIgnoreCase)
         );
     }
 

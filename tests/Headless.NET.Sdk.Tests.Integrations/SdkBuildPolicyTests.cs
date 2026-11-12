@@ -72,9 +72,8 @@ class Foo { }
         );
 
         Assert.True(result.ExitCode == 0, result.Output);
-        Assert.Contains(
-            result.GetBinLogFiles(),
-            file => file.EndsWith("Headless.NET.Sdk.Analyzers.editorconfig", StringComparison.OrdinalIgnoreCase)
+        Assert.Contains(result.GetBinLogFiles(), file =>
+            file.EndsWith("Headless.NET.Sdk.Analyzers.editorconfig", StringComparison.OrdinalIgnoreCase)
         );
         Assert.True(result.HasWarning("MA0047"), result.SarifSummary);
     }
