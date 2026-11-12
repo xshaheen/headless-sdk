@@ -72,11 +72,9 @@ public abstract partial class ContractConsumerBehaviorTests
         var packageKey = $"{packageId}/{expectedVersion}";
         Assert.True(target.TryGetProperty(packageKey, out _), $"Expected exact resolved package {packageKey}.");
         var library = libraries.GetProperty(packageKey);
-        Assert.Contains(
-            library.GetProperty("files").EnumerateArray(),
-            file =>
-                file.GetString()?.Contains("analyzers/", StringComparison.OrdinalIgnoreCase) == true
-                && file.GetString()?.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) == true
+        Assert.Contains(library.GetProperty("files").EnumerateArray(), file =>
+            file.GetString()?.Contains("analyzers/", StringComparison.OrdinalIgnoreCase) == true
+            && file.GetString()?.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) == true
         );
     }
 

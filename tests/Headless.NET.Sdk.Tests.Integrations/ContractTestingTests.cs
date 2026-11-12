@@ -48,24 +48,21 @@ public sealed class ContractTestingTests(HeadlessSdkPackageFixture fixture) : Co
                     "#if !XUNIT_GENERATED_DISABLE_WARNINGS\n#error XUNIT_GENERATED_DISABLE_WARNINGS is not defined\n#endif\nusing Xunit; namespace ConsumerProject; public sealed class ContractSmokeTests { [Fact] public void passes() => Assert.True(true); }",
             }
         );
-        await UpdateProjectAsync(
-            project,
-            root =>
-            {
-                var references = root.Descendants("PackageReference").ToArray();
-                var crashDump = references.Single(element =>
-                    element.Attribute("Include")?.Value == "Microsoft.Testing.Extensions.CrashDump"
-                );
-                crashDump.ReplaceWith(
-                    new XElement("PackageReference", new XAttribute("Remove", "Microsoft.Testing.Extensions.CrashDump"))
-                );
+        await UpdateProjectAsync(project, root =>
+        {
+            var references = root.Descendants("PackageReference").ToArray();
+            var crashDump = references.Single(element =>
+                element.Attribute("Include")?.Value == "Microsoft.Testing.Extensions.CrashDump"
+            );
+            crashDump.ReplaceWith(
+                new XElement("PackageReference", new XAttribute("Remove", "Microsoft.Testing.Extensions.CrashDump"))
+            );
 
-                var codeCoverage = references.Single(element =>
-                    element.Attribute("Include")?.Value == "Microsoft.Testing.Extensions.CodeCoverage"
-                );
-                codeCoverage.SetAttributeValue("ExcludeAssets", "all");
-            }
-        );
+            var codeCoverage = references.Single(element =>
+                element.Attribute("Include")?.Value == "Microsoft.Testing.Extensions.CodeCoverage"
+            );
+            codeCoverage.SetAttributeValue("ExcludeAssets", "all");
+        });
 
         var repositoryRoot = TestRepository.FindRoot("MTP contract test");
         File.Copy(Path.Combine(repositoryRoot, "global.json"), Path.Combine(project.RootDirectory, "global.json"));
@@ -95,9 +92,8 @@ public sealed class ContractTestingTests(HeadlessSdkPackageFixture fixture) : Co
                 libraries.TryGetProperty(packageKey, out var library),
                 $"Expected library assets for {packageKey}."
             );
-            Assert.Contains(
-                library.GetProperty("files").EnumerateArray(),
-                file => file.GetString()?.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) == true
+            Assert.Contains(library.GetProperty("files").EnumerateArray(), file =>
+                file.GetString()?.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) == true
             );
         }
 

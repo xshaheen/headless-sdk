@@ -40,9 +40,8 @@ public sealed class ContractPackagingTests(HeadlessSdkPackageFixture fixture) : 
             Directory.EnumerateFiles(packageOutput, "*.nupkg", SearchOption.TopDirectoryOnly)
         );
         using var package = ZipFile.OpenRead(packagePath);
-        Assert.Contains(
-            package.Entries,
-            entry => string.Equals(entry.FullName, "_manifest/spdx_2.2/manifest.spdx.json", StringComparison.Ordinal)
+        Assert.Contains(package.Entries, entry =>
+            string.Equals(entry.FullName, "_manifest/spdx_2.2/manifest.spdx.json", StringComparison.Ordinal)
         );
     }
 }

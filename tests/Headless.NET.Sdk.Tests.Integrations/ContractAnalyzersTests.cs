@@ -223,29 +223,24 @@ public sealed class ContractAnalyzersTests(HeadlessSdkPackageFixture fixture) : 
                     "namespace ConsumerProject; public static class BannedApiConsumer { public static System.DateTime Value => System.DateTime.Now; }",
             }
         );
-        await UpdateProjectAsync(
-            project,
-            root =>
-            {
-                var references = root.Descendants("PackageReference").ToArray();
-                var meziantou = references.Single(element =>
-                    element.Attribute("Include")?.Value == "Meziantou.Analyzer"
-                );
-                meziantou.SetAttributeValue("ExcludeAssets", "all");
+        await UpdateProjectAsync(project, root =>
+        {
+            var references = root.Descendants("PackageReference").ToArray();
+            var meziantou = references.Single(element => element.Attribute("Include")?.Value == "Meziantou.Analyzer");
+            meziantou.SetAttributeValue("ExcludeAssets", "all");
 
-                var asyncFixer = references.Single(element => element.Attribute("Include")?.Value == "AsyncFixer");
-                asyncFixer.ReplaceWith(new XElement("PackageReference", new XAttribute("Remove", "AsyncFixer")));
+            var asyncFixer = references.Single(element => element.Attribute("Include")?.Value == "AsyncFixer");
+            asyncFixer.ReplaceWith(new XElement("PackageReference", new XAttribute("Remove", "AsyncFixer")));
 
-                var propertyTarget = root.Elements("Target")
-                    .Single(element => element.Attribute("Name")?.Value == "WriteHeadlessProperties");
-                propertyTarget.AddBeforeSelf(
-                    new XElement(
-                        "ItemGroup",
-                        new XElement("EditorConfigFiles", new XAttribute("Remove", "@(EditorConfigFiles)"))
-                    )
-                );
-            }
-        );
+            var propertyTarget = root.Elements("Target")
+                .Single(element => element.Attribute("Name")?.Value == "WriteHeadlessProperties");
+            propertyTarget.AddBeforeSelf(
+                new XElement(
+                    "ItemGroup",
+                    new XElement("EditorConfigFiles", new XAttribute("Remove", "@(EditorConfigFiles)"))
+                )
+            );
+        });
 
         var result = await project.RunDotNetAsync(
             $"build {Quote(project.ProjectFilePath)} --no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"

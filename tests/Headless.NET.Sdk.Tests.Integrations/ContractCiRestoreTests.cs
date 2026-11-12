@@ -116,21 +116,19 @@ public sealed class ContractCiRestoreTests(HeadlessSdkPackageFixture fixture) : 
                 ["ContractWarning.cs"] = "#warning HEADLESS_CONTRACT_WARNING",
             }
         );
-        await UpdateProjectAsync(
-            project,
-            root =>
-                root.Add(
+        await UpdateProjectAsync(project, root =>
+            root.Add(
+                new XElement(
+                    "Target",
+                    new XAttribute("Name", "EmitHeadlessContractMsBuildWarning"),
+                    new XAttribute("BeforeTargets", "CoreCompile"),
                     new XElement(
-                        "Target",
-                        new XAttribute("Name", "EmitHeadlessContractMsBuildWarning"),
-                        new XAttribute("BeforeTargets", "CoreCompile"),
-                        new XElement(
-                            "Warning",
-                            new XAttribute("Code", "HEADLESS0001"),
-                            new XAttribute("Text", "HEADLESS_CONTRACT_MSBUILD_WARNING")
-                        )
+                        "Warning",
+                        new XAttribute("Code", "HEADLESS0001"),
+                        new XAttribute("Text", "HEADLESS_CONTRACT_MSBUILD_WARNING")
                     )
                 )
+            )
         );
 
         var local = await project.RunDotNetAsync(
@@ -213,12 +211,10 @@ public sealed class ContractCiRestoreTests(HeadlessSdkPackageFixture fixture) : 
         Assert.Contains("warning NU1903", ci.Output, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("error NU1903", ci.Output, StringComparison.OrdinalIgnoreCase);
 
-        await UpdateProjectAsync(
-            project,
-            root =>
-                root.Add(
-                    new XElement("PropertyGroup", new XElement("WarningsAsErrors", "$(WarningsAsErrors);NU1903;NU1904"))
-                )
+        await UpdateProjectAsync(project, root =>
+            root.Add(
+                new XElement("PropertyGroup", new XElement("WarningsAsErrors", "$(WarningsAsErrors);NU1903;NU1904"))
+            )
         );
 
         var escalated = await project.RunDotNetAsync(
@@ -240,19 +236,17 @@ public sealed class ContractCiRestoreTests(HeadlessSdkPackageFixture fixture) : 
             includePackageReference: false,
             extraPackageReferences: new Dictionary<string, string>(StringComparer.Ordinal) { ["Humanizer"] = "2.14.1" }
         );
-        await UpdateProjectAsync(
-            project,
-            root =>
-                root.Add(
+        await UpdateProjectAsync(project, root =>
+            root.Add(
+                new XElement(
+                    "ItemGroup",
                     new XElement(
-                        "ItemGroup",
-                        new XElement(
-                            "PackageReference",
-                            new XAttribute("Include", "Humanizer"),
-                            new XAttribute("Version", "2.14.1")
-                        )
+                        "PackageReference",
+                        new XAttribute("Include", "Humanizer"),
+                        new XAttribute("Version", "2.14.1")
                     )
                 )
+            )
         );
 
         var restore = await project.RunDotNetAsync(
