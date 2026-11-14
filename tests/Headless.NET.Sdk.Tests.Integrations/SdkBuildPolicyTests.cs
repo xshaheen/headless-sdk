@@ -754,7 +754,14 @@ class Foo { }
         );
 
         Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains("NETSDK1013", result.Output, StringComparison.Ordinal);
+
+        // The consumer build runs on the newest installed .NET SDK, not this repository's pin, and the SDK
+        // reports an empty TargetFramework as NETSDK1013 up to .NET 10 and as NETSDK1241 from .NET 11.
+        Assert.True(
+            result.Output.Contains("NETSDK1013", StringComparison.Ordinal)
+                || result.Output.Contains("NETSDK1241", StringComparison.Ordinal),
+            $"Expected NETSDK1013 or NETSDK1241 in the build output:{Environment.NewLine}{result.Output}"
+        );
     }
 
     [Fact]
