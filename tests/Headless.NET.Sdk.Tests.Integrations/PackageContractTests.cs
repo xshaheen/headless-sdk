@@ -150,10 +150,12 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
             Assert.Equal("logo.png", MetadataValue(metadata, "icon"));
             Assert.Equal("https://github.com/xshaheen/headless-sdk", MetadataValue(metadata, "projectUrl"));
             Assert.Equal("https://github.com/xshaheen/headless-sdk/releases", MetadataValue(metadata, "releaseNotes"));
+#pragma warning disable RS0030 // wall-clock: the pack stamps the copyright end year from the build machine's clock
             Assert.Equal(
                 $"Copyright © Mahmoud Shaheen 2024 - {DateTime.UtcNow.Year}",
                 MetadataValue(metadata, "copyright")
             );
+#pragma warning restore RS0030
             Assert.Equal(
                 "xshaheen;sdk;msbuild-sdk;msbuild;editorconfig;configuration;settings;props;targets",
                 MetadataValue(metadata, "tags")
