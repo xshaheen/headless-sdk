@@ -9,8 +9,10 @@ M:System.Threading.SpinWait.SpinUntil(System.Func{System.Boolean});Await the sig
 M:System.Threading.SpinWait.SpinUntil(System.Func{System.Boolean},System.Int32);Await the signal the test is waiting for, not a polling loop
 M:System.Threading.SpinWait.SpinUntil(System.Func{System.Boolean},System.TimeSpan);Await the signal the test is waiting for, not a polling loop
 
+P:System.DateTime.Now;Inject TimeProvider and use FakeTimeProvider in the test
 P:System.DateTime.UtcNow;Inject TimeProvider and use FakeTimeProvider in the test
 P:System.DateTime.Today;Inject TimeProvider and use FakeTimeProvider in the test
+P:System.DateTimeOffset.Now;Inject TimeProvider and use FakeTimeProvider in the test
 P:System.DateTimeOffset.UtcNow;Inject TimeProvider and use FakeTimeProvider in the test
 P:System.Environment.TickCount;Assert on output, events, and counts, not elapsed time
 P:System.Environment.TickCount64;Assert on output, events, and counts, not elapsed time
