@@ -375,7 +375,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
     }
 
     [Fact]
-    public void should_gate_nuget_publication_on_a_published_release_and_protected_environment()
+    public void should_gate_nuget_publication_on_a_published_release_protected_environment_and_trusted_publishing()
     {
         var repositoryRoot = TestRepository.FindRoot("NuGet publication workflow contract");
         var workflow = File.ReadAllText(Path.Combine(repositoryRoot, ".github", "workflows", "publish.yml"));
@@ -388,7 +388,12 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
             StringComparison.Ordinal
         );
         Assert.Contains("name: NuGet Release", workflow, StringComparison.Ordinal);
-        Assert.Contains("${{ secrets.NUGET_API_KEY }}", workflow, StringComparison.Ordinal);
+        // Trusted Publishing: the job exchanges its OIDC token for a short-lived key instead of
+        // reading a stored one; the stored key was rejected with a 403 for 0.6.1 and 0.6.2.
+        Assert.Contains("id-token: write", workflow, StringComparison.Ordinal);
+        Assert.Contains("uses: NuGet/login@", workflow, StringComparison.Ordinal);
+        Assert.Contains("${{ steps.nuget-login.outputs.NUGET_API_KEY }}", workflow, StringComparison.Ordinal);
+        Assert.DoesNotContain("secrets.NUGET_API_KEY", workflow, StringComparison.Ordinal);
         Assert.Contains("https://api.nuget.org/v3/index.json", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("--skip-duplicate", workflow, StringComparison.Ordinal);
     }
