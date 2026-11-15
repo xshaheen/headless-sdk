@@ -244,6 +244,8 @@ literals and inline suppression reasons that no line-length warning can fix.
 
 The bundled general, Newtonsoft.Json, and guard-clause banned-symbol lists are enabled by default. The guard-clause list bans the BCL throw helpers `ArgumentNullException.ThrowIfNull`, `ArgumentException.ThrowIfNullOrEmpty` and `ThrowIfNullOrWhiteSpace`, every `ArgumentOutOfRangeException.ThrowIf*`, and `ObjectDisposedException.ThrowIf`, and points to the `Headless.Checks` `Argument.*` and `Ensure.*` guards instead. Consumers can disable the complete banned-symbol policy with `DisableSupportBannedSymbols=true`, or disable any list independently through `IncludeDefaultBannedSymbols=false`, `BannedNewtonsoftJsonSymbols=false`, and `BannedGuardClauseSymbols=false`. The `Microsoft.CodeAnalysis.BannedApiAnalyzers` package remains part of the analyzer infrastructure.
 
+A fourth list, the test timing list, is off by default. Set `BannedTestTimingSymbols=true` to apply it to test and test harness projects. It bans `Thread.Sleep`, `Task.Delay` without a `TimeProvider`, `SpinWait.SpinUntil`, `Stopwatch`, `Environment.TickCount`, `DateTime.UtcNow`, `DateTime.Today`, and `DateTimeOffset.UtcNow` (the general list already bans `DateTime.Now` and `DateTimeOffset.Now`), because a test that waits on real time is slow on a fast machine and flaky on a slow one. Each message names the replacement: await the signal the test is waiting for, or inject `TimeProvider` and pass a `FakeTimeProvider`. A line that tests real time suppresses `RS0030` with its reason. A later release turns the list on by default, so a suite can enable it now and clear its violations first.
+
 Each defect class is reported by one rule. Where packages overlap, the SDK keeps the rule with the
 broader trigger set or a code fix and sets the duplicates to `none`. Examples: CA1849 reports blocking
 calls in async code, replacing VSTHRD103, AsyncFixer02, and MA0042. MA0001, MA0074, and MA0011
@@ -285,6 +287,7 @@ the listed default; explicit values win unless the behavior is identified as man
 | `IncludeDefaultBannedSymbols` | `true` | Set `false` to omit the general .NET banned-symbol list. |
 | `BannedNewtonsoftJsonSymbols` | `true` | Set `false` to permit Newtonsoft.Json APIs while retaining the general list. |
 | `BannedGuardClauseSymbols` | `true` | Set `false` to permit the BCL guard-clause throw helpers (`ArgumentNullException.ThrowIfNull` and siblings) while retaining the other lists. |
+| `BannedTestTimingSymbols` | `false` | Set `true` to ban sleeps, `Task.Delay`, `Stopwatch`, and clock reads in test and test harness projects. A later release changes the default to `true`. |
 | `HeadlessEmitInternalsVisibleToAttributes` | `true` | Set `false` when the project owns its friend-assembly list. |
 | `HeadlessEmitClsCompliantAttribute` | `true` | Set `false` when the project supplies its own `CLSCompliant` attribute. |
 | `HeadlessEnableStrictSystemTextJsonRuntimeDefaults` | `false` | Enables the two process-wide strict System.Text.Json runtime switches for TFMs compatible with `net9.0`. |

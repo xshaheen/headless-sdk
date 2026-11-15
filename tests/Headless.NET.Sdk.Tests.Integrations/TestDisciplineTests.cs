@@ -10,7 +10,7 @@ using Xunit;
 namespace Headless.NET.Sdk.Tests.Integrations;
 
 // The rules RS0030 cannot express, checked over this repository's test sources. RS0030 bans sleeps
-// and wall-clock reads (tests/BannedSymbols.Tests.txt), because a test that waits on time is slow
+// and wall-clock reads (src/Headless.NET.Sdk/configurations/BannedSymbols.TestTiming.txt), because a test that waits on time is slow
 // on a fast machine and flaky on a slow one. These tests keep its escape hatch honest and hold the
 // two rules around it: a skip that silences a test forever names the issue that brings it back, and
 // a test never carries its own timeout, because a flaky test is fixed, not given more time.
