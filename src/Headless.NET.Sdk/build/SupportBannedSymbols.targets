@@ -23,7 +23,8 @@
       Sleeps, Task.Delay, Stopwatch, and clock reads make a test slow on a fast machine and flaky on
       a slow one. The list is opt-in because existing suites hold many of them and RS0030 fails a CI
       build; a later release turns it on by default. Test harness projects hold shared fixtures that
-      tests wait through, so they follow the same rule.
+      tests wait through, so they follow the same rule. DateTime.Now and DateTimeOffset.Now stay only
+      on the general list, because BannedApiAnalyzers reports a symbol banned by two lists as RS0031.
     -->
     <AdditionalFiles
       Include="$(MSBuildThisFileDirectory)..\configurations\BannedSymbols.TestTiming.txt"

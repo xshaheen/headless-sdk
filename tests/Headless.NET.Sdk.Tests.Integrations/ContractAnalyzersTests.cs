@@ -8,6 +8,8 @@ using System.Xml.Linq;
 using Xunit;
 using static Headless.NET.Sdk.Tests.Integrations.DotNetCommand;
 
+#nullable enable
+
 namespace Headless.NET.Sdk.Tests.Integrations;
 
 public sealed class ContractAnalyzersTests(HeadlessSdkPackageFixture fixture) : ContractConsumerBehaviorTests
@@ -257,7 +259,8 @@ public sealed class ContractAnalyzersTests(HeadlessSdkPackageFixture fixture) : 
             },
             additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                // DateTime.Now is on both the general list and the test timing list.
+                // The general list bans DateTime.Now; the test timing list leaves it out, because a symbol
+                // banned by two lists is reported as RS0031.
                 ["TimingConsumer.cs"] = """
                 namespace ConsumerProject;
 
