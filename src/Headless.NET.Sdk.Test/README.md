@@ -78,6 +78,7 @@ maintain a consumer-owned runsettings file.
 - A direct supported xUnit v3 package reference adds `XUNIT_GENERATED_DISABLE_WARNINGS` once while preserving other constants; xUnit v3 4.0.1 and later then suppress warnings in their generated code. Set `EnableXunitEntryPointDisableWarnings=false` to opt out; test-project classification alone does not enable it.
 - Coverage enabled on CI, with `HeadlessCoverageSettingsPath` exposing the packaged denominator policy, and analyzer work skipped during the test-build phase unless explicitly retained.
 - Mandatory Headless analyzer infrastructure, configurable banned-API policy, and mandatory audit and CI policies with narrow test-code severity relaxations.
+- An opt-in test timing banned-API list: setting `BannedTestTimingSymbols` to `true` reports sleeps, `Task.Delay` without a `TimeProvider`, `Stopwatch`, and clock reads as `RS0030`. It is off by default; a later release turns it on.
 
 The package is self-contained and ships no `buildTransitive` assets. Shared harness libraries can instead use `IsTestHarnessProject=true` with the base SDK to receive test analysis defaults without becoming executable test hosts.
 
