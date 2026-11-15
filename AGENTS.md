@@ -15,14 +15,27 @@ The product is the consumer contract, and the README's **Support contract** sect
 - `src/_shared` owns satellite packaging and metadata. A satellite's own `build/` and `sdk/` folders hold only its project-type wrapper.
 - `tests/Headless.NET.Sdk.Tests.Integrations` is the only test project. Most tests pack the six packages and build throwaway consumer projects against them.
 
+## Hit every surface
+
+A change that works in the one consumer build you tried is often wrong in the others. Before calling a change done, say which of these it touches and what you decided for each, even "not supported here":
+
+- **Consumption modes.** PackageReference, project SDK (`Sdk="..."`), additional SDK (`<Sdk Name>`), `global.json` SDK resolution, and .NET 10 file-based apps (`#:sdk`); the project modes in both single- and multi-targeting builds.
+- **Satellites.** `Headless.NET.Sdk` and its `.Web`, `.Test`, `.Razor`, `.BlazorWebAssembly`, and `.WindowsDesktop` satellites. A shared `build/` or `configurations/` edit reaches all six.
+- **Props and targets.** The project can override a property set in props; one set in targets overrides the project. Design-time builds evaluate them too.
+- **Shipped policy files.** Severities in the injected editorconfigs (plus the regenerated root `.editorconfig` and `AnalyzerRulesAtPackageDefaults.txt`), the `BannedSymbols*.txt` lists and their opt-out properties, and the scaffold templates.
+- **Build contexts.** Local, CI (`ContinuousIntegrationBuild`: warnings as errors, locked restore), and AI-agent builds (`SupportDetectLlmContext.props`).
+- **Platforms.** Linux shards, Windows smoke (`WindowsDesktop`), and macOS smoke, which runs only in Publish.
+- **Docs.** The README's Support contract and consumption sections, and the package README of each satellite touched.
+
 ## Build and test
 
 Use the `make` targets; `make help` lists them. A fresh clone or worktree needs `make bootstrap` (tools, restore, hooks); `make doctor` names any missing prerequisite with its fix.
 
-- **`make test-static`** runs the two repository-only test classes (analyzer rule coverage, version pins) in seconds. Run it after any edit to a config file or a version pin.
-- **`make verify`** runs the CI sequence: restore, `--no-incremental` build, pack, then the full suite, which takes minutes. It writes `artifacts/proof/<run>/summary.md`. Paste that summary into the PR description inside a collapsed `<details>` block, under the Verification lines that state its result.
+- **`make test-static`** runs the repository-only test classes (analyzer rule coverage, version pins, test discipline) in seconds. Run it after any edit to a config file or a version pin.
+- **`make verify`** runs the CI sequence: restore, `--no-incremental` build, pack, then the full suite, which takes minutes. It writes `artifacts/proof/<run>/summary.md`. Condense it into one row of the PR template's Verification table; never paste it.
 - **`make test-class CLASS='*Name*'`** reruns matching tests against the packages from the last `make verify`. Those packages go stale when anything under `src/` changes, so rerun `make verify` first.
 - **`make verify-affected`** is the gate to run once, on the final head, before you publish. It runs `make check`: `format-check`, `test-static`, then `verify`. The repo has one solution and one test project, so there is no narrower affected scope.
+- **`make prove TEST='*method*' [BASE=origin/main]`** is a fix's regression proof: it runs the tests TEST selects on the merge base, with this checkout's changed test files copied in, then here, and passes only when they fail there and pass here. Put its table in the PR's Regression line. Read the base log's tail: a base too old for the installed SDK (`global.json` disables roll-forward) also fails, for a reason that is not the bug.
 - **`make build`** is incremental and asserts restore instead of restoring (run `make restore` after a package change). `make rebuild` is CI's `--no-incremental` build.
 
 ## Rules the code does not state
@@ -33,6 +46,7 @@ Use the `make` targets; `make help` lists them. A fresh clone or worktree needs 
 - **Severities live only in the injected configs.** Edit `Headless.NET.Sdk.Analyzers.editorconfig` or `Headless.NET.Sdk.Tests.editorconfig`; each keeps one section per analyzer family with rules sorted by ID. The compiler and ReSharper's `jb inspectcode` both read them. `configurations/editorconfig.txt` is an editor-only scaffold, because a consumer `.editorconfig` outranks the SDK and a copied severity would pin that repository to the SDK version it was copied from. `editorconfig_scaffold_should_not_carry_analyzer_settings` fails if one is added. This repository's own root `.editorconfig` is generated from those files by `python3 eng/tools/sync_root_editorconfig.py`, because its projects use plain `Microsoft.NET.Sdk`; rerun the script after editing a shipped config, or `root_editorconfig_should_match_the_injected_configs` fails.
 - **Version pins move together.** A tool or analyzer version appears in `Directory.Packages.props`, in the shipped props that expose it, and in `tests/Headless.NET.Sdk.TestToolVersions.Anchor`. The anchor exists only so that Dependabot opens bump PRs. `VersionConsistencyTests` fails when the three disagree.
 - **Test names** use `should_{action}_{expected}_when_{condition}`.
+- **Tests never wait on time.** `tests/BannedSymbols.Tests.txt` bans sleeps, `Task.Delay`, `Stopwatch`, and clock reads in test code (RS0030, an error); banned APIs inside a consumer-source string are not test code and are unaffected. A line that truly depends on real time suppresses RS0030 with the reason on the pragma: `#pragma warning disable RS0030 // wall-clock: <why>` or `// real-wait: <why>`. `TestDisciplineTests` (in `make test-static`) fails on a suppression without one, on an unconditional skip that names no issue (`#123` or a URL), and on a `Timeout` on `[Fact]` or `[Theory]`. A platform skip uses `Assert.SkipUnless(<capability>, <why>)`.
 
 ## CI and releases
 

@@ -27,6 +27,12 @@ CHECK_GATES ?= format-check test-static verify
 HOOK_BASE_REF ?=
 CLASS ?=
 JSON ?=
+BASE ?= origin/main
+TEST ?=
+# prove runs TEST (an MTP --filter-method glob) without HEADLESS_PACKAGES_DIR, so each checkout's
+# fixture packs its own src/: the base run tests the base packages, the head run this checkout's.
+PROVE_TEST = $(DOTNET) test --project "$(TEST_PROJECT)" --configuration "$(CONFIGURATION)" -- --filter-method '$(TEST)' --minimum-expected-tests 1
+PROVE_PATHS = tests
 # One timestamp per make invocation, so every stage of a target writes into the same bundle. Memoized:
 # `date` runs on first use only, never for help, doctor, or a hook.
 RUN_ID = $(eval RUN_ID := $(shell date -u +%Y%m%dT%H%M%SZ))$(RUN_ID)
@@ -42,7 +48,7 @@ endif
 LAST_PACKAGES = $(ARTIFACTS_DIR)/proof/last-packages
 TEST_REPORT_ARGS = --report-trx --minimum-expected-tests 1
 # Static tests read the repository and need no packed packages or consumer builds.
-STATIC_TEST_CLASSES = --filter-class '*AnalyzerRuleCoverageTests' --filter-class '*VersionConsistencyTests'
+STATIC_TEST_CLASSES = --filter-class '*AnalyzerRuleCoverageTests' --filter-class '*VersionConsistencyTests' --filter-class '*TestDisciplineTests'
 
 # CI's release path stays in the workflows: it packs once, then shards one immutable package
 # artifact across Linux test jobs and Windows and macOS smoke jobs. `make verify` runs the same
@@ -104,8 +110,8 @@ endef
 .PHONY: help
 help: ## Show targets and examples
 	@awk 'BEGIN {FS = ":.*##"} /^##@/ {printf "\n%s\n", substr($$0, 5)} /^[a-zA-Z0-9_.-]+:.*##/ {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@printf '\nConventions:\n  JSON=1 prints doctor as the contract report; CLASS narrows test-class (an MTP --filter-class glob);\n  LOCAL_VERSION overrides the unique local pack version; PROOF_KEEP bounds the kept proof bundles; NO_COLOR is honored.\n'
-	@printf '\nExamples:\n  make test-static\n  make test-class CLASS='"'"'*ScaffoldingTests*'"'"'\n  make verify-affected\n  make doctor JSON=1\n'
+	@printf '\nConventions:\n  JSON=1 prints doctor as the contract report; CLASS narrows test-class (an MTP --filter-class glob);\n  LOCAL_VERSION overrides the unique local pack version; PROOF_KEEP bounds the kept proof bundles;\n  TEST selects prove'"'"'s tests (an MTP --filter-method glob) and BASE its base ref; NO_COLOR is honored.\n'
+	@printf '\nExamples:\n  make test-static\n  make test-class CLASS='"'"'*ScaffoldingTests*'"'"'\n  make prove TEST='"'"'*should_keep_vulnerable_package_findings*'"'"'\n  make verify-affected\n  make doctor JSON=1\n'
 
 # doctor report. stdin: one check per line, `group|component|check|status|reason|fix`
 # (status: ok fail missing gated unavailable). Table, or the contract JSON when JSON=1.
@@ -169,7 +175,7 @@ doctor: ## Check prerequisites per capability group, each with its fix; JSON=1 p
 
 # Seconds: the two repository-only classes need no packed packages or consumer builds.
 .PHONY: test-static
-test-static: ## Run the repository-only test classes (analyzer rule coverage, version pins); seconds, no packing
+test-static: ## Run the repository-only test classes (analyzer rule coverage, version pins, test discipline); seconds, no packing
 	@rm -rf "$(RESULTS_DIR)/static"
 	$(DOTNET) test --project "$(TEST_PROJECT)" --configuration "$(CONFIGURATION)" -- $(STATIC_TEST_CLASSES) --minimum-expected-tests 1 --results-directory "$(RESULTS_DIR)/static"
 
@@ -206,8 +212,8 @@ check: ## CI gate: runs every gate in CHECK_GATES (format-check test-static veri
 
 # The full CI sequence: build, pack all six packages under a unique local version, run the
 # integration suite against them, then reduce the logs and TRX into artifacts/proof/<run>/summary.md
-# (paste it into the PR) and summary.json. Every stage runs, so one failure does not hide the rest,
-# except that tests are skipped when the build or pack failed rather than run against stale output.
+# (condense it into one PR Verification row; never paste it) and summary.json. Every stage runs, so
+# one failure does not hide the rest, except that tests are skipped when the build or pack failed rather than run against stale output.
 # Bundles sort by their timestamp name; the newest PROOF_KEEP - 1 stay, so the new one makes PROOF_KEEP.
 .PHONY: verify
 verify: ## Build, pack (unique local version), and run the full suite; writes a proof bundle (~3 min)
@@ -224,7 +230,34 @@ verify: ## Build, pack (unique local version), and run the full suite; writes a 
 		HEADLESS_PACKAGES_DIR="$(CURDIR)/$$run/packages" $(PROOF) run --dir "$$run" --name tests -- $(DOTNET) test "$(SOLUTION)" --configuration "$(CONFIGURATION)" --no-restore --no-build -- $(TEST_REPORT_ARGS) --results-directory "$(CURDIR)/$$run/tests" || status=1; \
 	fi; \
 	$(PROOF) summarize --dir "$$run" > /dev/null || status=1; \
-	cat "$$run/summary.md"; printf 'Proof bundle: %s (summary.md for the PR body, summary.json for tools)\n' "$$run"; exit $$status
+	cat "$$run/summary.md"; printf 'Proof bundle: %s (condense summary.md into the PR Verification row; summary.json for tools)\n' "$$run"; exit $$status
+
+# A fix is proven when its tests fail on the base and pass on the fix. The base checkout gets this
+# checkout's changed and new test files copied in, because the new test is the probe and the fix is
+# what the base lacks; a test that does not compile on the base counts as failing there. A base run
+# can also fail for a reason that is not the bug, so the tail of its log is printed for the author to
+# read. The base checkout is a detached worktree under CLI_DIR, removed on exit. Each side packs the
+# six packages before its test runs, so expect minutes, not seconds.
+.PHONY: prove
+prove: ## Prove a fix: the tests TEST selects fail on the merge base with BASE (default origin/main) and pass here
+	@[ -n "$(TEST)" ] || { echo "TEST selects the tests that hold the fix (an MTP --filter-method glob). Example: make prove TEST='*should_keep_vulnerable_package_findings*' BASE=origin/main" >&2; exit 2; }
+	@if [ -n "$(findstring n,$(subst -,,$(filter-out --%,$(foreach w,$(MAKEFLAGS),$(if $(findstring =,$(w)),,$(w))))))" ]; then echo "prove: dry run; would run TEST=$(TEST) on the merge base with BASE=$(BASE) and here"; exit 0; fi; \
+	base=$$(git merge-base "$(BASE)" HEAD) || { echo "prove: cannot resolve the merge base with BASE=$(BASE)" >&2; exit 1; }; \
+	logs='$(CLI_DIR)/prove'; dir="$$logs/base"; mkdir -p "$$logs"; \
+	git worktree remove --force "$$dir" 2>/dev/null || true; \
+	git worktree add --force --detach --quiet "$$dir" "$$base"; \
+	trap 'git worktree remove --force "$$dir" 2>/dev/null || true' EXIT; \
+	{ git diff --name-only --diff-filter=AM "$$base" -- $(PROVE_PATHS); git ls-files --others --exclude-standard -- $(PROVE_PATHS); } | sort -u | \
+	while IFS= read -r f; do mkdir -p "$$dir/$$(dirname "$$f")"; cp "$$f" "$$dir/$$f"; done; \
+	if (cd "$$dir" && $(PROVE_TEST)) > "$$logs/base.log" 2>&1; then b=pass; else b=fail; fi; \
+	if $(PROVE_TEST) > "$$logs/head.log" 2>&1; then h=pass; else h=fail; fi; \
+	printf '| Commit | %s |\n| --- | --- |\n| base %s | %s |\n| head %s | %s |\n' "$(TEST)" "$$(git rev-parse --short "$$base")" "$$b" "$$(git rev-parse --short HEAD)" "$$h"; \
+	echo "Logs: $$logs/base.log $$logs/head.log"; \
+	case "$$b$$h" in \
+	  failpass) echo "prove: fails on base, passes on head. Confirm the base failure is the bug:"; tail -n 15 "$$logs/base.log"; exit 0 ;; \
+	  passpass) echo "prove: the tests pass on base too, so they do not hold the fix" >&2; exit 3 ;; \
+	  *) echo "prove: the tests fail on head" >&2; tail -n 15 "$$logs/head.log" >&2; exit 1 ;; \
+	esac
 
 .PHONY: format
 format: ## Write formatting with CSharpier (C# and the MSBuild files it formats)

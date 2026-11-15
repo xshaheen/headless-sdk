@@ -50,26 +50,27 @@ Fixes #
 
 <!-- Delete if none. One row per surface a consumer depends on: an MSBuild property or its default, an analyzer
      severity, a banned symbol, a scaffold file, a package ID, a supported target framework. Cross-check the README's
-     Support contract section. -->
+     Support contract section. Under the table, show each changed shipped file's surface as a `diff` block of the bare
+     lines a consumer sees (property, severity, or banned-symbol lines), no surrounding XML. -->
 
 | Surface | Change | Who breaks, and the migration |
 | --- | --- | --- |
 
 ## Verification
 
-<!-- The state on the head commit only. How the branch got there (checks run on earlier commits, reruns) goes in
-     the collapsed Branch history block, never in these lines. -->
+<!-- The state on the head commit only; earlier commits and reruns go in Branch history. Condense each gate run to
+     one row: verdict, tests passed/failed/skipped (with skip reasons), compiler and analyzer findings. Add a stage
+     row only for a failure or warning, quoting its first line. Never paste summary.md. -->
 
 | Check | Result on `<head commit>` |
 | --- | --- |
-| `make verify` | |
+| `make verify-affected` | |
 
-- **Regression:** <!-- the consumer-build test that fails on main, stated as the behavior it holds -->
+- **Regression:** <!-- the behavior the new test holds, and for a fix the `make prove TEST=...` table: fails on
+  base, passes on head -->
 - **Consumption modes:** <!-- which of PackageReference, MSBuild SDK, single- and multi-targeting, and which
   satellites the tests cover for this change -->
 - **Not verified:** <!-- each claim no check covers, and why (macOS smoke runs only in Publish). Delete if none. -->
-
-<!-- Paste artifacts/proof/<run>/summary.md here inside a collapsed <details> block. -->
 
 <details><summary>Branch history</summary>
 
