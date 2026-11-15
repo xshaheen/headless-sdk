@@ -48,6 +48,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" />
-    <AdditionalFiles Include="..\..\src\Headless.NET.Sdk\configurations\BannedSymbols.TestTiming.txt" Visible="false" />
+    <AdditionalFiles Include="..\BannedSymbols.Tests.txt" Visible="false" />
   </ItemGroup>
 </Project>

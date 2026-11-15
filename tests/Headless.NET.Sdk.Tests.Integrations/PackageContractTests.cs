@@ -51,7 +51,6 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
         "build/SupportWebContainer.targets",
         "configurations/BannedSymbols.GuardClauses.txt",
         "configurations/BannedSymbols.NewtonsoftJson.txt",
-        "configurations/BannedSymbols.TestTiming.txt",
         "configurations/BannedSymbols.txt",
         "configurations/default.runsettings",
         "configurations/editorconfig.txt",

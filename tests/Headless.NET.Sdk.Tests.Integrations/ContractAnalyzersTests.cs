@@ -8,8 +8,6 @@ using System.Xml.Linq;
 using Xunit;
 using static Headless.NET.Sdk.Tests.Integrations.DotNetCommand;
 
-#nullable enable
-
 namespace Headless.NET.Sdk.Tests.Integrations;
 
 public sealed class ContractAnalyzersTests(HeadlessSdkPackageFixture fixture) : ContractConsumerBehaviorTests
@@ -199,93 +197,6 @@ public sealed class ContractAnalyzersTests(HeadlessSdkPackageFixture fixture) : 
             properties["PackageReferences"],
             StringComparison.Ordinal
         );
-    }
-
-    [Theory]
-    [InlineData(null, "IsTestProject", false, false)]
-    [InlineData("true", "IsTestProject", false, true)]
-    [InlineData("true", "IsTestProject", true, true)]
-    [InlineData("true", "IsTestHarnessProject", false, true)]
-    [InlineData("true", null, false, false)]
-    [InlineData("false", "IsTestProject", false, false)]
-    public async Task should_add_the_test_timing_list_only_when_enabled_for_a_test_project(
-        string? bannedTestTimingSymbols,
-        string? testProjectProperty,
-        bool useSdkConsumption,
-        bool expectTestTimingSymbols
-    )
-    {
-        var properties = new Dictionary<string, string>(StringComparer.Ordinal);
-        if (bannedTestTimingSymbols is not null)
-        {
-            properties["BannedTestTimingSymbols"] = bannedTestTimingSymbols;
-        }
-
-        if (testProjectProperty is not null)
-        {
-            properties[testProjectProperty] = "true";
-        }
-
-        await using var project = await ConsumerProject.CreateAsync(
-            fixture.PackageVersion,
-            fixture.PackageSourceDirectory,
-            sdk: useSdkConsumption ? $"Headless.NET.Sdk/{fixture.PackageVersion}" : "Microsoft.NET.Sdk",
-            targetFramework: "net10.0",
-            includePackageReference: !useSdkConsumption,
-            extraProperties: properties
-        );
-
-        var evaluated = await project.EvaluateHeadlessPropertiesAsync();
-
-        Assert.Equal(
-            expectTestTimingSymbols,
-            evaluated["AdditionalFiles"]
-                .Split('|', StringSplitOptions.RemoveEmptyEntries)
-                .Any(path => path.EndsWith("BannedSymbols.TestTiming.txt", StringComparison.OrdinalIgnoreCase))
-        );
-    }
-
-    [Fact]
-    public async Task should_report_test_waits_and_clock_reads_once_when_the_test_timing_list_is_enabled()
-    {
-        await using var project = await ConsumerProject.CreateAsync(
-            fixture.PackageVersion,
-            fixture.PackageSourceDirectory,
-            targetFramework: "net10.0",
-            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["BannedTestTimingSymbols"] = "true",
-                ["IsTestHarnessProject"] = "true",
-            },
-            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                // The general list bans DateTime.Now; the test timing list leaves it out, because a symbol
-                // banned by two lists is reported as RS0031.
-                ["TimingConsumer.cs"] = """
-                namespace ConsumerProject;
-
-                public static class TimingConsumer
-                {
-                    public static System.Threading.Tasks.Task Wait() => System.Threading.Tasks.Task.Delay(10);
-
-                    public static System.DateTime Local => System.DateTime.Now;
-
-                    public static System.DateTimeOffset Utc => System.DateTimeOffset.UtcNow;
-                }
-                """,
-            }
-        );
-
-        var result = await project.RunDotNetAsync(
-            $"build {Quote(project.ProjectFilePath)} --no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
-        );
-
-        Assert.True(result.ExitCode == 0, result.Output);
-        Assert.Contains("Task.Delay", result.Output, StringComparison.Ordinal);
-        Assert.Contains("DateTimeOffset.UtcNow", result.Output, StringComparison.Ordinal);
-        Assert.Contains("DateTime.Now", result.Output, StringComparison.Ordinal);
-        // RS0031 reports a symbol banned twice across the lists the project receives.
-        Assert.DoesNotContain("RS0031", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]
