@@ -4,7 +4,7 @@
 An agent's claim that a change works is only as good as the evidence attached to it. This tool
 records every stage it runs (command, exit code, duration, full log) and then reduces the raw
 outputs (compiler log, TRX files, analyzer report, Cobertura coverage) into summary.json for
-machines and summary.md for a pull request body. Standard library only.
+machines and summary.md for the author to condense into a pull request body. Standard library only.
 
 Commands:
   run        Run one stage command, tee its output to <dir>/<name>.log, record its result, and

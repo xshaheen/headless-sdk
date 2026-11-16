@@ -150,10 +150,12 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
             Assert.Equal("logo.png", MetadataValue(metadata, "icon"));
             Assert.Equal("https://github.com/xshaheen/headless-sdk", MetadataValue(metadata, "projectUrl"));
             Assert.Equal("https://github.com/xshaheen/headless-sdk/releases", MetadataValue(metadata, "releaseNotes"));
+#pragma warning disable RS0030 // wall-clock: the pack stamps the copyright end year from the build machine's clock
             Assert.Equal(
                 $"Copyright © Mahmoud Shaheen 2024 - {DateTime.UtcNow.Year}",
                 MetadataValue(metadata, "copyright")
             );
+#pragma warning restore RS0030
             Assert.Equal(
                 "xshaheen;sdk;msbuild-sdk;msbuild;editorconfig;configuration;settings;props;targets",
                 MetadataValue(metadata, "tags")
@@ -373,7 +375,7 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
     }
 
     [Fact]
-    public void should_gate_nuget_publication_on_a_published_release_and_protected_environment()
+    public void should_gate_nuget_publication_on_a_published_release_protected_environment_and_trusted_publishing()
     {
         var repositoryRoot = TestRepository.FindRoot("NuGet publication workflow contract");
         var workflow = File.ReadAllText(Path.Combine(repositoryRoot, ".github", "workflows", "publish.yml"));
@@ -386,7 +388,12 @@ public sealed class PackageContractTests(HeadlessSdkPackageFixture fixture) : IC
             StringComparison.Ordinal
         );
         Assert.Contains("name: NuGet Release", workflow, StringComparison.Ordinal);
-        Assert.Contains("${{ secrets.NUGET_API_KEY }}", workflow, StringComparison.Ordinal);
+        // Trusted Publishing: the job exchanges its OIDC token for a short-lived key instead of
+        // reading a stored one; the stored key was rejected with a 403 for 0.6.1 and 0.6.2.
+        Assert.Contains("id-token: write", workflow, StringComparison.Ordinal);
+        Assert.Contains("uses: NuGet/login@", workflow, StringComparison.Ordinal);
+        Assert.Contains("${{ steps.nuget-login.outputs.NUGET_API_KEY }}", workflow, StringComparison.Ordinal);
+        Assert.DoesNotContain("secrets.NUGET_API_KEY", workflow, StringComparison.Ordinal);
         Assert.Contains("https://api.nuget.org/v3/index.json", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("--skip-duplicate", workflow, StringComparison.Ordinal);
     }

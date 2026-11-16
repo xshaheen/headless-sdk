@@ -761,7 +761,9 @@ public sealed class SdkPackageAssetsTests(HeadlessSdkPackageFixture fixture) : S
 
         var properties = await project.EvaluateHeadlessPropertiesAsync();
 
+#pragma warning disable RS0030 // wall-clock: SupportCopyright.targets reads the evaluating machine's clock
         var currentYear = DateTime.UtcNow.Year.ToString(CultureInfo.InvariantCulture);
+#pragma warning restore RS0030
         Assert.Equal($"Copyright © Headless Contoso {currentYear}", properties["Copyright"]);
     }
 
