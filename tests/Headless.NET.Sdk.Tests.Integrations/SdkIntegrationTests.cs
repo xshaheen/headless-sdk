@@ -25,18 +25,17 @@ public abstract class SdkIntegrationTests : IClassFixture<HeadlessSdkPackageFixt
 {
     private protected static string NormalizeLineEndings(string value) => value.ReplaceLineEndings("\n");
 
-    private protected static string CreateCentralPackageManagementProps(string packageVersionItems) =>
-        $$"""
-            <Project>
-              <PropertyGroup>
-                <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-                <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-              </PropertyGroup>
-              <ItemGroup>
-                {{packageVersionItems}}
-              </ItemGroup>
-            </Project>
-            """;
+    private protected static string CreateCentralPackageManagementProps(string packageVersionItems) => $$"""
+        <Project>
+          <PropertyGroup>
+            <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+            <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+          </PropertyGroup>
+          <ItemGroup>
+            {{packageVersionItems}}
+          </ItemGroup>
+        </Project>
+        """;
 
     private protected static void AssertImplicitAnalyzerReference(
         IReadOnlyDictionary<string, XElement> packageReferences,
