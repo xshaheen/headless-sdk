@@ -82,6 +82,32 @@
   </ItemGroup>
 
   <!--
+    The coverage package ships about 43 MB of native profilers for six runtimes, and a RID-agnostic
+    build copies all of them into every test project's output. The reference stays unconditional,
+    because a coverage-only reference would change the restore graph and break the consumer's locked
+    restore (NU1004) on CI. Only the copy is skipped, so builds that do not collect coverage leave the
+    natives out of bin and out of deps.json. Builds that collect coverage keep them. Windows build hosts
+    keep them too: coverage on Linux and macOS was measured to instrument statically and load none of
+    them, while Windows coverage may load the profilers for a run-time `--coverage`.
+  -->
+  <Target
+    Name="_HeadlessExcludeCodeCoverageNativeAssets"
+    AfterTargets="ResolvePackageAssets"
+    Condition="'$(HeadlessSdkProjectType)' == 'Test' AND '$(EnableCodeCoverage)' != 'true' AND !$([MSBuild]::IsOSPlatform('Windows'))"
+  >
+    <ItemGroup>
+      <RuntimeTargetsCopyLocalItems
+        Remove="@(RuntimeTargetsCopyLocalItems)"
+        Condition="'%(RuntimeTargetsCopyLocalItems.NuGetPackageId)' == 'Microsoft.Testing.Extensions.CodeCoverage'"
+      />
+      <NativeCopyLocalItems
+        Remove="@(NativeCopyLocalItems)"
+        Condition="'%(NativeCopyLocalItems.NuGetPackageId)' == 'Microsoft.Testing.Extensions.CodeCoverage'"
+      />
+    </ItemGroup>
+  </Target>
+
+  <!--
     Most CI pipelines run `dotnet build` and `dotnet test` separately. Avoid repeating analyzer
     work in MTP's test-build phase unless the consumer explicitly opts out of this optimization.
   -->
