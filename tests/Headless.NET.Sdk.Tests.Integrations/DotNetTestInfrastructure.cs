@@ -33,6 +33,45 @@ internal static class TestRepository
             ?? throw new InvalidOperationException($"PackageVersion {packageId} does not declare Version.");
     }
 
+    /// <summary>
+    /// Names the SDK version that consumer builds run under. Unset, consumer builds use whatever the
+    /// <c>dotnet</c> on PATH resolves (the repository-pinned SDK in CI). Set, every consumer project
+    /// gets a <c>global.json</c> that pins it, so one suite validates the packages under each
+    /// supported SDK.
+    /// </summary>
+    public const string ConsumerSdkVersionVariable = "HEADLESS_CONSUMER_SDK_VERSION";
+
+    public static bool IsConsumerSdkPinned =>
+        !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(ConsumerSdkVersionVariable));
+
+    public static string ConsumerSdkVersion =>
+        IsConsumerSdkPinned
+            ? Environment.GetEnvironmentVariable(ConsumerSdkVersionVariable)!.Trim()
+            : ReadRepositorySdkVersion();
+
+    public static int ConsumerSdkMajor =>
+        int.Parse(ConsumerSdkVersion.Split('.')[0], System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// The <c>"sdk"</c> entry (with trailing separator) that pins the consumer SDK, or an empty
+    /// string when the consumer SDK is not pinned. Splice it first inside a <c>global.json</c> object.
+    /// </summary>
+    public static string ConsumerSdkPinJson =>
+        IsConsumerSdkPinned
+            ? $"\"sdk\": {{ \"version\": \"{ConsumerSdkVersion}\", \"rollForward\": \"latestFeature\", \"allowPrerelease\": false }},{Environment.NewLine}  "
+            : string.Empty;
+
+    public static string ReadRepositorySdkVersion()
+    {
+        using var globalJson = System.Text.Json.JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(FindRoot("repository SDK pin"), "global.json"))
+        );
+        var version = globalJson.RootElement.GetProperty("sdk").GetProperty("version").GetString();
+        return string.IsNullOrWhiteSpace(version)
+            ? throw new InvalidOperationException("global.json does not pin an SDK version.")
+            : version;
+    }
+
     public static string FindRoot(string purpose)
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
@@ -62,6 +101,10 @@ internal static class DotNetCommandEnvironment
             ["DOTNET_CLI_HOME"] = Path.Combine(tempRoot, "dotnet-cli-home"),
             ["DOTNET_NOLOGO"] = "1",
             ["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1",
+            // SDK 11 starts a persistent MSBuild server by default. A warm server would carry state
+            // across consumer builds and can keep the harness's output pipes open after the command exits.
+            ["DOTNET_CLI_USE_MSBUILD_SERVER"] = "false",
+            ["MSBUILDUSESERVER"] = "0",
             ["NUGET_PACKAGES"] = Path.Combine(tempRoot, ".nuget-packages"),
             ["NUGET_HTTP_CACHE_PATH"] = Path.Combine(tempRoot, ".nuget-http-cache"),
         };
@@ -210,6 +253,17 @@ internal static class DotNetCommand
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromMinutes(10);
 
+    private static readonly string[] InheritedSdkLocationVariables =
+    [
+        "MSBUILD_EXE_PATH",
+        "MSBuildExtensionsPath",
+        "MSBuildSDKsPath",
+        "DOTNET_HOST_PATH",
+        "DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR",
+        "DOTNET_MSBUILD_SDK_RESOLVER_SDKS_DIR",
+        "DOTNET_MSBUILD_SDK_RESOLVER_SDKS_VER",
+    ];
+
     public static async Task<DotNetCommandResult> RunAsync(
         string workingDirectory,
         string arguments,
@@ -233,6 +287,15 @@ internal static class DotNetCommand
         // MTP sets this marker on the outer dotnet test process. Nested clean-consumer test runs
         // must be independent CLI invocations; the marker's presence, even empty, suppresses them.
         startInfo.Environment.Remove("DOTNET_CLI_TEST_COMMAND_WORKING_DIRECTORY");
+
+        // The outer `dotnet test` (the repository-pinned SDK) exports its own MSBuild and SDK locations.
+        // A consumer pinned to a different SDK would mix that SDK's CLI with these paths and fail to
+        // start MSBuild task hosts, so each nested invocation must resolve its own SDK from scratch.
+        foreach (var name in InheritedSdkLocationVariables)
+        {
+            startInfo.Environment.Remove(name);
+        }
+
         startInfo.Environment["MSBUILDDISABLENODEREUSE"] = "1";
         startInfo.Environment["DOTNET_CLI_USE_MSBUILDNOINPROCNODE"] = "1";
 

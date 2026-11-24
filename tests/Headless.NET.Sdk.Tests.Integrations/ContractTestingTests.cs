@@ -64,8 +64,32 @@ public sealed class ContractTestingTests(HeadlessSdkPackageFixture fixture) : Co
             codeCoverage.SetAttributeValue("ExcludeAssets", "all");
         });
 
+        // The repository global.json carries the MTP runner entry; only its SDK pin follows the
+        // consumer SDK under test, so the copy is rewritten rather than copied verbatim.
         var repositoryRoot = TestRepository.FindRoot("MTP contract test");
-        File.Copy(Path.Combine(repositoryRoot, "global.json"), Path.Combine(project.RootDirectory, "global.json"));
+        var repositoryGlobalJson = await File.ReadAllTextAsync(
+            Path.Combine(repositoryRoot, "global.json"),
+            TestContext.Current.CancellationToken
+        );
+        var repositorySdkVersion = TestRepository.ReadRepositorySdkVersion();
+        await File.WriteAllTextAsync(
+            Path.Combine(project.RootDirectory, "global.json"),
+            repositoryGlobalJson
+                .Replace(
+                    $"\"{repositorySdkVersion}\"",
+                    $"\"{TestRepository.ConsumerSdkVersion}\"",
+                    StringComparison.Ordinal
+                )
+                // The repository disables roll-forward; a pinned consumer SDK is a floor, as in ConsumerSdkPinJson.
+                .Replace(
+                    "\"rollForward\": \"disable\"",
+                    TestRepository.IsConsumerSdkPinned
+                        ? "\"rollForward\": \"latestFeature\""
+                        : "\"rollForward\": \"disable\"",
+                    StringComparison.Ordinal
+                ),
+            TestContext.Current.CancellationToken
+        );
 
         var restore = await project.RunDotNetAsync(
             $"restore {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"

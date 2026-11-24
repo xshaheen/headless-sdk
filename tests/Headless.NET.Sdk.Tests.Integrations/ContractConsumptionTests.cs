@@ -153,15 +153,7 @@ public sealed class ContractConsumptionTests(HeadlessSdkPackageFixture fixture) 
             }
         );
 
-        var repositoryRoot = TestRepository.FindRoot("global.json SDK resolution contract test");
-        using var repositoryGlobalJson = JsonDocument.Parse(
-            await File.ReadAllTextAsync(
-                Path.Combine(repositoryRoot, "global.json"),
-                TestContext.Current.CancellationToken
-            )
-        );
-        var sdkVersion = repositoryGlobalJson.RootElement.GetProperty("sdk").GetProperty("version").GetString();
-        Assert.False(string.IsNullOrWhiteSpace(sdkVersion));
+        var sdkVersion = TestRepository.ConsumerSdkVersion;
         await File.WriteAllTextAsync(
             Path.Combine(project.RootDirectory, "global.json"),
             $$"""

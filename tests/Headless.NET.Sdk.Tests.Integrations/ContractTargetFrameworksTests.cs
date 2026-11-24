@@ -32,8 +32,16 @@ public sealed class ContractTargetFrameworksTests(HeadlessSdkPackageFixture fixt
     [InlineData("netstandard2.0")]
     [InlineData("net8.0")]
     [InlineData("net9.0")]
+    [InlineData("net10.0")]
+    [InlineData("net11.0")]
     public async Task should_not_restrict_consumer_target_frameworks(string targetFramework)
     {
+        // A targeting pack newer than the consumer SDK does not exist, so net11.0 needs SDK 11.
+        Assert.SkipUnless(
+            targetFramework != "net11.0" || TestRepository.ConsumerSdkMajor >= 11,
+            "A net11.0 consumer needs the .NET 11 SDK."
+        );
+
         await using var project = await ConsumerProject.CreateAsync(
             fixture.PackageVersion,
             fixture.PackageSourceDirectory,
@@ -50,6 +58,55 @@ public sealed class ContractTargetFrameworksTests(HeadlessSdkPackageFixture fixt
         var properties = await project.EvaluateHeadlessPropertiesAsync();
         Assert.Equal(targetFramework, properties["TargetFramework"]);
         Assert.Equal("Headless.NET.Sdk", properties["HeadlessSdkName"]);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task should_build_a_multi_targeted_project_including_net11_with_analyzers_as_errors_on_ci(
+        bool usePackageReference
+    )
+    {
+        // net11.0 is where SDK 11 starts applying the .NET 11 analyzer rules to AnalysisLevel=latest-all,
+        // so this guards the mandatory analyzer contract against new warnings on the newest target.
+        Assert.SkipUnless(TestRepository.ConsumerSdkMajor >= 11, "A net11.0 consumer needs the .NET 11 SDK.");
+
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: usePackageReference ? "Microsoft.NET.Sdk" : $"Headless.NET.Sdk/{fixture.PackageVersion}",
+            targetFramework: "net10.0",
+            includePackageReference: usePackageReference,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["ContinuousIntegrationBuild"] = "true",
+            }
+        );
+        await WriteProjectAsync(
+            project,
+            $$"""
+            <Project Sdk="{{(usePackageReference ? "Microsoft.NET.Sdk" : $"Headless.NET.Sdk/{fixture.PackageVersion}")}}">
+              <PropertyGroup>
+                <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
+                <Nullable>enable</Nullable>
+                <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+              </PropertyGroup>
+              {{(
+                usePackageReference
+                    ? $"<ItemGroup><PackageReference Include=\"Headless.NET.Sdk\" Version=\"{fixture.PackageVersion}\" PrivateAssets=\"all\" /></ItemGroup>"
+                    : string.Empty
+            )}}
+            </Project>
+            """,
+            new Dictionary<string, string>(StringComparer.Ordinal)
+        );
+
+        var result = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} --no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
+        );
+
+        Assert.True(result.ExitCode == 0, result.Output);
+        Assert.Contains("net11.0", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]

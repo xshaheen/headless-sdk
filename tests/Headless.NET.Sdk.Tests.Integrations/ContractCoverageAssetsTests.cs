@@ -245,7 +245,7 @@ public sealed class ContractCoverageAssetsTests(HeadlessSdkPackageFixture fixtur
                 Path.Combine(project.RootDirectory, "global.json"),
                 $$"""
                 {
-                  "msbuild-sdks": {
+                  {{TestRepository.ConsumerSdkPinJson}}"msbuild-sdks": {
                     "Headless.NET.Sdk.Test": "{{fixture.PackageVersion}}"
                   }
                 }

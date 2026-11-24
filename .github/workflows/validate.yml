@@ -107,7 +107,7 @@ jobs:
           if-no-files-found: error
 
   tests:
-    name: Tests (${{ matrix.shard }})
+    name: Tests (${{ matrix.shard }}${{ matrix.consumer-sdk && format(', SDK {0}', matrix.consumer-sdk) || '' }})
     needs: pack
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -116,10 +116,20 @@ jobs:
       matrix:
         # The second shard is the complement of the first, so a new test class always runs in
         # exactly one shard without editing this list.
+        # Each shard runs against consumer builds on the pinned SDK (empty consumer-sdk) and again on
+        # the .NET 10 SDK, so both supported SDK lines are validated from one set of packed packages.
         include:
           - shard: sdk
+            consumer-sdk: ""
             filter: --filter-class "Headless.NET.Sdk.Tests.Integrations.Sdk*"
           - shard: contract
+            consumer-sdk: ""
+            filter: --filter-not-class "Headless.NET.Sdk.Tests.Integrations.Sdk*"
+          - shard: sdk
+            consumer-sdk: "10.0.100"
+            filter: --filter-class "Headless.NET.Sdk.Tests.Integrations.Sdk*"
+          - shard: contract
+            consumer-sdk: "10.0.100"
             filter: --filter-not-class "Headless.NET.Sdk.Tests.Integrations.Sdk*"
 
     steps:
@@ -133,6 +143,12 @@ jobs:
         uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: ./global.json
+
+      - name: Setup consumer SDK
+        if: matrix.consumer-sdk != ''
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: 10.0.x
 
       - name: Cache NuGet packages
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
@@ -160,13 +176,15 @@ jobs:
         # to the platform: --report-trx emits the trx and --results-directory pins it to a known path.
         env:
           HEADLESS_PACKAGES_DIR: ${{ github.workspace }}/artifacts/packages-results
+          # Pins every consumer project's global.json to this SDK; empty keeps the pinned SDK.
+          HEADLESS_CONSUMER_SDK_VERSION: ${{ matrix.consumer-sdk }}
         run: dotnet test tests/Headless.NET.Sdk.Tests.Integrations/Headless.NET.Sdk.Tests.Integrations.csproj --configuration "${{ env.CONFIGURATION }}" --no-restore --no-build -- ${{ matrix.filter }} --minimum-expected-tests 1 --report-trx --results-directory ./artifacts/test-results
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: test-results-${{ matrix.shard }}
+          name: test-results-${{ matrix.shard }}${{ matrix.consumer-sdk && format('-sdk{0}', matrix.consumer-sdk) || '' }}
           path: ./artifacts/test-results
           if-no-files-found: ignore
 
