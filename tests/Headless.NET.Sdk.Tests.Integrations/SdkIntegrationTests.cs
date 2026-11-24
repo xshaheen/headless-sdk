@@ -19,8 +19,8 @@ using StructuredLoggerSerialization = Microsoft.Build.Logging.StructuredLogger.S
 
 namespace Headless.NET.Sdk.Tests.Integrations;
 
-// Shared helpers for the Sdk*Tests classes. xUnit runs the tests of one class serially, so the
-// suite is split into one class per area to let the consumer builds run in parallel.
+// Shared helpers for the Sdk*Tests classes, one class per area. Tests run in parallel within a
+// class as well (xunit.runner.json), so a class groups by topic, not by schedule.
 public abstract class SdkIntegrationTests : IClassFixture<HeadlessSdkPackageFixture>
 {
     private protected static string NormalizeLineEndings(string value) => value.ReplaceLineEndings("\n");

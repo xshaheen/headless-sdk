@@ -11,7 +11,7 @@ using static Headless.NET.Sdk.Tests.Integrations.DotNetCommand;
 namespace Headless.NET.Sdk.Tests.Integrations;
 
 // Builds and runs a test host per consumption mode, so it lives apart from the evaluation-only
-// ContractCoverageTests and runs in parallel with it.
+// ContractCoverageTests.
 public sealed class ContractCoverageAssetsTests(HeadlessSdkPackageFixture fixture) : ContractConsumerBehaviorTests
 {
     private const string CodeCoveragePackageId = "Microsoft.Testing.Extensions.CodeCoverage";
