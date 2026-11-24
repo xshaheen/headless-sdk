@@ -40,7 +40,7 @@ for the target framework, and the build fails with MSB3030 when the SDK does not
 apphost (for example, `net8.0` built by the .NET 10 SDK). The SDK forms set the default before
 restore and need no declaration.
 
-When `dotnet test` runs under the .NET 10 SDK, the repository must select Microsoft Testing
+When `dotnet test` runs under the .NET 10 or .NET 11 SDK, the repository must select Microsoft Testing
 Platform in `global.json`. Add this top-level entry alongside the existing `sdk` configuration:
 
 ```json
@@ -51,10 +51,10 @@ Platform in `global.json`. Add this top-level entry alongside the existing `sdk`
 }
 ```
 
-Without it, .NET 10 routes `dotnet test` through VSTest and the MTP project rejects the command.
+Without it, these SDKs route `dotnet test` through VSTest and the MTP project rejects the command. The `DOTNET_TEST_RUNNER` environment variable (.NET 11 SDK) overrides the `global.json` entry for one session.
 This is a command-host requirement, not a restriction on the test project's `TargetFramework`.
 
-Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headless.NET.Sdk.Test@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
+Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 or later `#:sdk Headless.NET.Sdk.Test@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
 
 ## Coverage settings
 
