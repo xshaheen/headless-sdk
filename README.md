@@ -292,6 +292,11 @@ the listed default; explicit values win unless the behavior is identified as man
 | `HeadlessEmitInternalsVisibleToAttributes` | `true` | Set `false` when the project owns its friend-assembly list. |
 | `HeadlessEmitClsCompliantAttribute` | `true` | Set `false` when the project supplies its own `CLSCompliant` attribute. |
 | `HeadlessEnableStrictSystemTextJsonRuntimeDefaults` | `false` | Enables the two process-wide strict System.Text.Json runtime switches for TFMs compatible with `net9.0`. |
+| `HeadlessRuntimeAsync` | `true` for TFMs compatible with `net11.0`, `false` for WebAssembly | Compiles async methods with .NET 11 runtime async (`runtime-async=on`) instead of compiler state machines. A multi-targeted project gets it only in its `net11.0`-or-later builds. Set `false` to opt out. A `runtime-async` value already in `Features` is kept. |
+| `HeadlessUpdatedMemorySafetyRules` | `true` when `LangVersion=preview` and the project does not reference `Microsoft.Windows.CsWin32` | Adds the `updated-memory-safety-rules` compiler feature, so `unsafe` on a member propagates to its callers. Set `false` to opt out. |
+| `AllowUnsafeBlocks` | `true` | Allows `unsafe` code without a per-project opt-in. An explicit value wins. |
+| `PublishDocumentationFiles` | `false` when `PublishAot` is `true`, otherwise the .NET SDK default | A Native AOT app does not ship its XML documentation, and the .NET 11 optimized publish fails with MSB3030 when asked to copy it. An explicit value wins. |
+| `IlcGenerateMstatFile`, `IlcGenerateDgmlFile` | `true` | Make a Native AOT publish write the size and dependency-graph files that tools such as sizoscope read. They have no effect unless the project publishes Native AOT. |
 | `HeadlessSymbolFormat` | `embedded` (`none` for Blazor WebAssembly) | Accepts `embedded`, `snupkg`, or `none`. |
 | `EnablePackageValidation` | `true` (`false` for `PackAsTool`) | Enables Microsoft package validation for ordinary packages; Microsoft disables API compatibility validation for tool packages. Consumers may explicitly disable it. |
 | `GenerateSBOM` | `false` | Generates an SPDX SBOM inside the package when enabled. |
