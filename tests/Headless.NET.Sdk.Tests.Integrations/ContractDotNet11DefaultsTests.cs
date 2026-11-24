@@ -15,6 +15,7 @@ public sealed class ContractDotNet11DefaultsTests(HeadlessSdkPackageFixture fixt
 {
     private const string RuntimeAsyncTarget = "HeadlessConfigureRuntimeAsync";
     private const string MemorySafetyTarget = "HeadlessConfigureUpdatedMemorySafetyRules";
+    private const string SkipDocumentationTarget = "HeadlessSkipDocumentationFilesForNativeAot";
     private const string AsyncSource = """
         namespace ConsumerProject;
 
@@ -128,19 +129,20 @@ public sealed class ContractDotNet11DefaultsTests(HeadlessSdkPackageFixture fixt
         await using var project = await CreateRestoredProjectAsync("net10.0", usePackageReference);
 
         Assert.Equal("true", await GetPropertyAsync(project, "AllowUnsafeBlocks"));
-        Assert.Equal("true", await GetPropertyAsync(project, "PublishDocumentationFiles"));
         Assert.Equal("true", await GetPropertyAsync(project, "IlcGenerateMstatFile"));
         Assert.Equal("true", await GetPropertyAsync(project, "IlcGenerateDgmlFile"));
-        Assert.Equal("false", await GetPropertyAsync(project, "PublishDocumentationFiles", "-p:PublishAot=true"));
-        Assert.Equal(
-            "true",
-            await GetPropertyAsync(
-                project,
-                "PublishDocumentationFiles",
-                "-p:PublishAot=true -p:PublishDocumentationFiles=true"
-            )
-        );
         Assert.Equal("false", await GetPropertyAsync(project, "AllowUnsafeBlocks", "-p:AllowUnsafeBlocks=false"));
+
+        // The SDK defaults these to true before the project decides PublishAot, so a target turns them off.
+        foreach (var property in new[] { "PublishDocumentationFiles", "PublishDocumentationFile" })
+        {
+            Assert.Equal("true", await GetPropertyAsync(project, property));
+            Assert.Equal("true", await GetPropertyAfterTargetAsync(project, SkipDocumentationTarget, property));
+            Assert.Equal(
+                "false",
+                await GetPropertyAfterTargetAsync(project, SkipDocumentationTarget, property, "-p:PublishAot=true")
+            );
+        }
     }
 
     [Theory]

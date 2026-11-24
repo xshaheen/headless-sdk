@@ -229,12 +229,22 @@
 
   <!--
     A Native AOT app does not ship its XML documentation file, and the .NET 11 optimized publish does
-    not copy it, which fails with MSB3030 (dotnet/sdk#56618). Evaluated here because PublishAot is
-    usually set in the project body.
+    not copy it, which fails with MSB3030 (dotnet/sdk#56618). The .NET SDK defaults the three
+    properties below to true in Microsoft.NET.Sdk.BeforeCommon.targets, before this file and before
+    the project body decide PublishAot, so a property cannot override them: the target runs ahead of
+    the publish targets that read them instead.
   -->
-  <PropertyGroup Label="Native AOT Publish" Condition=" '$(PublishAot)' == 'true' ">
-    <PublishDocumentationFiles Condition=" '$(PublishDocumentationFiles)' == '' ">false</PublishDocumentationFiles>
-  </PropertyGroup>
+  <Target
+    Name="HeadlessSkipDocumentationFilesForNativeAot"
+    BeforeTargets="ComputeResolvedFilesToPublishList;_ComputeResolvedCopyLocalPublishAssets"
+    Condition=" '$(PublishAot)' == 'true' "
+  >
+    <PropertyGroup>
+      <PublishDocumentationFiles>false</PublishDocumentationFiles>
+      <PublishDocumentationFile>false</PublishDocumentationFile>
+      <PublishReferencesDocumentationFiles>false</PublishReferencesDocumentationFiles>
+    </PropertyGroup>
+  </Target>
 
   <PropertyGroup Label="Tool Packaging">
     <PackAsTool
