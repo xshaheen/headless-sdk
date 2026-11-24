@@ -92,6 +92,18 @@ internal static class TestRepository
 
 internal static class DotNetCommandEnvironment
 {
+    // One HTTP cache for every consumer build, kept across runs. Each consumer restore otherwise
+    // starts cold and downloads nuget.org's vulnerability feed (and any package missing from the
+    // fallback folder) again, which turns every restore into a network round trip and makes the
+    // suite's duration follow network latency. The cache holds feed responses and downloaded
+    // .nupkg files only; NuGet locks it across processes, and each consumer keeps its own
+    // NUGET_PACKAGES, so no consumer sees another's restored state.
+    private static readonly string SharedHttpCachePath = Path.Combine(
+        Path.GetTempPath(),
+        "Headless.NET.Sdk.Tests",
+        "nuget-http-cache"
+    );
+
     public static Dictionary<string, string> CreateIsolatedEnvironment(string tempRoot)
     {
         var environment = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -106,7 +118,7 @@ internal static class DotNetCommandEnvironment
             ["DOTNET_CLI_USE_MSBUILD_SERVER"] = "false",
             ["MSBUILDUSESERVER"] = "0",
             ["NUGET_PACKAGES"] = Path.Combine(tempRoot, ".nuget-packages"),
-            ["NUGET_HTTP_CACHE_PATH"] = Path.Combine(tempRoot, ".nuget-http-cache"),
+            ["NUGET_HTTP_CACHE_PATH"] = SharedHttpCachePath,
         };
 
         foreach (var pathKey in new[] { "DOTNET_CLI_HOME", "NUGET_PACKAGES", "NUGET_HTTP_CACHE_PATH" })

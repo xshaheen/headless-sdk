@@ -37,6 +37,16 @@
   </ItemGroup>
 
   <!--
+    xunit.runner.json: parallelMode "all" lets the tests of one class run in parallel, and
+    preEnumerateTheories makes each theory row its own test case. Most tests build a throwaway
+    consumer project in their own temp root, so a class shares nothing but the read-only package
+    fixture; without this, the suite lasts as long as its slowest class runs serially.
+  -->
+  <ItemGroup>
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!--
     Test discipline: a sleep or a wall-clock read makes a test slow or flaky, so RS0030 fails the
     build on one. A line that truly tests real time opts out with
     `#pragma warning disable RS0030 // real-wait: <why>` (or `wall-clock: <why>`); TestDisciplineTests
