@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Xunit;
 using static Headless.NET.Sdk.Tests.Integrations.DotNetCommand;
@@ -254,5 +255,80 @@ public sealed class ContractConsumptionTests(HeadlessSdkPackageFixture fixture) 
             StringComparison.Ordinal
         );
         Assert.DoesNotContain("Headless.NET.Sdk.Analyzers.editorconfig", contract, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // The Test SDK README's PackageReference example, copied as written with the root README's
+    // restore bootstrap, must build. NuGet evaluates a project for restore with
+    // ExcludeRestorePackageImports=true, so the package's OutputType=Exe default is invisible there;
+    // the example declares it, or restore plans a library and skips the net8.0 apphost pack that a
+    // .NET 10 SDK does not bundle. The restore-time evaluation fails the same way on any host, while
+    // the build fails only where that apphost pack is missing.
+    [Fact]
+    public async Task should_build_the_readme_package_reference_example_when_a_test_project_copies_it()
+    {
+        var repositoryRoot = TestRepository.FindRoot("README PackageReference example");
+        var projectContent = ReadReadmeXmlBlock(
+                Path.Combine(repositoryRoot, "src", "Headless.NET.Sdk.Test", "README.md"),
+                """<Project Sdk="Microsoft.NET.Sdk">""",
+                """<PackageReference Include="Headless.NET.Sdk.Test" """
+            )
+            .Replace("x.y.z", fixture.PackageVersion, StringComparison.Ordinal);
+        var restoreBootstrap = ReadReadmeXmlBlock(
+            Path.Combine(repositoryRoot, "README.md"),
+            "<Project>",
+            "<NuGetAuditMode>"
+        );
+
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            includePackageReference: false,
+            additionalFiles: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Directory.Build.props"] = restoreBootstrap,
+            }
+        );
+        await WriteProjectAsync(
+            project,
+            projectContent,
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["ReadmeTests.cs"] = """
+                using Xunit;
+
+                namespace ConsumerProject;
+
+                public sealed class ReadmeTests
+                {
+                    [Fact]
+                    public void adds() => Assert.Equal(2, 1 + 1);
+                }
+                """,
+            }
+        );
+
+        var restoreView = await project.RunDotNetAsync(
+            $"msbuild {Quote(project.ProjectFilePath)} -getProperty:OutputType -p:ExcludeRestorePackageImports=true -nologo -v:quiet"
+        );
+        Assert.True(restoreView.ExitCode == 0, restoreView.Output);
+        Assert.Equal("Exe", restoreView.Output.Trim());
+
+        var build = await project.RunDotNetAsync(
+            $"build {Quote(project.ProjectFilePath)} -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
+        );
+        Assert.True(build.ExitCode == 0, build.Output);
+    }
+
+    private static string ReadReadmeXmlBlock(string readmePath, string firstLine, string marker)
+    {
+        var blocks = Regex
+            .Matches(File.ReadAllText(readmePath), @"```xml\r?\n(?<body>.*?)\r?\n```", RegexOptions.Singleline)
+            .Select(match => match.Groups["body"].Value)
+            .Where(body =>
+                body.StartsWith(firstLine, StringComparison.Ordinal) && body.Contains(marker, StringComparison.Ordinal)
+            )
+            .ToList();
+
+        return Assert.Single(blocks);
     }
 }

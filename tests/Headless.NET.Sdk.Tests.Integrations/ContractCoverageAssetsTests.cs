@@ -173,10 +173,9 @@ public sealed class ContractCoverageAssetsTests(HeadlessSdkPackageFixture fixtur
             _ => throw new ArgumentOutOfRangeException(nameof(consumptionMode), consumptionMode, null),
         };
 
-        // On Linux a PackageReference consumer of the Test SDK fails to copy its apphost (MSB3030)
-        // unless the project itself declares OutputType=Exe, whether or not coverage natives are
-        // stripped. That defect is outside the coverage contract, so this mode declares it to keep
-        // its copy-local assertions running on every platform.
+        // NuGet restore does not load package build assets, so a PackageReference consumer of the
+        // Test SDK must declare OutputType=Exe itself, as its README shows; otherwise restore skips
+        // the net8.0 apphost pack and the build fails with MSB3030.
         var outputType = string.Equals(consumptionMode, "package-reference", StringComparison.Ordinal)
             ? "<OutputType>Exe</OutputType>"
             : string.Empty;
