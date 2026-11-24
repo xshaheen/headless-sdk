@@ -39,7 +39,7 @@ All five family consumption modes are supported. Every MSBuild project must set 
 
 The additional-SDK form layers Headless over any project SDK, not only Microsoft's. Prefer it to PackageReference for projects such as an Aspire AppHost; the [Additional SDK](https://github.com/xshaheen/headless-sdk#3-additional-sdk) section shows that example.
 
-The version can instead be resolved from `global.json`. .NET 10 file-based apps use:
+The version can instead be resolved from `global.json`. .NET 10 or later file-based apps use:
 
 ```csharp
 #:sdk Headless.NET.Sdk@x.y.z
@@ -58,7 +58,7 @@ See the repository [consumption-mode reference](https://github.com/xshaheen/head
 - CI locked restore only when an existing lock file opts the project in.
 - Direct and transitive NuGet audit; findings (`NU1901`-`NU1904`) and missing audit data (`NU1900`, `NU1905`) are warnings that never fail a build.
 - Extra Headless global usings only when `ImplicitUsings` is enabled and the TFM is compatible with `net8.0`.
-- Automatic analyzer profile for .NET 10 file-based apps.
+- Automatic analyzer profile for .NET 10 or later file-based apps.
 - Opt-in SBOM generation with `GenerateSBOM=true`.
 - Embedded symbols by default through `HeadlessSymbolFormat=embedded`.
 - Targeted removal of the conflicting reference-pack `System.Runtime` facade when `System.Runtime.Experimental` supplies its own facade.

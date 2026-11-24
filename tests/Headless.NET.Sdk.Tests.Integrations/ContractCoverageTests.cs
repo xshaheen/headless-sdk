@@ -168,15 +168,7 @@ public sealed partial class ContractCoverageTests(HeadlessSdkPackageFixture fixt
 
     private async Task WriteGlobalJsonAsync(ConsumerProject project)
     {
-        var repositoryRoot = TestRepository.FindRoot("coverage property global.json contract test");
-        using var repositoryGlobalJson = JsonDocument.Parse(
-            await File.ReadAllTextAsync(
-                Path.Combine(repositoryRoot, "global.json"),
-                TestContext.Current.CancellationToken
-            )
-        );
-        var sdkVersion = repositoryGlobalJson.RootElement.GetProperty("sdk").GetProperty("version").GetString();
-        Assert.False(string.IsNullOrWhiteSpace(sdkVersion));
+        var sdkVersion = TestRepository.ConsumerSdkVersion;
 
         await File.WriteAllTextAsync(
             Path.Combine(project.RootDirectory, "global.json"),
@@ -184,7 +176,7 @@ public sealed partial class ContractCoverageTests(HeadlessSdkPackageFixture fixt
             {
               "sdk": {
                 "version": "{{sdkVersion}}",
-                "rollForward": "disable",
+                "rollForward": "latestFeature",
                 "allowPrerelease": false
               },
               "msbuild-sdks": {

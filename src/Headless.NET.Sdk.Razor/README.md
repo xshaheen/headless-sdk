@@ -20,7 +20,7 @@ Direct PackageReference consumption uses `Microsoft.NET.Sdk.Razor`:
 <PackageReference Include="Headless.NET.Sdk.Razor" Version="x.y.z" PrivateAssets="all" />
 ```
 
-Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headless.NET.Sdk.Razor@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
+Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 or later `#:sdk Headless.NET.Sdk.Razor@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
 
 ## Razor contract
 

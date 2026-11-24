@@ -21,9 +21,9 @@ Direct PackageReference consumption uses `Microsoft.NET.Sdk.WindowsDesktop`:
 <PackageReference Include="Headless.NET.Sdk.WindowsDesktop" Version="x.y.z" PrivateAssets="all" />
 ```
 
-Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headless.NET.Sdk.WindowsDesktop@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
+Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 or later `#:sdk Headless.NET.Sdk.WindowsDesktop@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
 
-For a .NET 10 file app, this wrapper preserves the Headless Windows Desktop identity over the base
+For a .NET 10 or later file app, this wrapper preserves the Headless Windows Desktop identity over the base
 Microsoft SDK. A single source file cannot author WPF or Windows Forms project items, and importing
 the legacy Windows Desktop wrapper there would only produce NETSDK1137 and NETSDK1106. Normal
 projects continue to use `Microsoft.NET.Sdk.WindowsDesktop` with `UseWPF` or `UseWindowsForms`.

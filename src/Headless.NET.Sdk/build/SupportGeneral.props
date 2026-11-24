@@ -27,6 +27,11 @@
     <DefaultItemExcludes>$(DefaultItemExcludes);**/*.lscache</DefaultItemExcludes>
 
     <LangVersion Condition="'$(LangVersion)' == ''">latest</LangVersion>
+    <AllowUnsafeBlocks Condition="'$(AllowUnsafeBlocks)' == ''">true</AllowUnsafeBlocks>
+
+    <!-- Size and dependency-graph files for investigating a Native AOT app (sizoscope); inert unless publishing AOT. -->
+    <IlcGenerateMstatFile Condition="'$(IlcGenerateMstatFile)' == ''">true</IlcGenerateMstatFile>
+    <IlcGenerateDgmlFile Condition="'$(IlcGenerateDgmlFile)' == ''">true</IlcGenerateDgmlFile>
     <Nullable Condition="'$(Nullable)' == ''">enable</Nullable>
     <ImplicitUsings Condition="'$(ImplicitUsings)' == ''">enable</ImplicitUsings>
 

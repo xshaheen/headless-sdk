@@ -12,9 +12,16 @@
     </PropertyGroup>
   </Target>
 
+  <!--
+    SDK 11 reads the custom nuspec while it resolves the pack output paths, in
+    _GetOutputItemsFromPack, which runs before GenerateNuspec. The nuspec holds $PackageVersion$
+    tokens, so the properties must exist by then or the task fails with MSB4018 (empty version).
+    SDK 10 never reads them there, so hooking both targets is safe on either SDK.
+    _GetOutputItemsFromPack is a private NuGet target; the pack proof on both SDKs guards it.
+  -->
   <Target
     Name="HeadlessSetNuspecProperties"
-    BeforeTargets="GenerateNuspec"
+    BeforeTargets="_GetOutputItemsFromPack;GenerateNuspec"
     DependsOnTargets="InitializeSourceControlInformation"
     Condition="'$(PackageType)' == 'MSBuildSdk' and '$(NuspecFile)' != ''"
   >

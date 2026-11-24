@@ -6,7 +6,7 @@ Release notes are maintained in [GitHub Releases](https://github.com/xshaheen/he
 
 ## Support contract
 
-- The package family is built and validated with the repository-pinned .NET 10 SDK. Headless does not restrict consumer target frameworks; compatibility is determined by the selected Microsoft SDK and its installed targeting packs or workloads.
+- The package family is built and packed with the repository-pinned .NET 11 SDK, and its consumer-build suite also runs on the .NET 10 SDK, so both SDK lines are validated. Headless does not restrict consumer target frameworks; compatibility is determined by the selected Microsoft SDK and its installed targeting packs or workloads.
 - Every MSBuild project must declare its target framework explicitly. Headless does not infer one.
 - All five consumption modes below are first-class. Build, pack, analyzer, and application policy
   is identical; the documented restore bootstrap is required for PackageReference mode.
@@ -169,7 +169,7 @@ Pin one or more family members centrally:
 ```json
 {
   "sdk": {
-    "version": "10.0.400",
+    "version": "11.0.100",
     "rollForward": "disable"
   },
   "msbuild-sdks": {
@@ -193,9 +193,9 @@ Projects can then use the versionless form:
 </Project>
 ```
 
-### 5. .NET 10 file-based apps
+### 5. .NET 10 and later file-based apps
 
-Use the SDK directive. The .NET 10 file-app host supplies the file app's target framework; the Headless target-framework inference feature is not involved.
+Use the SDK directive. The file-app host of the .NET 10 or later SDK supplies the file app's target framework; the Headless target-framework inference feature is not involved.
 
 ```csharp
 #:sdk Headless.NET.Sdk@x.y.z
@@ -292,6 +292,11 @@ the listed default; explicit values win unless the behavior is identified as man
 | `HeadlessEmitInternalsVisibleToAttributes` | `true` | Set `false` when the project owns its friend-assembly list. |
 | `HeadlessEmitClsCompliantAttribute` | `true` | Set `false` when the project supplies its own `CLSCompliant` attribute. |
 | `HeadlessEnableStrictSystemTextJsonRuntimeDefaults` | `false` | Enables the two process-wide strict System.Text.Json runtime switches for TFMs compatible with `net9.0`. |
+| `HeadlessRuntimeAsync` | `true` for TFMs compatible with `net11.0`, `false` for WebAssembly | Compiles async methods with .NET 11 runtime async (`runtime-async=on`) instead of compiler state machines. A multi-targeted project gets it only in its `net11.0`-or-later builds. Set `false` to opt out. A `runtime-async` value already in `Features` is kept. |
+| `HeadlessUpdatedMemorySafetyRules` | `true` when `LangVersion=preview` and the project does not reference `Microsoft.Windows.CsWin32` | Adds the `updated-memory-safety-rules` compiler feature, so `unsafe` on a member propagates to its callers. Set `false` to opt out. |
+| `AllowUnsafeBlocks` | `true` | Allows `unsafe` code without a per-project opt-in. An explicit value wins. |
+| `PublishAot` | unset | When `true`, the publish skips the XML documentation file (`PublishDocumentationFiles`, `PublishDocumentationFile` and `PublishReferencesDocumentationFiles` become `false`): a Native AOT app does not ship it, and the .NET 11 optimized publish fails with MSB3030 when asked to copy it. |
+| `IlcGenerateMstatFile`, `IlcGenerateDgmlFile` | `true` | Make a Native AOT publish write the size and dependency-graph files that tools such as sizoscope read. They have no effect unless the project publishes Native AOT. |
 | `HeadlessSymbolFormat` | `embedded` (`none` for Blazor WebAssembly) | Accepts `embedded`, `snupkg`, or `none`. |
 | `EnablePackageValidation` | `true` (`false` for `PackAsTool`) | Enables Microsoft package validation for ordinary packages; Microsoft disables API compatibility validation for tool packages. Consumers may explicitly disable it. |
 | `GenerateSBOM` | `false` | Generates an SPDX SBOM inside the package when enabled. |
@@ -411,7 +416,7 @@ The test framework remains consumer-selected. For example:
 </Project>
 ```
 
-When the command-line host is the .NET 10 SDK, Microsoft Testing Platform also requires the
+When the command-line host is the .NET 10 or .NET 11 SDK, Microsoft Testing Platform also requires the
 repository `global.json` to select the MTP runner. Add this top-level entry alongside the existing
 `sdk` configuration:
 
@@ -423,8 +428,8 @@ repository `global.json` to select the MTP runner. Add this top-level entry alon
 }
 ```
 
-Without that entry, .NET 10 routes `dotnet test` through VSTest and Microsoft Testing Platform
-rejects the invocation before discovering tests. This host requirement does not restrict the test
+Without that entry, these SDKs route `dotnet test` through VSTest and Microsoft Testing Platform
+rejects the invocation before discovering tests. The `DOTNET_TEST_RUNNER` environment variable of the .NET 11 SDK overrides the `global.json` entry for one session. This host requirement does not restrict the test
 project's `TargetFramework`.
 
 ### Coverage settings contract

@@ -20,9 +20,9 @@ Direct PackageReference consumption uses `Microsoft.NET.Sdk.BlazorWebAssembly`:
 <PackageReference Include="Headless.NET.Sdk.BlazorWebAssembly" Version="x.y.z" PrivateAssets="all" />
 ```
 
-Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 `#:sdk Headless.NET.Sdk.BlazorWebAssembly@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
+Additional-SDK, `global.json` MSBuild SDK resolution, and .NET 10 or later `#:sdk Headless.NET.Sdk.BlazorWebAssembly@x.y.z` consumption are also supported. See the [family consumption reference](https://github.com/xshaheen/headless-sdk#consumption-modes).
 
-For a .NET 10 file app, this wrapper preserves the Headless Blazor identity over the base Microsoft
+For a .NET 10 or later file app, this wrapper preserves the Headless Blazor identity over the base Microsoft
 SDK. A single source file cannot author Blazor project items, and the specialized SDK assumes browser
 workload references and Native AOT behavior that the generated file project cannot satisfy. Normal
 Blazor WebAssembly projects retain their specialized Microsoft SDK behavior.

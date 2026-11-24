@@ -147,6 +147,17 @@ public sealed class Class1;
             cancellationToken
         );
 
+        if (TestRepository.IsConsumerSdkPinned)
+        {
+            // Tests that exercise global.json resolution overwrite this file and splice the same pin in.
+            await File.WriteAllTextAsync(
+                Path.Combine(rootDirectory, "global.json"),
+                $"{{{Environment.NewLine}  {TestRepository.ConsumerSdkPinJson.TrimEnd().TrimEnd(',')}{Environment.NewLine}}}{Environment.NewLine}",
+                Encoding.UTF8,
+                cancellationToken
+            );
+        }
+
         if (editorConfigContent is not null)
         {
             await File.WriteAllTextAsync(
