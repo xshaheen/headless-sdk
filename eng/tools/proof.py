@@ -10,14 +10,20 @@ Commands:
   run        Run one stage command, tee its output to <dir>/<name>.log, record its result, and
              exit with the command's status.
   summarize  Write <dir>/summary.json and <dir>/summary.md from what the stages left in <dir>.
+  tree       Print the content id of the working tree: tracked and untracked files, ignored ones
+             excluded. Two checkouts with the same id hold the same sources.
+  reuse      Print the newest passing bundle under --root that proved --tree, and exit 1 if none.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import shutil
 import subprocess
+import tempfile
 import sys
 import time
 import xml.etree.ElementTree as ET
@@ -187,8 +193,40 @@ def git(*args: str) -> str:
     return subprocess.run(["git", *args], cwd=REPO_ROOT, capture_output=True, text=True, check=False).stdout.strip()
 
 
+def working_tree_id() -> str:
+    """Hash the working tree through a throwaway index, so the real index and stash stay untouched."""
+    git_dir = Path(git("rev-parse", "--absolute-git-dir"))
+    with tempfile.TemporaryDirectory() as scratch:
+        index = Path(scratch) / "index"
+        if (git_dir / "index").exists():
+            shutil.copyfile(git_dir / "index", index)
+        env = {**os.environ, "GIT_INDEX_FILE": str(index)}
+        subprocess.run(["git", "add", "--all", "--", "."], cwd=REPO_ROOT, env=env, check=True, capture_output=True)
+        return subprocess.run(
+            ["git", "write-tree"], cwd=REPO_ROOT, env=env, check=True, capture_output=True, text=True
+        ).stdout.strip()
+
+
+def reuse(root: Path, tree: str) -> int:
+    """A passing bundle for the same sources proves them again; only its packages must still exist."""
+    for bundle in sorted(root.glob("*-verify"), reverse=True):
+        summary_path = bundle / "summary.json"
+        if not summary_path.exists() or not (bundle / "packages").is_dir():
+            continue
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        if summary.get("verdict") == "pass" and summary.get("tree") == tree:
+            print(bundle)
+            return 0
+    return 1
+
+
 def summarize(directory: Path) -> int:
     stages = read_stages(directory)
+    # The id the run started on, kept only when the sources did not change while it ran: an edit
+    # mid-run means no single tree was proven, so the bundle must never be reused.
+    tree_path = directory / "tree"
+    started_tree = tree_path.read_text(encoding="utf-8").strip() if tree_path.exists() else None
+    tree = started_tree if started_tree and started_tree == working_tree_id() else None
     affected_path = directory / "affected.json"
     affected = json.loads(affected_path.read_text(encoding="utf-8")) if affected_path.exists() else {}
     changed_assemblies: set[str] = set()
@@ -208,6 +246,7 @@ def summarize(directory: Path) -> int:
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "commit": git("rev-parse", "HEAD"),
         "dirty": bool(git("status", "--porcelain")),
+        "tree": tree,
         "base": affected.get("base"),
         "verdict": "fail" if failed_stages else "pass",
         "stages": [asdict(stage) for stage in stages],
@@ -286,7 +325,17 @@ def main() -> int:
     skip.add_argument("--reason", required=True)
     summary = commands.add_parser("summarize", help="write summary.json and summary.md")
     summary.add_argument("--dir", required=True, type=Path)
+    commands.add_parser("tree", help="print the working tree's content id")
+    reuse_parser = commands.add_parser("reuse", help="print a passing bundle that proved --tree")
+    reuse_parser.add_argument("--root", required=True, type=Path)
+    reuse_parser.add_argument("--tree", required=True)
     args = parser.parse_args()
+
+    if args.command == "tree":
+        print(working_tree_id())
+        return 0
+    if args.command == "reuse":
+        return reuse(args.root, args.tree)
 
     if args.command == "run":
         command = args.stage_command[1:] if args.stage_command[:1] == ["--"] else args.stage_command
