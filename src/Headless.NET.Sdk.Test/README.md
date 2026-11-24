@@ -69,6 +69,13 @@ Resolve the property from one representative test project after restore. Treat t
 fully qualified path and verify that it exists before invoking the module runner; do not copy or
 maintain a consumer-owned runsettings file.
 
+On a Linux or macOS build host, a build that leaves `EnableCodeCoverage` unset or `false` keeps the coverage extension but does not
+copy its native profilers (`runtimes/*/native`, about 43 MB per test project) into the output or
+list them in `*.deps.json`. `--coverage` stays a valid run-time option. With the packaged coverage
+settings on Linux and macOS, coverage instruments managed modules statically and does not load those
+profilers, so a module runner that passes `--coverage` to such a build collects the same coverage.
+Windows build hosts still copy the profilers, because Windows coverage may load them.
+
 ## Test contract
 
 - Executable MTP host by default, with `IsTestProject=true`, `IsPackable=false`, and `IsPublishable=false`.

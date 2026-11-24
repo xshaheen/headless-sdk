@@ -447,6 +447,13 @@ Framework PR #814 is to resolve this property for its module-based runner, retai
 regression verifier, and remove the duplicated `eng/coverage.runsettings`; that framework change
 and any SDK version bump are outside this repository change.
 
+On a Linux or macOS build host, a build that leaves `EnableCodeCoverage` unset or `false` keeps the coverage extension but does not
+copy its native profilers (`runtimes/*/native`, about 43 MB per test project) into the output or
+list them in `*.deps.json`. `--coverage` stays a valid run-time option. With the packaged coverage
+settings on Linux and macOS, coverage instruments managed modules statically and does not load those
+profilers, so a module runner that passes `--coverage` to such a build collects the same coverage.
+Windows build hosts still copy the profilers, because Windows coverage may load them.
+
 The Test SDK owns the versions of its six implicit MTP extension references. Central Package Management consumers must not add `PackageVersion` entries for those extension IDs; NuGet rejects central versions for SDK-defined implicit references with NU1009. The consumer's test-framework version remains centrally manageable.
 
 VSTest classification, `Microsoft.NET.Test.Sdk`, and VSTest logger defaults are not part of this contract. Shared test harness libraries can use `IsTestHarnessProject=true` to receive test analysis defaults without becoming executable test hosts.
