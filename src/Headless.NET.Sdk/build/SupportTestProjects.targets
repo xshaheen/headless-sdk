@@ -88,7 +88,7 @@
     restore (NU1004) on CI. Only the copy is skipped, so builds that do not collect coverage leave the
     natives out of bin and out of deps.json. Builds that collect coverage keep them. Windows build hosts
     keep them too: coverage on Linux and macOS was measured to instrument statically and load none of
-    them, while Windows coverage may load the profilers for a run-time `--coverage`.
+    them, while Windows coverage may load the profilers when coverage is requested at run time.
   -->
   <Target
     Name="_HeadlessExcludeCodeCoverageNativeAssets"
