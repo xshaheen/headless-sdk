@@ -19,12 +19,13 @@ The SDK supplies the MTP host extensions; the consumer chooses its test framewor
 </Project>
 ```
 
-Direct PackageReference consumption uses `Microsoft.NET.Sdk`:
+Direct PackageReference consumption uses `Microsoft.NET.Sdk` and declares `OutputType`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Headless.NET.Sdk.Test" Version="x.y.z" PrivateAssets="all" />
@@ -32,6 +33,12 @@ Direct PackageReference consumption uses `Microsoft.NET.Sdk`:
   </ItemGroup>
 </Project>
 ```
+
+NuGet restore does not load package build assets, so in this mode restore never sees the package's
+`OutputType=Exe` default. Without the declaration, restore plans a library, skips the apphost pack
+for the target framework, and the build fails with MSB3030 when the SDK does not bundle that
+apphost (for example, `net8.0` built by the .NET 10 SDK). The SDK forms set the default before
+restore and need no declaration.
 
 When `dotnet test` runs under the .NET 10 SDK, the repository must select Microsoft Testing
 Platform in `global.json`. Add this top-level entry alongside the existing `sdk` configuration:
@@ -78,7 +85,7 @@ Windows build hosts still copy the profilers, because Windows coverage may load 
 
 ## Test contract
 
-- Executable MTP host by default, with `IsTestProject=true`, `IsPackable=false`, and `IsPublishable=false`.
+- Executable MTP host by default (PackageReference consumers declare `OutputType=Exe`; see above), with `IsTestProject=true`, `IsPackable=false`, and `IsPublishable=false`.
 - Microsoft Testing Platform only; VSTest and `Microsoft.NET.Test.Sdk` are not injected.
 - Restore-visible crash dump, hang dump, hot reload, retry, TRX, and coverage extensions.
 - Default TRX output, crash and hang dumps, and `MinimumExpectedTests=1`. Set it to a positive value to change the MTP guard, or `0` to omit only the SDK-supplied argument; omission does not guarantee that a zero-test run succeeds. `EnableDefaultTestSettings=false` removes all SDK-owned MTP arguments.

@@ -81,6 +81,10 @@ Use the matching Microsoft SDK and add Headless directly:
 
 For example, `Headless.NET.Sdk.Web` is paired with `Microsoft.NET.Sdk.Web`. Because no `buildTransitive` assets ship, referenced projects are unaffected unless they also opt in.
 
+`Headless.NET.Sdk.Test` pairs with `Microsoft.NET.Sdk`, which defaults to a library, so a test
+project consumed this way must declare `<OutputType>Exe</OutputType>`. Restore does not see the
+package's executable default (see below) and would not fetch the apphost the build copies.
+
 NuGet evaluates a project for restore with `ExcludeRestorePackageImports=true`, which skips the
 `build` assets of every referenced package. Consequently, no PackageReference restore receives the
 Headless restore-time audit, lock, and audit-warning policy, whether or not `obj/` already exists.
@@ -391,7 +395,7 @@ Unlike CI detection, this signal is consumer-overridable: set `HeadlessIsLlmCont
 
 ## Test SDK contract
 
-`Headless.NET.Sdk.Test` is Microsoft Testing Platform only. It defaults test hosts to `OutputType=Exe`, `IsTestProject=true`, `IsPackable=false`, and `IsPublishable=false`, and supplies restore-visible MTP extensions for crash dumps, hang dumps, hot reload, retry, TRX reporting, and coverage. Default execution includes TRX output and a minimum expected test count; coverage and crash and hang dumps are enabled on CI.
+`Headless.NET.Sdk.Test` is Microsoft Testing Platform only. It defaults test hosts to `OutputType=Exe` (PackageReference consumers declare it themselves), `IsTestProject=true`, `IsPackable=false`, and `IsPublishable=false`, and supplies restore-visible MTP extensions for crash dumps, hang dumps, hot reload, retry, TRX reporting, and coverage. Default execution includes TRX output and a minimum expected test count; coverage and crash and hang dumps are enabled on CI.
 
 The test framework remains consumer-selected. For example:
 
