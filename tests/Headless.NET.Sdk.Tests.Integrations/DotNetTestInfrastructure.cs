@@ -265,6 +265,14 @@ internal static class DotNetCommand
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromMinutes(10);
 
+    // One C# compiler server per test run, named by this process so it never serves another
+    // worktree's or session's builds and each run starts it cold. Without it every consumer build
+    // starts and JITs its own csc, which was most of a consumer build's CPU.
+    private static readonly string SharedCompilationId = string.Create(
+        CultureInfo.InvariantCulture,
+        $"headless-sdk-tests-{Environment.ProcessId}"
+    );
+
     private static readonly string[] InheritedSdkLocationVariables =
     [
         "MSBUILD_EXE_PATH",
@@ -283,7 +291,7 @@ internal static class DotNetCommand
         CancellationToken cancellationToken = default
     )
     {
-        var startInfo = new ProcessStartInfo("dotnet", AddDisableBuildServersArgument(arguments))
+        var startInfo = new ProcessStartInfo("dotnet", arguments)
         {
             RedirectStandardError = true,
             RedirectStandardOutput = true,
@@ -308,8 +316,18 @@ internal static class DotNetCommand
             startInfo.Environment.Remove(name);
         }
 
+        // Of the build servers `--disable-build-servers` turns off, only the C# compiler server is
+        // shared, and only within this test run. MSBuild nodes and the MSBuild server would carry
+        // environment and evaluation state from one consumer build to the next, and the Razor
+        // server is not needed by these consumers. The compiler server detaches from the command's
+        // output pipes, so reading them to EOF still ends when the command exits.
         startInfo.Environment["MSBUILDDISABLENODEREUSE"] = "1";
         startInfo.Environment["DOTNET_CLI_USE_MSBUILDNOINPROCNODE"] = "1";
+        startInfo.Environment["DOTNET_CLI_USE_MSBUILD_SERVER"] = "false";
+        startInfo.Environment["MSBUILDUSESERVER"] = "0";
+        startInfo.Environment["UseRazorBuildServer"] = "false";
+        startInfo.Environment["UseSharedCompilation"] = "true";
+        startInfo.Environment["SharedCompilationId"] = SharedCompilationId;
 
         using var process = new Process { StartInfo = startInfo };
         process.Start();
@@ -346,19 +364,6 @@ internal static class DotNetCommand
 
         var output = $"{await standardOutputTask}{await standardErrorTask}";
         return new DotNetCommandResult(process.ExitCode, output.Trim());
-    }
-
-    private static string AddDisableBuildServersArgument(string arguments)
-    {
-        if (arguments.Contains("--disable-build-servers", StringComparison.Ordinal))
-        {
-            return arguments;
-        }
-
-        var separatorIndex = arguments.IndexOf(' ', StringComparison.Ordinal);
-        return separatorIndex < 0
-            ? $"{arguments} --disable-build-servers"
-            : $"{arguments[..separatorIndex]} --disable-build-servers{arguments[separatorIndex..]}";
     }
 
     public static string Quote(string value) => $"\"{value}\"";
