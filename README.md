@@ -309,7 +309,7 @@ the listed default; explicit values win unless the behavior is identified as man
 | `MinimumExpectedTests` | `1` | Sets the MTP minimum-test guard. Set `0` to omit only the SDK-supplied `--minimum-expected-tests` argument; this does not guarantee that a zero-test run succeeds. |
 | `EnableXunitEntryPointDisableWarnings` | `true` when a supported xUnit v3 package is directly referenced | xUnit v3 4.0.1 and later wrap their generated entry point and AOT source in `#pragma warning disable` when `XUNIT_GENERATED_DISABLE_WARNINGS` is defined, so analyzer warnings cannot fail a build on code the consumer does not own. Set `false` to prevent the SDK from adding the constant. |
 | `OptimizeTestRun` | enabled unless `false` | Set `false` to keep analyzers enabled during MTP's test-build phase. |
-| `EnableTestDumps` | `true` on CI, otherwise unset | Adds the MTP `--crashdump` and `--hangdump` (10-minute timeout) arguments when `true`. Each extension relaunches the test host under a controller process, which costs about 0.2 s per local run. |
+| `EnableTestDumps` | `true` on CI and in AI-agent builds, otherwise unset | Adds the MTP `--crashdump` and `--hangdump` (10-minute timeout) arguments when `true`. Each extension relaunches the test host under a controller process, which costs about 0.2 s per run, so interactive local runs leave them off. An explicit value wins, including `false` in an agent build. |
 | `RunAnalyzersDuringBuild` | `true` | Set `false` in a local inner loop to compile without analyzers, about 40% faster; editor live analysis still reports findings. CI and AI-agent builds force it back to `true`. |
 | `RunAnalyzersDuringLiveAnalysis` | `true` | Set `false` locally to stop editor background analysis while builds still analyze. CI and AI-agent builds force it back to `true`. |
 | `DisableSupportPackageInformation` | `false` | Set `true` to opt out of Headless package metadata and symbol policy. |
@@ -395,13 +395,13 @@ Locked restore is enforced on CI only when the project has opted in by committin
 
 ### AI coding-agent builds
 
-Headless detects common AI coding-agent environments (Claude Code, Codex CLI, Cursor, Copilot CLI/agent, Gemini CLI, Windsurf, Zed, Cline, Aider, and others) and treats warnings as errors for those sessions, so an agent fixes warnings in the same session instead of leaving them for CI. Agent detection deliberately does **not** activate CI behavior: no SBOM generation, no locked restore, no coverage defaults.
+Headless detects common AI coding-agent environments (Claude Code, Codex CLI, Cursor, Copilot CLI/agent, Gemini CLI, Windsurf, Zed, Cline, Aider, and others) and treats warnings as errors for those sessions, so an agent fixes warnings in the same session instead of leaving them for CI. Agent detection deliberately does **not** activate CI behavior: no SBOM generation, no locked restore, no coverage defaults. Test projects do get crash and hang dumps (`EnableTestDumps`), because an agent run is unattended like CI: nobody attaches a debugger, and a hung test otherwise holds the run until something outside kills it.
 
-Unlike CI detection, this signal is consumer-overridable: set `HeadlessIsLlmContext=false` in `Directory.Build.props` or the project file to opt out, or `HeadlessIsLlmContext=true` to force the gate on.
+Unlike CI detection, this signal is consumer-overridable: set `HeadlessIsLlmContext=false` in `Directory.Build.props` or the project file to opt out of both the warning gate and the dump default, or `HeadlessIsLlmContext=true` to force them on. Set `EnableTestDumps=false` to keep the warning gate without dumps.
 
 ## Test SDK contract
 
-`Headless.NET.Sdk.Test` is Microsoft Testing Platform only. It defaults test hosts to `OutputType=Exe` (PackageReference consumers declare it themselves), `IsTestProject=true`, `IsPackable=false`, and `IsPublishable=false`, and supplies restore-visible MTP extensions for crash dumps, hang dumps, hot reload, retry, TRX reporting, and coverage. Default execution includes TRX output and a minimum expected test count; coverage and crash and hang dumps are enabled on CI.
+`Headless.NET.Sdk.Test` is Microsoft Testing Platform only. It defaults test hosts to `OutputType=Exe` (PackageReference consumers declare it themselves), `IsTestProject=true`, `IsPackable=false`, and `IsPublishable=false`, and supplies restore-visible MTP extensions for crash dumps, hang dumps, hot reload, retry, TRX reporting, and coverage. Default execution includes TRX output and a minimum expected test count; coverage is enabled on CI, and crash and hang dumps on CI and in AI-agent builds.
 
 The test framework remains consumer-selected. For example:
 

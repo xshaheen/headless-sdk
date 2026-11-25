@@ -147,7 +147,7 @@ public sealed class SdkProjectTypesTests(HeadlessSdkPackageFixture fixture) : Sd
         Assert.Equal(1, args.Split("--minimum-expected-tests 1", StringSplitOptions.None).Length - 1);
         Assert.DoesNotContain("--coverage", args, StringComparison.Ordinal);
 
-        // Dumps are CI diagnostics: on by default there, and an explicit local opt-in still works.
+        // Dumps are unattended-run diagnostics: on by default on CI, and an explicit local opt-in still works.
         var ci = (await project.EvaluateHeadlessPropertiesAsync("-p:ContinuousIntegrationBuild=true"))[
             "TestingPlatformCommandLineArguments"
         ];
@@ -185,6 +185,59 @@ public sealed class SdkProjectTypesTests(HeadlessSdkPackageFixture fixture) : Sd
         Assert.Contains("--coverage", coverageArgs, StringComparison.Ordinal);
         Assert.Contains("--coverage-settings", coverageArgs, StringComparison.Ordinal);
         Assert.Contains("default.runsettings", coverageArgs, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task should_enable_test_dumps_when_an_ai_agent_drives_the_build()
+    {
+        // An agent run is unattended like CI: nobody attaches a debugger, so a hung test needs a
+        // hang dump. The neutral environment clears every agent variable, so the local project
+        // stays dump-free whatever session runs this suite.
+        var agentEnvironment = new Dictionary<string, string>(StringComparer.Ordinal) { ["CLAUDECODE"] = "1" };
+
+        await using var local = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
+            includePackageReference: false
+        );
+        await using var agent = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
+            includePackageReference: false,
+            environmentOverrides: agentEnvironment
+        );
+        // The default lives in targets, after the project body, so a project-body value must still win.
+        await using var agentOptOut = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
+            includePackageReference: false,
+            extraProperties: new Dictionary<string, string>(StringComparer.Ordinal) { ["EnableTestDumps"] = "false" },
+            environmentOverrides: agentEnvironment
+        );
+
+        var localProperties = await local.EvaluateHeadlessPropertiesAsync();
+        var agentProperties = await agent.EvaluateHeadlessPropertiesAsync();
+        var optOutProperties = await agentOptOut.EvaluateHeadlessPropertiesAsync();
+        var localArgs = localProperties["TestingPlatformCommandLineArguments"];
+        var agentArgs = agentProperties["TestingPlatformCommandLineArguments"];
+        var optOutArgs = optOutProperties["TestingPlatformCommandLineArguments"];
+
+        Assert.Equal("false", localProperties["HeadlessIsLlmContext"]);
+        Assert.NotEqual("true", localProperties["ContinuousIntegrationBuild"]);
+        Assert.DoesNotContain("--crashdump", localArgs, StringComparison.Ordinal);
+        Assert.DoesNotContain("--hangdump", localArgs, StringComparison.Ordinal);
+
+        Assert.Equal("true", agentProperties["HeadlessIsLlmContext"]);
+        Assert.NotEqual("true", agentProperties["ContinuousIntegrationBuild"]);
+        Assert.Contains("--crashdump", agentArgs, StringComparison.Ordinal);
+        Assert.Contains("--hangdump", agentArgs, StringComparison.Ordinal);
+
+        Assert.Equal("true", optOutProperties["HeadlessIsLlmContext"]);
+        Assert.DoesNotContain("--crashdump", optOutArgs, StringComparison.Ordinal);
+        Assert.DoesNotContain("--hangdump", optOutArgs, StringComparison.Ordinal);
     }
 
     [Theory]
