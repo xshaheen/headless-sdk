@@ -1,32 +1,15 @@
 name: CI
 
+# No workflow-level paths filter: final-status is the check main requires, and a workflow that a
+# paths filter skips never reports it, so a docs-only pull request would wait on it forever. The
+# changes job decides instead, and final-status always runs.
 on:
   pull_request:
     branches:
       - main
-    paths:
-      - ".github/workflows/**"
-      - "src/**"
-      - "tests/**"
-      - "Directory.*"
-      - "global.json"
-      - "headless-sdk.slnx"
-      - "nuget.config"
-      - "logo.png"
-      - "README.md"
   push:
     branches:
       - main
-    paths:
-      - ".github/workflows/**"
-      - "src/**"
-      - "tests/**"
-      - "Directory.*"
-      - "global.json"
-      - "headless-sdk.slnx"
-      - "nuget.config"
-      - "logo.png"
-      - "README.md"
   workflow_dispatch:
 
 permissions:
@@ -37,24 +20,95 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.classify.outputs.code }}
+
+    steps:
+      # Only a pull request can skip validation, so only a pull request needs the diff. Depth 2 is
+      # enough: the pull request's merge commit has the base tip as its first parent.
+      - name: Checkout
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      # Lists the files that cannot change what validation builds, packs, or tests, and treats
+      # every other path as a code input, so a new file runs validation until someone adds it here.
+      - name: Classify changed files
+        id: classify
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            echo "Not a pull request: validation runs."
+            exit 0
+          fi
+
+          # A plain assignment lets the shell's -e fail the job when the diff fails; a process
+          # substitution would hide it and skip validation on an empty list. --no-renames lists
+          # both sides of a move, so moving a file out of src/ still counts as a code change.
+          diff_output=$(git diff --name-only --no-renames HEAD^1 HEAD)
+          mapfile -t changed <<< "$diff_output"
+          code=false
+          for file in "${changed[@]}"; do
+            [[ -z "$file" ]] && continue
+            case "$file" in
+              AGENTS.md | CLAUDE.md | Makefile | .gitignore | .githooks/* | .vscode/* \
+                | .github/PULL_REQUEST_TEMPLATE.md | .github/dependabot.yml)
+                echo "not a code input: $file"
+                ;;
+              *)
+                echo "code input:       $file"
+                code=true
+                ;;
+            esac
+          done
+
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Validation runs: $code"
+
   validate:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     uses: ./.github/workflows/validate.yml
 
   final-status:
     name: Final status
     if: always()
     needs:
+      - changes
       - validate
     runs-on: ubuntu-latest
 
     steps:
       # The validate call fails if any of its jobs (pack, every test shard, every platform smoke
-      # leg) fails, so its single result covers them all.
+      # leg) fails, so its single result covers them all. A skipped validate passes only when the
+      # changes job succeeded and found no code input; a skip for any other reason fails.
       - name: Require every validation job
         env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          CODE_CHANGED: ${{ needs.changes.outputs.code }}
           VALIDATE_RESULT: ${{ needs.validate.result }}
         run: |
-          if [[ "$VALIDATE_RESULT" != "success" ]]; then
-            echo "Validation failed: validate=$VALIDATE_RESULT"
+          if [[ "$CHANGES_RESULT" != "success" ]]; then
+            echo "Change detection failed: changes=$CHANGES_RESULT"
+            exit 1
+          fi
+          if [[ "$CODE_CHANGED" == "true" ]]; then
+            if [[ "$VALIDATE_RESULT" != "success" ]]; then
+              echo "Validation failed: validate=$VALIDATE_RESULT"
+              exit 1
+            fi
+            echo "Validation passed."
+          elif [[ "$CODE_CHANGED" == "false" && "$VALIDATE_RESULT" == "skipped" ]]; then
+            echo "No code input changed: validation skipped."
+          else
+            echo "Unexpected state: code=$CODE_CHANGED validate=$VALIDATE_RESULT"
             exit 1
           fi
