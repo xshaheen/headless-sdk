@@ -60,6 +60,7 @@ See the repository [consumption-mode reference](https://github.com/xshaheen/head
 - Extra Headless global usings only when `ImplicitUsings` is enabled and the TFM is compatible with `net8.0`.
 - Automatic analyzer profile for .NET 10 or later file-based apps.
 - Opt-in SBOM generation with `GenerateSBOM=true`.
+- Opt-in exact `[x.y.z]` package dependencies for `ProjectReference` siblings with `HeadlessPinProjectReferenceVersions=true`.
 - Embedded symbols by default through `HeadlessSymbolFormat=embedded`.
 - Targeted removal of the conflicting reference-pack `System.Runtime` facade when `System.Runtime.Experimental` supplies its own facade.
 

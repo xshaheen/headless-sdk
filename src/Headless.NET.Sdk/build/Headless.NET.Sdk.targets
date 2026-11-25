@@ -62,6 +62,7 @@ Copyright (c) Mahmoud Shaheen. All rights reserved.
   <Import Project="$(MSBuildThisFileDirectory)SupportAssemblyAttributes.targets" />
   <Import Project="$(MSBuildThisFileDirectory)SupportAnalyzerHygiene.targets" />
   <Import Project="$(MSBuildThisFileDirectory)SupportSbom.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)SupportPinProjectReferenceVersions.targets" />
   <Import
     Project="$(MSBuildThisFileDirectory)SupportEmbedBinlog.targets"
     Condition=" '$(DisableSupportEmbedBinlog)' != 'true' "
