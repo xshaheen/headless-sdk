@@ -3,10 +3,15 @@
     <!-- Headless.NET.Sdk.Test is MTP-only; xUnit uses this when generating its entry point. -->
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <IsTestProject Condition="'$(IsTestProject)' == '' AND '$(IsTestHarnessProject)' != 'true'">true</IsTestProject>
-    <IsTestProject Condition="'$(IsTestProject)' == '' AND '$(IsTestHarnessProject)' == 'true'">false</IsTestProject>
-    <IsTestingPlatformApplication
-      Condition="'$(IsTestingPlatformApplication)' == '' AND '$(IsTestHarnessProject)' == 'true'"
-      >false</IsTestingPlatformApplication>
+    <!--
+      A harness is a library that test projects reference, never a test of its own, so it overrides
+      earlier defaults the way OutputType does below. The Test SDK's props set IsTestProject=true before
+      the project body can declare the harness, and under PackageReference consumption the MTP
+      packages' targets set IsTestingPlatformApplication=true before these targets run. Either value
+      makes a solution-wide `dotnet test` try to run the harness.
+    -->
+    <IsTestProject Condition="'$(IsTestHarnessProject)' == 'true'">false</IsTestProject>
+    <IsTestingPlatformApplication Condition="'$(IsTestHarnessProject)' == 'true'">false</IsTestingPlatformApplication>
     <GenerateRuntimeConfigurationFiles
       Condition="'$(GenerateRuntimeConfigurationFiles)' == '' AND '$(IsTestHarnessProject)' == 'true'"
       >true</GenerateRuntimeConfigurationFiles>
