@@ -302,7 +302,7 @@ the listed default; explicit values win unless the behavior is identified as man
 | `GenerateSBOM` | `false` | Generates an SPDX SBOM inside the package when enabled. |
 | `HeadlessPinProjectReferenceVersions` | `false` | Set `true` to pack each `ProjectReference` as an exact `[x.y.z]` dependency instead of NuGet's `>= x.y.z`. See [Sibling package versions](#sibling-package-versions). |
 | `ReportAnalyzer` | `true` on CI, otherwise unset | Compiler per-analyzer timing report. It is diagnostics only and costs build time on every compile, so local and AI-agent builds leave it off. Pass `-p:ReportAnalyzer=true` to profile analyzers locally, or `-p:ReportAnalyzer=false` to silence it on CI. |
-| `IsTestHarnessProject` | `false` | Applies test-library defaults without creating an executable test host. |
+| `IsTestHarnessProject` | `false` | Applies test-library defaults without creating an executable test host. With `Headless.NET.Sdk.Test` it also forces `OutputType=Library`, `IsTestProject=false`, and `IsTestingPlatformApplication=false`, so `dotnet test` skips the harness. |
 | `EnableCodeCoverage` | `true` on CI, otherwise unset | Adds MTP coverage arguments when `true`. |
 | `HeadlessCoverageSettingsPath` | packaged Test SDK path | Absolute path to the SDK-owned `default.runsettings`; query this evaluated property when an external runner needs the canonical coverage denominator policy. |
 | `EnableDefaultTestSettings` | enabled unless `false` | Set `false` to own all MTP command-line defaults. |

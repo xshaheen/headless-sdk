@@ -124,6 +124,55 @@ public sealed class SdkProjectTypesTests(HeadlessSdkPackageFixture fixture) : Sd
         Assert.Empty(properties["TestingPlatformCommandLineArguments"]);
     }
 
+    [Theory]
+    [InlineData("project-sdk", false)]
+    [InlineData("project-sdk", true)]
+    [InlineData("package-reference", false)]
+    [InlineData("package-reference", true)]
+    public async Task should_keep_harness_out_of_test_runs_when_test_sdk_harness_references_xunit(
+        string consumptionMode,
+        bool multiTargeting
+    )
+    {
+        // A harness library references xUnit's extensibility package (the runner packages require an
+        // executable), which brings no test application of its own. The Test SDK's props default
+        // IsTestProject to true before the project body sets IsTestHarnessProject, and under
+        // PackageReference consumption the MTP extensions' targets mark the project a test application
+        // before Headless targets run, so either one makes `dotnet test` try to run the harness.
+        var packageReference = string.Equals(consumptionMode, "package-reference", StringComparison.Ordinal);
+        var extraProperties = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["IsTestHarnessProject"] = "true",
+        };
+
+        if (multiTargeting)
+        {
+            extraProperties["TargetFrameworks"] = "net8.0;net10.0";
+        }
+
+        await using var project = await ConsumerProject.CreateAsync(
+            fixture.PackageVersion,
+            fixture.PackageSourceDirectory,
+            sdk: packageReference ? "Microsoft.NET.Sdk" : $"Headless.NET.Sdk.Test/{fixture.PackageVersion}",
+            targetFramework: multiTargeting ? null : "net8.0",
+            includePackageReference: packageReference,
+            packageReferenceId: "Headless.NET.Sdk.Test",
+            extraProperties: extraProperties,
+            extraPackageReferences: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["xunit.v3.extensibility.core"] = TestRepository.ReadCentralPackageVersion("xunit.v3.mtp-v2"),
+            }
+        );
+
+        var properties = await project.EvaluateHeadlessPropertiesAsync();
+
+        Assert.Equal("Test", properties["HeadlessSdkProjectType"]);
+        Assert.Equal("true", properties["IsTestHarnessProject"]);
+        Assert.Equal("false", properties["IsTestProject"]);
+        Assert.Equal("false", properties["IsTestingPlatformApplication"]);
+        Assert.Equal("Library", properties["OutputType"]);
+    }
+
     [Fact]
     public async Task should_set_configurable_mtp_command_line_arguments_when_using_test_project_type_sdk()
     {
