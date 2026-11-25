@@ -93,6 +93,8 @@ Windows build hosts still copy the profilers, because Windows coverage may load 
 - Coverage enabled on CI, with `HeadlessCoverageSettingsPath` exposing the packaged denominator policy, and analyzer work skipped during the test-build phase unless explicitly retained.
 - Mandatory Headless analyzer infrastructure, configurable banned-API policy, and mandatory audit and CI policies with narrow test-code severity relaxations.
 
-The package is self-contained and ships no `buildTransitive` assets. Shared harness libraries can instead use `IsTestHarnessProject=true` with the base SDK to receive test analysis defaults without becoming executable test hosts.
+The package is self-contained and ships no `buildTransitive` assets.
+
+A shared harness library, which test projects reference but which holds no tests of its own, sets `IsTestHarnessProject=true` with this SDK or the base SDK. It receives the test analysis defaults and builds as a library: the SDK sets `OutputType=Library`, `IsTestProject=false`, and `IsTestingPlatformApplication=false`, overriding an explicit value, so a solution-wide `dotnet test` does not try to run it. Reference `xunit.v3.extensibility.core` from a harness, not `xunit.v3` or an `xunit.v3.mtp-*` runner package, because xUnit's runner packages fail any build that is not an executable.
 
 The SDK owns the versions of its six implicit MTP extensions. Central Package Management consumers must not declare `PackageVersion` entries for those extension IDs; test-framework versions remain consumer-owned and centrally manageable.
