@@ -24,10 +24,13 @@
       >true</EnableCodeCoverage>
     <!--
       Crash and hang dumps are post-mortem diagnostics for unattended runs. Each extension relaunches
-      the test host under a controller process, which adds about 0.2 s to every local run while an
-      interactive developer can attach a debugger instead. CI keeps them; explicit toggle wins.
+      the test host under a controller process, which adds about 0.2 s to every run. An interactive
+      developer can attach a debugger instead, so local runs skip them. CI and AI-agent runs are
+      unattended: nobody attaches a debugger, and without a hang dump a hung test holds the run until
+      something outside kills it, leaving no evidence. Explicit toggle wins.
     -->
-    <EnableTestDumps Condition="'$(EnableTestDumps)' == '' AND '$(ContinuousIntegrationBuild)' == 'true'"
+    <EnableTestDumps
+      Condition="'$(EnableTestDumps)' == '' AND ('$(ContinuousIntegrationBuild)' == 'true' OR '$(HeadlessIsLlmContext)' == 'true')"
       >true</EnableTestDumps>
     <HeadlessCoverageSettingsPath Condition="'$(HeadlessCoverageSettingsPath)' == ''"
       >$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)', '..', 'configurations', 'default.runsettings'))</HeadlessCoverageSettingsPath>
