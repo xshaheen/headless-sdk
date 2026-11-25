@@ -70,6 +70,7 @@ public sealed class ContractPackagingTests(HeadlessSdkPackageFixture fixture) : 
     [InlineData("package-reference", "false", "2.3.4")]
     [InlineData("package-reference-multi-targeting", "true", "[2.3.4]")]
     [InlineData("package-reference-multi-targeting", null, "2.3.4")]
+    [InlineData("razor-project-sdk", "true", "[2.3.4]")]
     public async Task should_pack_the_sibling_dependency_range_when_pin_project_reference_versions_is_set(
         string consumptionMode,
         string? pinProjectReferenceVersions,
@@ -87,6 +88,8 @@ public sealed class ContractPackagingTests(HeadlessSdkPackageFixture fixture) : 
                 string.Empty,
                 string.Empty
             ),
+            // The targets ship in the shared build folder; one satellite row shows a satellite picks them up.
+            "razor-project-sdk" => ($"Headless.NET.Sdk.Razor/{fixture.PackageVersion}", string.Empty, string.Empty),
             "global-json-sdk" => ("Headless.NET.Sdk", string.Empty, string.Empty),
             "additional-sdk" => (
                 "Microsoft.NET.Sdk",
