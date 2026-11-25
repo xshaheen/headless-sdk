@@ -112,8 +112,8 @@ endef
 .PHONY: help
 help: ## Show targets and examples
 	@awk 'BEGIN {FS = ":.*##"} /^##@/ {printf "\n%s\n", substr($$0, 5)} /^[a-zA-Z0-9_.-]+:.*##/ {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@printf '\nConventions:\n  JSON=1 prints doctor as the contract report; CLASS narrows test-class (an MTP --filter-class glob);\n  LOCAL_VERSION overrides the unique local pack version; PROOF_KEEP bounds the kept proof bundles;\n  TEST selects prove'"'"'s tests (an MTP --filter-method glob) and BASE its base ref; FORCE=1 makes verify rerun\n  sources it already proved; NO_COLOR is honored.\n'
-	@printf '\nExamples:\n  make test-static\n  make test-class CLASS='"'"'*ScaffoldingTests*'"'"'\n  make prove TEST='"'"'*should_keep_vulnerable_package_findings*'"'"'\n  make verify-affected\n  make doctor JSON=1\n'
+	@printf '\nConventions:\n  JSON=1 prints doctor as the contract report; CLASS narrows test-class (MTP --filter-class globs,\n  space-separated); LOCAL_VERSION overrides the unique local pack version; PROOF_KEEP bounds the\n  kept proof bundles; TEST selects prove'"'"'s tests (an MTP --filter-method glob) and BASE its base ref;\n  FORCE=1 makes verify rerun sources it already proved; NO_COLOR is honored.\n'
+	@printf '\nExamples:\n  make test-static\n  make test-class CLASS='"'"'*ScaffoldingTests*'"'"'\n  make test-failed\n  make prove TEST='"'"'*should_keep_vulnerable_package_findings*'"'"'\n  make verify-affected\n  make doctor JSON=1\n'
 
 # doctor report. stdin: one check per line, `group|component|check|status|reason|fix`
 # (status: ok fail missing gated unavailable). Table, or the contract JSON when JSON=1.
@@ -181,13 +181,25 @@ test-static: ## Run the repository-only test classes (analyzer rule coverage, ve
 	@rm -rf "$(RESULTS_DIR)/static"
 	$(DOTNET) test --project "$(TEST_PROJECT)" --configuration "$(CONFIGURATION)" -- $(STATIC_TEST_CLASSES) --minimum-expected-tests 1 --results-directory "$(RESULTS_DIR)/static"
 
+# CLASS holds one or more space-separated globs, so test-failed reruns every failed class in one test
+# host run and one results folder.
 .PHONY: test-class
 test-class: ## Run tests matching CLASS= against the last packed packages; narrows what runs, not what builds (make verify first)
 	@test -n "$(CLASS)" || { echo "CLASS is required. Example: make test-class CLASS='*ScaffoldingTests*'" >&2; exit 2; }
 	@test -d "$(LAST_PACKAGES)" || { echo "No packed packages yet. Run: make verify" >&2; exit 1; }
 	@rm -rf "$(RESULTS_DIR)/class"
 	HEADLESS_PACKAGES_DIR="$$(cd "$(LAST_PACKAGES)" && pwd -P)" \
-		$(DOTNET) test --project "$(TEST_PROJECT)" --configuration "$(CONFIGURATION)" --no-restore --no-build -- --filter-class '$(CLASS)' --minimum-expected-tests 1 --results-directory "$(RESULTS_DIR)/class"
+		$(DOTNET) test --project "$(TEST_PROJECT)" --configuration "$(CONFIGURATION)" --no-restore --no-build -- $(foreach c,$(CLASS),--filter-class '$(c)') --minimum-expected-tests 1 --results-directory "$(RESULTS_DIR)/class"
+
+# After a failed verify, a fix proves itself on the classes that failed instead of the whole suite. The
+# classes come from the bundle that packed last-packages, and the rerun refuses when src/ changed since
+# that pack, because test-class would then test stale packages. The final proof is still make verify.
+.PHONY: test-failed
+test-failed: ## Rerun only the test classes that failed in the last make verify, against its packages; refuses when src/ changed since
+	@classes=$$($(PROOF) failed --root "$(ARTIFACTS_DIR)/proof") || exit $$?; \
+	[ -n "$$classes" ] || exit 0; \
+	if $(MAKE) test-class CLASS="$$classes"; then echo "[test-failed] every previously failed class passes. Finish with: make verify"; \
+	else echo "[test-failed] still failing; results in $(RESULTS_DIR)/class" >&2; exit 1; fi
 
 # Incremental and without MinVer's override, so an unchanged tree compiles nothing; asserts restore
 # instead of restoring (restore is the largest fixed cost and almost never has work to do).
