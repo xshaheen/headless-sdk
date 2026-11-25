@@ -13,6 +13,8 @@ Commands:
   key        Print the reuse key: the content id of the working tree (tracked and untracked files,
              ignored ones excluded) followed by each --input NAME=VALUE that changes the verdict.
   reuse      Print the newest passing bundle under --root whose key equals --key; exit 1 if none.
+  failed     Print the failed test classes of the bundle last-packages points at, for test-class;
+             exit 1 when src/ changed since it packed.
 """
 
 from __future__ import annotations
@@ -156,6 +158,12 @@ def test_modules(directory: Path) -> list[TestModule]:
     for trx in sorted(directory.rglob("*.trx")):
         root = ET.parse(trx).getroot()
         module = TestModule(module=re.sub(r"_net[\d.]+_\w+$", "", trx.stem))
+        # The class comes from the test definition, because a theory's testName carries its arguments.
+        classes = {
+            test.get("id", ""): method.get("className", "")
+            for test in root.iterfind(".//t:TestDefinitions/t:UnitTest", TRX_NS)
+            if (method := test.find("t:TestMethod", TRX_NS)) is not None
+        }
         for result in root.iterfind(".//t:Results/t:UnitTestResult", TRX_NS):
             outcome = result.get("outcome", "")
             if outcome == "Passed":
@@ -163,7 +171,14 @@ def test_modules(directory: Path) -> list[TestModule]:
             elif outcome in ("Failed", "Error", "Timeout", "Aborted"):
                 module.failed += 1
                 message = result.findtext(".//t:ErrorInfo/t:Message", default="", namespaces=TRX_NS).strip()
-                module.failures.append({"test": result.get("testName", ""), "message": message.splitlines()[0] if message else outcome})
+                name = result.get("testName", "")
+                module.failures.append(
+                    {
+                        "test": name,
+                        "class": classes.get(result.get("testId", "")) or name.split("(", 1)[0].rpartition(".")[0],
+                        "message": message.splitlines()[0] if message else outcome,
+                    }
+                )
             else:
                 module.skipped += 1
         modules.append(module)
@@ -224,6 +239,77 @@ def reuse(root: Path, key: str) -> int:
             print(bundle)
             return 0
     return 1
+
+
+def subtree(tree: str, path: str) -> str:
+    return git("rev-parse", "--verify", "--quiet", f"{tree}:{path}")
+
+
+def failed_classes(root: Path) -> int:
+    """Print the failed test classes of the bundle whose packages last-packages points at.
+
+    That bundle, not the newest one, because reuse and a failed pack both leave last-packages on an
+    older bundle, and its failures are the ones those packages produced. Stdout carries only the
+    space-separated class names, so the Makefile can pass them to test-class; empty means nothing to
+    rerun. Exits 1 when there is no usable bundle or the packages are stale.
+    """
+    last = root / "last-packages"
+    if not last.exists():
+        print("[test-failed] no packed packages yet. Run: make verify", file=sys.stderr)
+        return 1
+    bundle = last.resolve().parent
+    summary_path = bundle / "summary.json"
+    if not summary_path.exists():
+        print(f"[test-failed] {relative(str(bundle))} has no summary.json. Run: make verify", file=sys.stderr)
+        return 1
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    tests_stage = next((stage for stage in summary["stages"] if stage["name"] == "tests"), None)
+    failures = [failure for module in summary["tests"]["modules"] for failure in module["failures"]]
+    where = relative(str(bundle))
+    if tests_stage is None or tests_stage["exit_code"] < 0:
+        print(f"[test-failed] {where} ran no tests. Run: make verify", file=sys.stderr)
+        return 1
+    if not failures:
+        if tests_stage["exit_code"] > 0:
+            # A crashed or timed-out test host leaves no failed result to select.
+            print(f"[test-failed] {where}: the tests stage failed without a failed test result; read {where}/tests.log", file=sys.stderr)
+            return 1
+        print(f"[test-failed] {where}: no failed tests; nothing to rerun", file=sys.stderr)
+        return 0
+
+    # The packages are stale when src/ differs from the tree the run started on. The run's reuse key
+    # already names that tree, so its src/ subtree is compared with the working tree's.
+    key_path = bundle / "reuse-key"
+    started = key_path.read_text(encoding="utf-8").split() if key_path.exists() else []
+    packed_src = subtree(started[0], "src") if started else ""
+    if not packed_src:
+        print(f"[test-failed] {where} does not record the sources it packed. Run: make verify", file=sys.stderr)
+        return 1
+    current = working_tree_id()
+    if subtree(current, "src") != packed_src:
+        print(
+            f"[test-failed] src/ changed since {where} packed its packages, so a rerun would test stale packages. Run: make verify",
+            file=sys.stderr,
+        )
+        return 1
+    if subtree(current, "tests") != subtree(started[0], "tests"):
+        # test-class runs with --no-build, so an edited test runs only after it is compiled.
+        print("[test-failed] tests/ changed since that run; the rerun uses the last build's test binaries (make build compiles them)", file=sys.stderr)
+    sdk_input = "HEADLESS_CONSUMER_SDK_VERSION="
+    packed_sdk = next((value.removeprefix(sdk_input) for value in started[1:] if value.startswith(sdk_input)), "")
+    current_sdk = os.environ.get("HEADLESS_CONSUMER_SDK_VERSION", "")
+    if packed_sdk != current_sdk:
+        print(
+            f"[test-failed] those tests failed with consumer SDK {packed_sdk or '(pinned)'}; this rerun uses {current_sdk or '(pinned)'}",
+            file=sys.stderr,
+        )
+
+    classes = sorted({failure.get("class") or failure["test"].split("(", 1)[0].rpartition(".")[0] for failure in failures})
+    print(f"[test-failed] {where}: {len(failures)} failed test(s) in {len(classes)} class(es):", file=sys.stderr)
+    for name in classes:
+        print(f"[test-failed]   {name}", file=sys.stderr)
+    print(" ".join(classes))
+    return 0
 
 
 def summarize(directory: Path) -> int:
@@ -336,6 +422,8 @@ def main() -> int:
     reuse_parser = commands.add_parser("reuse", help="print a passing bundle that proved --key")
     reuse_parser.add_argument("--root", required=True, type=Path)
     reuse_parser.add_argument("--key", required=True)
+    failed_parser = commands.add_parser("failed", help="print the failed test classes of the last packed bundle")
+    failed_parser.add_argument("--root", required=True, type=Path)
     args = parser.parse_args()
 
     if args.command == "key":
@@ -343,6 +431,8 @@ def main() -> int:
         return 0
     if args.command == "reuse":
         return reuse(args.root, args.key)
+    if args.command == "failed":
+        return failed_classes(args.root)
 
     if args.command == "run":
         command = args.stage_command[1:] if args.stage_command[:1] == ["--"] else args.stage_command

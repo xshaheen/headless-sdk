@@ -114,23 +114,44 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The second shard is the complement of the first, so a new test class always runs in
+        # Tests run in parallel within a class (xunit.runner.json), so a shard is bound by its
+        # runner's four cores, not by its slowest class. The named shards hold roughly equal summed
+        # test time on the .NET 10 consumer SDK, the slower axis; rebalance when one shard runs long.
+        # The last shard excludes every class the others name, so a new test class always runs in
         # exactly one shard without editing this list.
         # Each shard runs against consumer builds on the pinned SDK (empty consumer-sdk) and again on
         # the .NET 10 SDK, so both supported SDK lines are validated from one set of packed packages.
+        shard: [project-types, coverage, build-policy, rest]
+        consumer-sdk: ["", "10.0.100"]
         include:
-          - shard: sdk
-            consumer-sdk: ""
-            filter: --filter-class "Headless.NET.Sdk.Tests.Integrations.Sdk*"
-          - shard: contract
-            consumer-sdk: ""
-            filter: --filter-not-class "Headless.NET.Sdk.Tests.Integrations.Sdk*"
-          - shard: sdk
-            consumer-sdk: "10.0.100"
-            filter: --filter-class "Headless.NET.Sdk.Tests.Integrations.Sdk*"
-          - shard: contract
-            consumer-sdk: "10.0.100"
-            filter: --filter-not-class "Headless.NET.Sdk.Tests.Integrations.Sdk*"
+          - shard: project-types
+            filter: >-
+              --filter-class "Headless.NET.Sdk.Tests.Integrations.SdkProjectTypesTests"
+              --filter-class "Headless.NET.Sdk.Tests.Integrations.ContractTargetFrameworksTests"
+              --filter-class "Headless.NET.Sdk.Tests.Integrations.ContractFileAppsTests"
+          - shard: coverage
+            filter: >-
+              --filter-class "Headless.NET.Sdk.Tests.Integrations.ContractCoverageAssetsTests"
+              --filter-class "Headless.NET.Sdk.Tests.Integrations.ContractEvaluationTests"
+              --filter-class "Headless.NET.Sdk.Tests.Integrations.SdkScaffoldingTests"
+              --filter-class "Headless.NET.Sdk.Tests.Integrations.ContractCoverageTests"
+          - shard: build-policy
+            filter: >-
+              --filter-class "Headless.NET.Sdk.Tests.Integrations.SdkBuildPolicyTests"
+              --filter-class "Headless.NET.Sdk.Tests.Integrations.ContractCiRestoreTests"
+              --filter-class "Headless.NET.Sdk.Tests.Integrations.ContractPackagingTests"
+          - shard: rest
+            filter: >-
+              --filter-not-class "Headless.NET.Sdk.Tests.Integrations.SdkProjectTypesTests"
+              --filter-not-class "Headless.NET.Sdk.Tests.Integrations.ContractTargetFrameworksTests"
+              --filter-not-class "Headless.NET.Sdk.Tests.Integrations.ContractFileAppsTests"
+              --filter-not-class "Headless.NET.Sdk.Tests.Integrations.ContractCoverageAssetsTests"
+              --filter-not-class "Headless.NET.Sdk.Tests.Integrations.ContractEvaluationTests"
+              --filter-not-class "Headless.NET.Sdk.Tests.Integrations.SdkScaffoldingTests"
+              --filter-not-class "Headless.NET.Sdk.Tests.Integrations.ContractCoverageTests"
+              --filter-not-class "Headless.NET.Sdk.Tests.Integrations.SdkBuildPolicyTests"
+              --filter-not-class "Headless.NET.Sdk.Tests.Integrations.ContractCiRestoreTests"
+              --filter-not-class "Headless.NET.Sdk.Tests.Integrations.ContractPackagingTests"
 
     steps:
       - name: Checkout
