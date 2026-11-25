@@ -217,18 +217,21 @@ check: ## CI gate: runs every gate in CHECK_GATES (format-check test-static veri
 # (condense it into one PR Verification row; never paste it) and summary.json. Every stage runs, so
 # one failure does not hide the rest, except that tests are skipped when the build or pack failed rather than run against stale output.
 # Bundles sort by their timestamp name; the newest PROOF_KEEP - 1 stay, so the new one makes PROOF_KEEP.
-# A rerun on sources a kept bundle already proved passing (same working-tree id: tracked and
-# untracked files, ignored ones excluded) reuses that bundle instead of spending the suite again;
-# the bundle records the id only when no file changed while it ran.
+# A rerun whose reuse key matches a kept passing bundle reuses that bundle instead of spending the
+# suite again. The key is the working-tree id (tracked and untracked files, ignored ones excluded)
+# plus every input that changes what the run proves (VERIFY_INPUTS), so a pass on one consumer SDK
+# or configuration never stands in for another. The bundle records the key only when no file
+# changed while it ran.
+VERIFY_INPUTS = --input 'CONFIGURATION=$(CONFIGURATION)' --input "HEADLESS_CONSUMER_SDK_VERSION=$${HEADLESS_CONSUMER_SDK_VERSION:-}"
 .PHONY: verify
-verify: ## Build, pack (unique local version), and run the full suite; writes a proof bundle (~3 min). Reuses a passing bundle for identical sources; FORCE=1 reruns
-	@run="$(PROOF_RUN)-verify"; status=0; tree=$$($(PROOF) tree 2>/dev/null || true); \
-	if [ -z "$(FORCE)" ] && [ -n "$$tree" ] && prior=$$($(PROOF) reuse --root "$(ARTIFACTS_DIR)/proof" --tree "$$tree"); then \
+verify: ## Build, pack (unique local version), and run the full suite; writes a proof bundle (~3 min). Reuses a passing bundle for identical sources and inputs; FORCE=1 reruns
+	@run="$(PROOF_RUN)-verify"; status=0; key=$$($(PROOF) key $(VERIFY_INPUTS) 2>/dev/null || true); \
+	if [ -z "$(FORCE)" ] && [ -n "$$key" ] && prior=$$($(PROOF) reuse --root "$(ARTIFACTS_DIR)/proof" --key "$$key"); then \
 		ln -sfn "$${prior##*/}/packages" "$(LAST_PACKAGES)"; \
-		cat "$$prior/summary.md"; printf 'Proof bundle: %s, reused: it already proved these exact sources (tree %s). FORCE=1 reruns.\n' "$$prior" "$${tree:0:12}"; exit 0; \
+		cat "$$prior/summary.md"; printf 'Proof bundle: %s, reused: it already proved these exact sources and inputs (%s %s). FORCE=1 reruns.\n' "$$prior" "$${key:0:12}" "$${key#* }"; exit 0; \
 	fi; \
 	{ find "$(ARTIFACTS_DIR)/proof" -mindepth 1 -maxdepth 1 -type d -name '*-verify' 2>/dev/null || true; } | sort -r | awk -v keep=$$(( $(PROOF_KEEP) - 1 )) 'NR > keep' | while IFS= read -r old; do rm -rf -- "$$old"; done; \
-	mkdir -p "$$run"; [ -z "$$tree" ] || printf '%s\n' "$$tree" > "$$run/tree"; \
+	mkdir -p "$$run"; [ -z "$$key" ] || printf '%s\n' "$$key" > "$$run/reuse-key"; \
 	$(PROOF) run --dir "$$run" --name restore -- $(DOTNET) restore "$(SOLUTION)" || status=1; \
 	$(PROOF) run --dir "$$run" --name build -- $(DOTNET) build "$(SOLUTION)" --configuration "$(CONFIGURATION)" --no-restore --no-incremental -p:GeneratePackageOnBuild=false -p:MinVerVersionOverride=$(LOCAL_VERSION) -v:minimal -nologo || status=1; \
 	$(PROOF) run --dir "$$run" --name pack -- $(DOTNET) pack "$(SOLUTION)" --configuration "$(CONFIGURATION)" --no-restore --no-build -p:MinVerVersionOverride=$(LOCAL_VERSION) --output "$$run/packages" -v:minimal -nologo || status=1; \
