@@ -227,6 +227,36 @@ public sealed class Class1;
         return await RunDotNetAsync($"build {Quote(ProjectFilePath)}{argumentsSuffix} /bl:{Quote(BinLogPath)}");
     }
 
+    // A consumer build that fails only now and then leaves nothing to read once its root is deleted,
+    // so a failed build attaches its binlog and the files restore left under obj/ to the test result
+    // (the TRX results folder, uploaded by CI). Call it before asserting on the exit code.
+    public async Task AttachEvidenceWhenFailedAsync(DotNetCommandResult result, string name)
+    {
+        if (result.ExitCode == 0)
+        {
+            return;
+        }
+
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        if (File.Exists(BinLogPath))
+        {
+            TestContext.Current.AddAttachment(
+                $"{name}-msbuild.binlog",
+                await File.ReadAllBytesAsync(BinLogPath, cancellationToken)
+            );
+        }
+
+        var objDirectory = Path.Combine(RootDirectory, "obj");
+        IEnumerable<string> objFiles = Directory.Exists(objDirectory)
+            ? Directory
+                .EnumerateFiles(objDirectory, "*", SearchOption.AllDirectories)
+                .Select(path => $"{Path.GetRelativePath(RootDirectory, path)} {new FileInfo(path).Length}")
+                .Order(StringComparer.Ordinal)
+            : ["(no obj directory)"];
+        TestContext.Current.AddAttachment($"{name}-obj-files.txt", string.Join(Environment.NewLine, objFiles));
+    }
+
     public async Task<Dictionary<string, string>> EvaluateHeadlessPropertiesAsync(string additionalArguments = "")
     {
         var argumentsSuffix = string.IsNullOrWhiteSpace(additionalArguments) ? string.Empty : $" {additionalArguments}";

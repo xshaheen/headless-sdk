@@ -50,10 +50,13 @@ public sealed class ContractTargetFrameworksTests(HeadlessSdkPackageFixture fixt
             includePackageReference: false
         );
 
-        var result = await project.RunDotNetAsync(
-            $"build {Quote(project.ProjectFilePath)} --no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
+        var result = await project.BuildWithBinLogAsync(
+            $"--no-incremental -p:RestoreConfigFile={Quote(project.NuGetConfigPath)}"
         );
 
+        // This build has failed intermittently with restore reporting nothing to restore (no
+        // project.assets.json, NETSDK1004); keep what the next failure leaves behind.
+        await project.AttachEvidenceWhenFailedAsync(result, $"target-framework-{targetFramework}");
         Assert.True(result.ExitCode == 0, result.Output);
         var properties = await project.EvaluateHeadlessPropertiesAsync();
         Assert.Equal(targetFramework, properties["TargetFramework"]);
