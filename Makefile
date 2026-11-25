@@ -29,6 +29,8 @@ CLASS ?=
 JSON ?=
 BASE ?= origin/main
 TEST ?=
+# FORCE=1 makes verify rerun even when a passing bundle already proved the same sources.
+FORCE ?=
 # prove runs TEST (an MTP --filter-method glob) without HEADLESS_PACKAGES_DIR, so each checkout's
 # fixture packs its own src/: the base run tests the base packages, the head run this checkout's.
 PROVE_TEST = $(DOTNET) test --project "$(TEST_PROJECT)" --configuration "$(CONFIGURATION)" -- --filter-method '$(TEST)' --minimum-expected-tests 1
@@ -110,7 +112,7 @@ endef
 .PHONY: help
 help: ## Show targets and examples
 	@awk 'BEGIN {FS = ":.*##"} /^##@/ {printf "\n%s\n", substr($$0, 5)} /^[a-zA-Z0-9_.-]+:.*##/ {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@printf '\nConventions:\n  JSON=1 prints doctor as the contract report; CLASS narrows test-class (an MTP --filter-class glob);\n  LOCAL_VERSION overrides the unique local pack version; PROOF_KEEP bounds the kept proof bundles;\n  TEST selects prove'"'"'s tests (an MTP --filter-method glob) and BASE its base ref; NO_COLOR is honored.\n'
+	@printf '\nConventions:\n  JSON=1 prints doctor as the contract report; CLASS narrows test-class (an MTP --filter-class glob);\n  LOCAL_VERSION overrides the unique local pack version; PROOF_KEEP bounds the kept proof bundles;\n  TEST selects prove'"'"'s tests (an MTP --filter-method glob) and BASE its base ref; FORCE=1 makes verify rerun\n  sources it already proved; NO_COLOR is honored.\n'
 	@printf '\nExamples:\n  make test-static\n  make test-class CLASS='"'"'*ScaffoldingTests*'"'"'\n  make prove TEST='"'"'*should_keep_vulnerable_package_findings*'"'"'\n  make verify-affected\n  make doctor JSON=1\n'
 
 # doctor report. stdin: one check per line, `group|component|check|status|reason|fix`
@@ -215,11 +217,21 @@ check: ## CI gate: runs every gate in CHECK_GATES (format-check test-static veri
 # (condense it into one PR Verification row; never paste it) and summary.json. Every stage runs, so
 # one failure does not hide the rest, except that tests are skipped when the build or pack failed rather than run against stale output.
 # Bundles sort by their timestamp name; the newest PROOF_KEEP - 1 stay, so the new one makes PROOF_KEEP.
+# A rerun whose reuse key matches a kept passing bundle reuses that bundle instead of spending the
+# suite again. The key is the working-tree id (tracked and untracked files, ignored ones excluded)
+# plus every input that changes what the run proves (VERIFY_INPUTS), so a pass on one consumer SDK
+# or configuration never stands in for another. The bundle records the key only when no file
+# changed while it ran.
+VERIFY_INPUTS = --input 'CONFIGURATION=$(CONFIGURATION)' --input "HEADLESS_CONSUMER_SDK_VERSION=$${HEADLESS_CONSUMER_SDK_VERSION:-}"
 .PHONY: verify
-verify: ## Build, pack (unique local version), and run the full suite; writes a proof bundle (~3 min)
-	@run="$(PROOF_RUN)-verify"; status=0; \
+verify: ## Build, pack (unique local version), and run the full suite; writes a proof bundle (~3 min). Reuses a passing bundle for identical sources and inputs; FORCE=1 reruns
+	@run="$(PROOF_RUN)-verify"; status=0; key=$$($(PROOF) key $(VERIFY_INPUTS) 2>/dev/null || true); \
+	if [ -z "$(FORCE)" ] && [ -n "$$key" ] && prior=$$($(PROOF) reuse --root "$(ARTIFACTS_DIR)/proof" --key "$$key"); then \
+		ln -sfn "$${prior##*/}/packages" "$(LAST_PACKAGES)"; \
+		cat "$$prior/summary.md"; printf 'Proof bundle: %s, reused: it already proved these exact sources and inputs (%s %s). FORCE=1 reruns.\n' "$$prior" "$${key:0:12}" "$${key#* }"; exit 0; \
+	fi; \
 	{ find "$(ARTIFACTS_DIR)/proof" -mindepth 1 -maxdepth 1 -type d -name '*-verify' 2>/dev/null || true; } | sort -r | awk -v keep=$$(( $(PROOF_KEEP) - 1 )) 'NR > keep' | while IFS= read -r old; do rm -rf -- "$$old"; done; \
-	mkdir -p "$$run"; \
+	mkdir -p "$$run"; [ -z "$$key" ] || printf '%s\n' "$$key" > "$$run/reuse-key"; \
 	$(PROOF) run --dir "$$run" --name restore -- $(DOTNET) restore "$(SOLUTION)" || status=1; \
 	$(PROOF) run --dir "$$run" --name build -- $(DOTNET) build "$(SOLUTION)" --configuration "$(CONFIGURATION)" --no-restore --no-incremental -p:GeneratePackageOnBuild=false -p:MinVerVersionOverride=$(LOCAL_VERSION) -v:minimal -nologo || status=1; \
 	$(PROOF) run --dir "$$run" --name pack -- $(DOTNET) pack "$(SOLUTION)" --configuration "$(CONFIGURATION)" --no-restore --no-build -p:MinVerVersionOverride=$(LOCAL_VERSION) --output "$$run/packages" -v:minimal -nologo || status=1; \

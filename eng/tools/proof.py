@@ -10,14 +10,20 @@ Commands:
   run        Run one stage command, tee its output to <dir>/<name>.log, record its result, and
              exit with the command's status.
   summarize  Write <dir>/summary.json and <dir>/summary.md from what the stages left in <dir>.
+  key        Print the reuse key: the content id of the working tree (tracked and untracked files,
+             ignored ones excluded) followed by each --input NAME=VALUE that changes the verdict.
+  reuse      Print the newest passing bundle under --root whose key equals --key; exit 1 if none.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import shutil
 import subprocess
+import tempfile
 import sys
 import time
 import xml.etree.ElementTree as ET
@@ -187,8 +193,46 @@ def git(*args: str) -> str:
     return subprocess.run(["git", *args], cwd=REPO_ROOT, capture_output=True, text=True, check=False).stdout.strip()
 
 
+def working_tree_id() -> str:
+    """Hash the working tree through a throwaway index, so the real index and stash stay untouched."""
+    git_dir = Path(git("rev-parse", "--absolute-git-dir"))
+    with tempfile.TemporaryDirectory() as scratch:
+        index = Path(scratch) / "index"
+        if (git_dir / "index").exists():
+            shutil.copyfile(git_dir / "index", index)
+        env = {**os.environ, "GIT_INDEX_FILE": str(index)}
+        subprocess.run(["git", "add", "--all", "--", "."], cwd=REPO_ROOT, env=env, check=True, capture_output=True)
+        return subprocess.run(
+            ["git", "write-tree"], cwd=REPO_ROOT, env=env, check=True, capture_output=True, text=True
+        ).stdout.strip()
+
+
+def reuse_key(inputs: list[str]) -> str:
+    """The sources plus every input that changes what a run proves, such as the consumer SDK the
+    suite builds with: a pass on one SDK or configuration is no proof for another."""
+    return " ".join([working_tree_id(), *sorted(inputs)])
+
+
+def reuse(root: Path, key: str) -> int:
+    """A passing bundle for the same key proves it again; only its packages must still exist."""
+    for bundle in sorted(root.glob("*-verify"), reverse=True):
+        summary_path = bundle / "summary.json"
+        if not summary_path.exists() or not (bundle / "packages").is_dir():
+            continue
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        if summary.get("verdict") == "pass" and summary.get("reuse_key") == key:
+            print(bundle)
+            return 0
+    return 1
+
+
 def summarize(directory: Path) -> int:
     stages = read_stages(directory)
+    # The key the run started on, kept only when the sources did not change while it ran: an edit
+    # mid-run means no single tree was proven, so the bundle must never be reused.
+    key_path = directory / "reuse-key"
+    started_key = key_path.read_text(encoding="utf-8").strip() if key_path.exists() else ""
+    key = started_key if started_key and started_key.split(" ", 1)[0] == working_tree_id() else None
     affected_path = directory / "affected.json"
     affected = json.loads(affected_path.read_text(encoding="utf-8")) if affected_path.exists() else {}
     changed_assemblies: set[str] = set()
@@ -208,6 +252,7 @@ def summarize(directory: Path) -> int:
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "commit": git("rev-parse", "HEAD"),
         "dirty": bool(git("status", "--porcelain")),
+        "reuse_key": key,
         "base": affected.get("base"),
         "verdict": "fail" if failed_stages else "pass",
         "stages": [asdict(stage) for stage in stages],
@@ -286,7 +331,18 @@ def main() -> int:
     skip.add_argument("--reason", required=True)
     summary = commands.add_parser("summarize", help="write summary.json and summary.md")
     summary.add_argument("--dir", required=True, type=Path)
+    key_parser = commands.add_parser("key", help="print the reuse key: tree id plus each --input")
+    key_parser.add_argument("--input", action="append", default=[], metavar="NAME=VALUE")
+    reuse_parser = commands.add_parser("reuse", help="print a passing bundle that proved --key")
+    reuse_parser.add_argument("--root", required=True, type=Path)
+    reuse_parser.add_argument("--key", required=True)
     args = parser.parse_args()
+
+    if args.command == "key":
+        print(reuse_key(args.input))
+        return 0
+    if args.command == "reuse":
+        return reuse(args.root, args.key)
 
     if args.command == "run":
         command = args.stage_command[1:] if args.stage_command[:1] == ["--"] else args.stage_command
