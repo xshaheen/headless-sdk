@@ -13,6 +13,21 @@ namespace Headless.NET.Sdk.Tests.Integrations;
 
 public abstract partial class ContractConsumerBehaviorTests
 {
+    // The PackageReference restore bootstrap the README documents, verbatim.
+    private protected const string RestoreBootstrapDirectoryBuildProps = """
+        <Project>
+          <PropertyGroup>
+            <NuGetAudit>true</NuGetAudit>
+            <NuGetAuditMode>all</NuGetAuditMode>
+            <NuGetAuditLevel>low</NuGetAuditLevel>
+            <RestoreLockedMode
+              Condition="Exists('$(MSBuildProjectDirectory)/packages.lock.json')"
+            >true</RestoreLockedMode>
+            <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904;NU1905</WarningsNotAsErrors>
+          </PropertyGroup>
+        </Project>
+        """;
+
     private protected static IReadOnlyDictionary<string, string> ReadPackageDependencyVersions(string packagePath)
     {
         using var package = ZipFile.OpenRead(packagePath);

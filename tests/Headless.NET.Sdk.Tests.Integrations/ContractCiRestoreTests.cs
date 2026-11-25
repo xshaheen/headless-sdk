@@ -11,21 +11,6 @@ namespace Headless.NET.Sdk.Tests.Integrations;
 
 public sealed class ContractCiRestoreTests(HeadlessSdkPackageFixture fixture) : ContractConsumerBehaviorTests
 {
-    // The PackageReference restore bootstrap the README documents, verbatim.
-    private const string RestoreBootstrapDirectoryBuildProps = """
-        <Project>
-          <PropertyGroup>
-            <NuGetAudit>true</NuGetAudit>
-            <NuGetAuditMode>all</NuGetAuditMode>
-            <NuGetAuditLevel>low</NuGetAuditLevel>
-            <RestoreLockedMode
-              Condition="Exists('$(MSBuildProjectDirectory)/packages.lock.json')"
-            >true</RestoreLockedMode>
-            <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904;NU1905</WarningsNotAsErrors>
-          </PropertyGroup>
-        </Project>
-        """;
-
     [Fact]
     public async Task should_warn_about_the_restore_bootstrap_when_package_reference_targets_net8()
     {

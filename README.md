@@ -300,6 +300,7 @@ the listed default; explicit values win unless the behavior is identified as man
 | `HeadlessSymbolFormat` | `embedded` (`none` for Blazor WebAssembly) | Accepts `embedded`, `snupkg`, or `none`. |
 | `EnablePackageValidation` | `true` (`false` for `PackAsTool`) | Enables Microsoft package validation for ordinary packages; Microsoft disables API compatibility validation for tool packages. Consumers may explicitly disable it. |
 | `GenerateSBOM` | `false` | Generates an SPDX SBOM inside the package when enabled. |
+| `HeadlessPinProjectReferenceVersions` | `false` | Set `true` to pack each `ProjectReference` as an exact `[x.y.z]` dependency instead of NuGet's `>= x.y.z`. See [Sibling package versions](#sibling-package-versions). |
 | `ReportAnalyzer` | `true` on CI, otherwise unset | Compiler per-analyzer timing report. It is diagnostics only and costs build time on every compile, so local and AI-agent builds leave it off. Pass `-p:ReportAnalyzer=true` to profile analyzers locally, or `-p:ReportAnalyzer=false` to silence it on CI. |
 | `IsTestHarnessProject` | `false` | Applies test-library defaults without creating an executable test host. |
 | `EnableCodeCoverage` | `true` on CI, otherwise unset | Adds MTP coverage arguments when `true`. |
@@ -496,6 +497,20 @@ Headless owns the transitive `Microsoft.Sbom.Targets` version; consumers do not 
 Explicit consumer `IncludeSymbols` and `SymbolPackageFormat` values remain authoritative. For portable PDBs, use `HeadlessSymbolFormat=snupkg`; the Microsoft SDK initializes `DebugType=portable` before Headless can distinguish an explicit value from the default.
 
 The `embedded` and `snupkg` formats default `EmbedUntrackedSources=true` so sources the repository does not track (source-generator output, generated files under `obj/`) stay debuggable from the PDB; SourceLink cannot fetch untracked files. Consumer-set values win, and `none` stays on Microsoft defaults.
+
+### Sibling package versions
+
+NuGet packs a `ProjectReference` as a `>= x.y.z` dependency, so a consumer may resolve one of your packages against a newer version of the package it references. When sibling packages ship together and compile against each other's internals (`InternalsVisibleTo`), that mix restores cleanly and fails at run time with `MissingMethodException` or `TypeLoadException`. Opt in to exact ranges in the packing project or a shared `Directory.Build.props`:
+
+```xml
+<PropertyGroup>
+  <HeadlessPinProjectReferenceVersions>true</HeadlessPinProjectReferenceVersions>
+</PropertyGroup>
+```
+
+Each packed `ProjectReference` dependency becomes `[x.y.z]`, the referenced project's own package version, in every target framework group, so NuGet rejects a mixed set at restore. A version that already starts with `[` is kept. A project that packs its own `NuspecFile` declares its dependencies itself and is unaffected. The default is `false`, which keeps NuGet's range.
+
+NuGet has no supported setting for this range, so Headless hooks NuGet's internal `_GetProjectReferenceVersions` target. If a future .NET SDK stops running that target, a pack with the property set fails with `HSDK002` instead of silently packing open ranges.
 
 ### Package metadata
 

@@ -1,0 +1,57 @@
+<Project>
+  <!--
+    NuGet packs a ProjectReference as an open ">= x.y.z" dependency. Packages that compile against
+    each other's internals (InternalsVisibleTo) break when a consumer resolves one of them against a
+    newer sibling whose internals moved: the restore succeeds and the app fails at run time with
+    MissingMethodException or TypeLoadException. HeadlessPinProjectReferenceVersions=true packs each
+    ProjectReference as the exact "[x.y.z]" range, so NuGet rejects that mix at restore instead.
+
+    NuGet offers no supported way to set a ProjectReference's packed range, so this hooks its private
+    _GetProjectReferenceVersions target, the one that fills _ProjectReferencesWithVersions for the
+    pack task. MSBuild ignores an AfterTargets that names a missing target, so a NuGet that renames
+    it would turn the pin off without a word. The pin target therefore records that it ran, and the
+    guard below fails the pack when it did not.
+  -->
+  <PropertyGroup>
+    <HeadlessPinProjectReferenceVersions Condition="'$(HeadlessPinProjectReferenceVersions)' == ''"
+      >false</HeadlessPinProjectReferenceVersions>
+  </PropertyGroup>
+
+  <Target
+    Name="_HeadlessPinProjectReferenceVersions"
+    AfterTargets="_GetProjectReferenceVersions"
+    Condition="'$(HeadlessPinProjectReferenceVersions)' == 'true'"
+  >
+    <ItemGroup>
+      <!-- A version that already carries a range, such as a project's own "[x.y.z]", stays as written. -->
+      <_ProjectReferencesWithVersions Condition="!$([System.String]::Copy('%(ProjectVersion)').StartsWith('['))">
+        <ProjectVersion>[%(ProjectVersion)]</ProjectVersion>
+      </_ProjectReferencesWithVersions>
+    </ItemGroup>
+    <PropertyGroup>
+      <_HeadlessProjectReferenceVersionsPinned>true</_HeadlessProjectReferenceVersionsPinned>
+    </PropertyGroup>
+  </Target>
+
+  <!--
+    GenerateNuspec runs _GetProjectReferenceVersions through DependsOnTargets, which MSBuild runs
+    before the BeforeTargets hooks, so the marker is set by the time this checks it. BeforeTargets
+    hooks run even when GenerateNuspec is skipped, so the conditions mirror NuGet's own: a project
+    that is not packable, is not a PackageReference-style project, or packs its own NuspecFile never
+    runs _GetProjectReferenceVersions and has nothing to pin.
+  -->
+  <Target
+    Name="_HeadlessValidateProjectReferenceVersionsPinned"
+    BeforeTargets="GenerateNuspec"
+    Condition="'$(HeadlessPinProjectReferenceVersions)' == 'true'
+      and '$(IsPackable)' == 'true'
+      and '$(PackageReferenceCompatibleProjectStyle)' == 'true'
+      and '$(NuspecFile)' == ''
+      and '$(_HeadlessProjectReferenceVersionsPinned)' != 'true'"
+  >
+    <Error
+      Code="HSDK002"
+      Text="HeadlessPinProjectReferenceVersions=true could not pin ProjectReference package versions: this NuGet SDK no longer runs the _GetProjectReferenceVersions target that Headless hooks. Pack without the property, or use a Headless.NET.Sdk version that supports this .NET SDK."
+    />
+  </Target>
+</Project>
